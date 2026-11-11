@@ -186,6 +186,42 @@ export function HowDialog() {
       </Dialog>
     );
   }
+  if (id === 'infrastructure') {
+    return (
+      <Dialog title={`${t('how.title')}: ${t('infra.title')}`} onClose={close} wide testId="how-dialog">
+        <p class="how-body">{t('how.infrastructure.body')}</p>
+        <h3>{t('infra.kind.airport')}</h3>
+        <table class="mini-table">
+          <tbody>
+            {(['light', 'moderate', 'severe'] as const).map((level, i) => (
+              <tr key={level}>
+                <td class="num">≥ {formatQuantity([1, 2, 3][i]!, 'pressure')}</td>
+                <td>{t(`infra.airport.${level}`)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <h3>{t('infra.kind.power')}</h3>
+        <table class="mini-table">
+          <tbody>
+            {(['light', 'moderate', 'beyond'] as const).map((level, i) => (
+              <tr key={level}>
+                <td class="num">≥ {formatQuantity([1.7, 5, 5.5][i]!, 'pressure')}</td>
+                <td>{t(`infra.power.${level}`)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <h3>{t('how.where')}</h3>
+        <p>Glasstone &amp; Dolan (1977) Table 5.153, §5.99-5.105</p>
+        <h3>{t('how.uncertainty')}</h3>
+        <p>{t('how.infrastructure.uncertainty')}</p>
+        <h3>{t('how.sources')}</h3>
+        <SourceList ids={['gd1977']} />
+        <p class="hint">{t('how.infrastructure.data')}</p>
+      </Dialog>
+    );
+  }
   if (!current) return null;
 
   if (id === 'casualties') {

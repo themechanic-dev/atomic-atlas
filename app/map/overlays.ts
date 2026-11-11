@@ -193,3 +193,29 @@ export function buildingBands(result: DetonationResult | null): BuildingBand[] {
 function radius(result: DetonationResult, id: string): number {
   return result.rings.find((r) => r.id === id)?.radiusM ?? 0;
 }
+
+/** Colours of infrastructure marks on the map, by kind and fuel. */
+export const SITE_COLORS: Record<string, string> = {
+  large: '#7cc4ff',
+  medium: '#7cc4ff',
+  nuclear: '#c77dff',
+  hydro: '#4dd0e1',
+  coal: '#9aa0a6',
+  gas: '#ffb74d',
+  oil: '#b08968',
+  other: '#bdbdbd',
+};
+
+/** Airports and power stations as points for the map. */
+export function siteFeatures(
+  sites: ReadonlyArray<{ kind: string; detail: string; name: string; lng: number; lat: number }>,
+): FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: sites.map((site) => ({
+      type: 'Feature',
+      properties: { kind: site.kind, detail: site.detail, name: site.name, color: SITE_COLORS[site.detail] ?? '#bdbdbd', major: site.detail === 'large' || site.detail === 'nuclear' },
+      geometry: { type: 'Point', coordinates: [site.lng, site.lat] },
+    })),
+  };
+}

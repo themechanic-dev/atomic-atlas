@@ -133,6 +133,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <Field label={t('settings.map.terrain')} hint={t('settings.map.terrain.hint')}>
           <Switch checked={s.terrain3d} onChange={(terrain3d) => updateSettings({ terrain3d })} label={t('settings.map.terrain')} testId="setting-terrain" />
         </Field>
+        <Field label={t('settings.map.infrastructure')} hint={t('settings.map.infrastructure.hint')}>
+          <Switch
+            checked={s.infrastructure}
+            onChange={(infrastructure) => updateSettings({ infrastructure })}
+            label={t('settings.map.infrastructure')}
+            testId="setting-infrastructure"
+          />
+        </Field>
       </section>
 
       <section class="settings-group">

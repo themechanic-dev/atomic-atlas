@@ -11,6 +11,7 @@ import { accumulatedDose } from '@physics/fallout/wseg10';
 import { t } from '../i18n';
 import { formatDistance, formatDoseRate, formatExposure, formatLatLon, formatPressure, formatDose } from '../lib/format';
 import { distanceM, type LngLat } from '../lib/geo';
+import { ensureSites, sites } from '../state/infrastructure';
 import { settings } from '../state/settings';
 import { blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, flashCount } from '../state/blastPlayback';
 import { beginBusy, detonation, groundZero } from '../state/simulation';
@@ -21,6 +22,7 @@ import {
   ringFeatures,
   ringLabelFeatures,
   ringsAt,
+  siteFeatures,
 } from './overlays';
 import { panelOpen, WIDE_LAYOUT } from '../state/ui';
 import { createBuildingDamage, DAMAGE_LAYER } from './buildingDamage';
@@ -144,6 +146,45 @@ function addOverlays(map: MapLibreMap): void {
     filter: ['==', ['get', 'kind'], 'radiation'],
     paint: { 'line-color': ['get', 'color'], 'line-width': 2.4, 'line-dasharray': [0.6, 1.6] },
   });
+  // Airports (squares would need an icon; a ringed dot does) and power stations, by fuel.
+  map.addSource('aa-sites', { type: 'geojson', data: siteFeatures(sites.value) });
+  map.addLayer({
+    id: 'aa-sites',
+    type: 'circle',
+    source: 'aa-sites',
+    minzoom: 5,
+    filter: ['any', ['get', 'major'], ['>=', ['zoom'], 7]],
+    layout: { visibility: settings.value.infrastructure ? 'visible' : 'none' },
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2.5, 10, 5, 14, 7],
+      'circle-color': ['get', 'color'],
+      'circle-stroke-color': theme === 'dark' ? '#101214' : '#ffffff',
+      'circle-stroke-width': ['match', ['get', 'kind'], 'airport', 2, 1],
+      'circle-opacity': 0.95,
+    },
+  });
+  map.addLayer({
+    id: 'aa-sites-labels',
+    type: 'symbol',
+    source: 'aa-sites',
+    minzoom: 9,
+    layout: {
+      visibility: settings.value.infrastructure ? 'visible' : 'none',
+      'text-field': ['get', 'name'],
+      'text-font': LABEL_FONT,
+      'text-size': 11,
+      'text-anchor': 'top',
+      'text-offset': [0, 0.7],
+      'text-max-width': 10,
+      'text-optional': true,
+    },
+    paint: {
+      'text-color': theme === 'dark' ? '#d9d5cc' : '#2a2c2f',
+      'text-halo-color': theme === 'dark' ? '#101214' : '#ffffff',
+      'text-halo-width': 1.4,
+    },
+  });
+
   // The blast front during playback: a bright line that sweeps outwards.
   map.addLayer({
     id: 'aa-rings-line-front',
@@ -379,6 +420,7 @@ export function MapView() {
       applyDetonation(map);
     });
     buildingDamage = createBuildingDamage(map);
+    ensureSites();
     map.on('idle', finishLoading);
     // Buildings that came in with new tiles are taken over when the map comes to rest.
     map.on('idle', () => {
@@ -444,6 +486,14 @@ export function MapView() {
         void settings.value.buildings3d;
         // Not tied to the playback clock: that has its own, lighter update below.
         if (styleReady) untracked(() => applyDetonation(map));
+      }),
+      // Infrastructure: the data arrives a moment after the map; the setting shows or hides it.
+      effect(() => {
+        const list = sites.value;
+        const visibility = settings.value.infrastructure ? 'visible' : 'none';
+        if (!styleReady) return;
+        (map.getSource('aa-sites') as GeoJSONSource | undefined)?.setData(siteFeatures(list));
+        for (const id of ['aa-sites', 'aa-sites-labels']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility);
       }),
       // Playback: the picture follows the clock.
       effect(() => {

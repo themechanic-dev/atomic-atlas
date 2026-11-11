@@ -10,6 +10,7 @@ import { assumedFissionFraction, WEAPONS, weaponById, type Weapon } from '../dat
 import { isLand } from '../data/land';
 import { directedRate, LAUNCHER_HOLD_MS, LIFTOFF_MS, stageAt, timelineFor, type Stage, type Timeline } from '../globe/director';
 import { distanceM, type LngLat } from '../lib/geo';
+import { playBlast } from './blastPlayback';
 import { settings } from './settings';
 import { groundZero, runDetonation, updateForm } from './simulation';
 import { mode } from './ui';
@@ -340,5 +341,9 @@ export function showEffectsAt(index: number): void {
     cameFromFlight.value = true;
     mode.value = 'detonation';
   });
-  void runDetonation();
+  const follow = cinematic.value;
+  void runDetonation().then(() => {
+    // The directed view goes on: once the map has reached the city, the explosion plays.
+    if (follow && mode.value === 'detonation') setTimeout(() => mode.value === 'detonation' && playBlast(), 2200);
+  });
 }

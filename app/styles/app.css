@@ -728,6 +728,47 @@ p {
   white-space: nowrap;
 }
 
+.sites {
+  list-style: none;
+  margin: 4px 0 8px;
+  padding: 0;
+}
+
+.sites li {
+  padding: 7px 0;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.sites li:first-child {
+  border-top: 0;
+}
+
+.site-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.site-range {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.site-kind {
+  color: var(--text-dim);
+}
+
+.site-finding.is-severe,
+.site-finding.is-beyond {
+  color: var(--danger, #ff6b5e);
+}
+
+.site-finding.is-moderate {
+  color: var(--accent);
+}
+
 .card-head-actions {
   display: flex;
   align-items: center;

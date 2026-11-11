@@ -327,3 +327,46 @@ describe('the director of a flight', () => {
     }
   });
 });
+
+describe('infrastructure inside the blast rings', () => {
+  it('lists the sites the blast reaches, nearest first, with the finding for their kind', async () => {
+    const { affectedSites, parseSites } = await import('../app/data/infrastructure');
+    const sites = parseSites({
+      sources: { airports: '', power: '' },
+      fuels: ['nuclear', 'hydro', 'coal', 'gas', 'oil', 'other'],
+      airports: [
+        [0.05, 0, 'Near field', 1],
+        [0.5, 0, 'Far field', 0],
+      ],
+      power: [
+        [0, 0.02, 'Close station', 3],
+        [0, 0.09, 'Weakly reached station', 1],
+      ],
+    });
+    // A made-up blast: 10 psi at the centre, falling by 1 psi per kilometre.
+    const found = affectedSites(sites, { lng: 0, lat: 0 }, 9000, (rangeM) => 10 - rangeM / 1000);
+    expect(found.map((entry) => entry.site.name)).toEqual(['Close station', 'Near field']);
+    expect(found[0]!.finding.damage).toBe('beyond');
+    expect(found[0]!.site.detail).toBe('gas');
+    expect(found[1]!.finding.damage).toBe('severe');
+    expect(found[1]!.rangeM).toBeGreaterThan(5000);
+    // The far station gets 0 psi and the far field is outside the search range.
+    expect(affectedSites(sites, { lng: 0, lat: 0 }, 100_000, () => 0.5)).toEqual([]);
+  });
+
+  it('ships a data file with both kinds and plausible coordinates', () => {
+    const file = JSON.parse(readFileSync(join(__dirname, '../app/public/data/infrastructure/sites.json'), 'utf8')) as {
+      airports: Array<[number, number, string, number]>;
+      power: Array<[number, number, string, number]>;
+      fuels: string[];
+    };
+    expect(file.airports.length).toBeGreaterThan(3000);
+    expect(file.power.length).toBeGreaterThan(3000);
+    for (const [lng, lat, name] of [...file.airports, ...file.power]) {
+      expect(Math.abs(lng)).toBeLessThanOrEqual(180);
+      expect(Math.abs(lat)).toBeLessThanOrEqual(90);
+      expect(typeof name).toBe('string');
+    }
+    for (const station of file.power) expect(file.fuels[station[3]]).toBeDefined();
+  });
+});

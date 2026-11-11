@@ -21,6 +21,8 @@ export interface Settings {
   weatherSource: WeatherSourceId;
   buildings3d: boolean;
   terrain3d: boolean;
+  /** Airports and power stations on the map and in the results. */
+  infrastructure: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -34,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   weatherSource: 'openmeteo',
   buildings3d: true,
   terrain3d: false,
+  infrastructure: true,
 };
 
 const STORAGE_KEY = 'atomic-atlas.settings.v1';
@@ -63,6 +66,7 @@ export function parseSettings(raw: string | null): Settings {
   if (typeof data.reduceMotion === 'boolean') out.reduceMotion = data.reduceMotion;
   if (typeof data.buildings3d === 'boolean') out.buildings3d = data.buildings3d;
   if (typeof data.terrain3d === 'boolean') out.terrain3d = data.terrain3d;
+  if (typeof data.infrastructure === 'boolean') out.infrastructure = data.infrastructure;
   if (typeof data.mapStyleUrl === 'string' && data.mapStyleUrl.length < 2000) out.mapStyleUrl = data.mapStyleUrl;
   return out;
 }
