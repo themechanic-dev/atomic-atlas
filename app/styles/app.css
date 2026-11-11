@@ -98,7 +98,8 @@ p {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding-top: env(safe-area-inset-top);
+  /* Capacitor provides the --safe-area-inset-* values on Android; browsers provide env(). */
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
 }
 
 .topbar {
@@ -187,7 +188,7 @@ p {
   bottom: 12px;
   width: var(--panel-width);
   max-width: calc(100% - 24px);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -1169,7 +1170,7 @@ p {
     height: 46%;
     border-radius: 16px 16px 0 0;
     border-bottom: 0;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   }
 
   .panel.is-closed {
