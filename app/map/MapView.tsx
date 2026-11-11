@@ -24,7 +24,7 @@ import {
   ringsAt,
   siteFeatures,
 } from './overlays';
-import { panelOpen, WIDE_LAYOUT } from '../state/ui';
+import { closeupRange, panelOpen, WIDE_LAYOUT } from '../state/ui';
 import { createBuildingDamage, DAMAGE_LAYER } from './buildingDamage';
 import { LABEL_FONT, skyFor, styleFor, TERRAIN_TILES, tuneStyle } from './style';
 
@@ -321,7 +321,9 @@ function probeHtml(point: LngLat): string {
   return (
     `<div class="probe"><div class="probe-title">${escape(t('probe.title'))}</div><dl>` +
     rows.map(([k, v]) => `<dt>${escape(k)}</dt><dd>${escape(v)}</dd>`).join('') +
-    '</dl></div>'
+    '</dl>' +
+    (current ? `<button type="button" class="btn btn-secondary probe-closeup" data-closeup data-testid="probe-closeup">${escape(t('closeup.open'))}</button>` : '') +
+    '</div>'
   );
 }
 
@@ -449,6 +451,15 @@ export function MapView() {
         .setLngLat(event.lngLat)
         .setHTML(probeHtml(point))
         .addTo(map);
+      // The read-out can open the close view for this point.
+      const current = detonation.value;
+      popup
+        .getElement()
+        ?.querySelector('[data-closeup]')
+        ?.addEventListener('click', () => {
+          if (current) closeupRange.value = Math.max(50, distanceM(current.at, point));
+          popup?.remove();
+        });
     });
     marker.on('dragend', () => {
       groundZero.value = normalise(marker.getLngLat());

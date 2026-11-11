@@ -10,6 +10,7 @@ import { detonation } from '../state/simulation';
 import { mode, panelOpen, type Mode } from '../state/ui';
 import { BusyIndicator } from './BusyIndicator';
 import { CatalogDialog } from './CatalogDialog';
+import { CloseupDialog } from './CloseupDialog';
 import { IconButton, Segmented } from './controls';
 import { HowDialog } from './HowDialog';
 import { Logo } from './Logo';
@@ -105,6 +106,7 @@ export function App() {
 
       {dialog === 'settings' ? <SettingsDialog onClose={() => setDialog(null)} /> : null}
       {dialog === 'catalog' ? <CatalogDialog onClose={() => setDialog(null)} /> : null}
+      <CloseupDialog />
       <HowDialog />
       <BusyIndicator />
     </div>

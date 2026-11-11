@@ -769,6 +769,84 @@ p {
   color: var(--accent);
 }
 
+.closeup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.closeup-stage {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.closeup-canvas {
+  display: block;
+  width: 100%;
+  height: min(46vh, 380px);
+}
+
+.closeup-clock,
+.closeup-arrow {
+  position: absolute;
+  top: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.closeup-clock {
+  right: 8px;
+  color: var(--accent);
+}
+
+.closeup-arrow {
+  left: 8px;
+  color: var(--text-dim);
+}
+
+.closeup-failed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.closeup-range {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.closeup .playback-row .slider {
+  flex: 1;
+  margin: 0;
+}
+
+.closeup-findings {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.probe-closeup {
+  margin-top: 8px;
+  width: 100%;
+}
+
 .card-head-actions {
   display: flex;
   align-items: center;

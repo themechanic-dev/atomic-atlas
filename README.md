@@ -10,9 +10,10 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 0.2 adds missiles: ranges, trajectories and flight times on a 3D globe,
-> from the launch point to the city map. Infrastructure, reactor accidents, water
-> effects, a war timeline and an offline assistant follow in later versions.
+> Version 0.3 adds the explosion played back in time on the city map, a close
+> view of what the effects do to ordinary things, and airports and power
+> stations on the map. Reactor accidents, water effects, a war timeline and an
+> offline assistant follow in later versions.
 
 ## What it does
 
@@ -33,6 +34,14 @@ Free and open source (MIT).
   lofted and depressed paths; one target per warhead for missiles that carry
   several. Play the flight against a clock, then open any target on the city
   map to see the effects there.
+- **Watch it happen.** Play a detonation back on the map in real time or slow
+  motion: the fireball grows, the burn zones light up, the blast front sweeps
+  outwards and every building changes at the moment the front reaches it.
+- **From close up.** A small 3D scene (street, airfield, power station, fuel
+  tanks, harbour) shows what the effects at any distance do to buildings,
+  vehicles and aircraft, with the numbers of that point.
+- **Infrastructure.** Airports and power stations on the map; for those inside
+  the blast rings, what the source reports for that kind of installation.
 - **"How was this calculated?"** Next to every number: the formula, the inputs,
   the source (section, figure or table) and how uncertain it is.
 - **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
@@ -63,11 +72,13 @@ buildings, weather and people do not behave like a formula.
 | Fallout | WSEG-10 pattern; cloud heights; effective wind; t^-1.2 decay | D. W. Hanifen, *Documentation and Analysis of the WSEG-10 Fallout Prediction Model* (1980); Glasstone & Dolan (1977), Fig. 9.96, §9.84, eqs. 9.147.1 and 9.150.1 |
 | Casualties | Share of people killed and injured per overpressure zone; burns for those in sight of the fireball; lethality of radiation dose | U.S. Office of Technology Assessment, *The Effects of Nuclear War* (1979) |
 | Missile flight | Free-flight ellipse over a round, non-rotating Earth: speed, highest point and time from the distance and the climb angle | R. R. Bate, D. D. Mueller and J. E. White, *Fundamentals of Astrodynamics* (1971), chapter 6 |
+| Timing | Blast arrival from the shock-front speed along the slant range; heat pulse; cloud rise | Glasstone & Dolan (1977), eq. 3.55.2, Figs. 3.77a–b, §7.85–7.86, Table 2.12 |
+| Damage to things | Houses, vehicles, parked aircraft, electricity networks, ignition of tinder | Glasstone & Dolan (1977), §5.52–5.68, §5.87–5.89, Tables 5.145, 5.153 and 7.40, §5.99–5.105 |
 | Population | GHS-POP R2023A, epoch 2025, about 1 km cells | European Commission, Joint Research Centre |
 
 ### Accuracy tests
 
-`npm test` runs 220+ checks. The physics is tested against values printed in the
+`npm test` runs 250+ checks. The physics is tested against values printed in the
 sources: the worked examples next to Glasstone & Dolan's charts (for example
 1,000 psi at 110 ft for 1 kt at 200 ft; 4 psi out to 2,600 ft), their tables of
 wind speed against overpressure, thermal partition and fallout contours, the
@@ -89,6 +100,8 @@ the book differ.
   OpenStreetMap contributors). Built-in map: Natural Earth. Satellite images:
   Sentinel-2 cloudless by EOX. Terrain: Mapzen / AWS Terrain Tiles. The globe is
   drawn with CesiumJS and carries its own small world image.
+- Infrastructure: airports from OurAirports (public domain), power stations from
+  the Global Power Plant Database 1.3 of the World Resources Institute (CC BY 4.0).
 - Weather: [Open-Meteo](https://open-meteo.com), wind at 10 m and at 850, 500 and
   250 hPa. Only the coordinates of the burst are sent.
 - Nothing needs an account or a key. With the built-in map and a manual wind the
@@ -126,7 +139,7 @@ npm run android:apk   # debug APK in release/
 ### Layout
 
 ```
-app/        the shared web UI (TypeScript, Preact, MapLibre GL, CesiumJS)
+app/        the shared web UI (TypeScript, Preact, MapLibre GL, CesiumJS, Three.js)
 physics/    the models: pure functions, no UI, with the accuracy tests
 data/       weapons catalog and historical scenarios, with sources
 desktop/    Electron shell (Linux, Windows)

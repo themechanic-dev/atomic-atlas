@@ -22,6 +22,7 @@ import { EFFECT_COLORS, FALLOUT_COLORS, FALLOUT_LEVELS } from '../map/overlays';
 import { settings } from '../state/settings';
 import { cameFromFlight, returnToFlight } from '../state/missiles';
 import { casualties, detonation, explaining } from '../state/simulation';
+import { closeupRange } from '../state/ui';
 import { Button, HowButton } from './controls';
 import { InfrastructureCard } from './InfrastructureCard';
 import { PlaybackCard } from './PlaybackCard';
@@ -86,6 +87,16 @@ export function ResultsPanel() {
         </Button>
       ) : null}
       <PlaybackCard />
+      <Button
+        onClick={() => {
+          const ring = result.rings.find((r) => r.id === 'blast5' && r.radiusM > 0) ?? result.rings.find((r) => r.kind === 'blast' && r.radiusM > 0);
+          // Just inside the ring, so the view shows what the ring stands for.
+          closeupRange.value = ring ? ring.radiusM * 0.97 : result.maxRadiusM / 2;
+        }}
+        testId="open-closeup"
+      >
+        {t('closeup.open')}
+      </Button>
 
       <div class="card" data-testid="casualties-card">
         <div class="card-head">
