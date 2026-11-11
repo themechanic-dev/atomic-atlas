@@ -7,9 +7,10 @@ import { describe, expect, it } from 'vitest';
 import el from '../app/i18n/el.json';
 import en from '../app/i18n/en.json';
 import { parseWeather, weatherUrl } from '../app/data/weather';
-import { circleRing, destination, distanceM, fromWindFrame } from '../app/lib/geo';
+import { alongGreatCircle, circleRing, destination, distanceM, fromWindFrame, initialBearing, pointInRing } from '../app/lib/geo';
 import { DEFAULT_SETTINGS, parseSettings } from '../app/state/settings';
 import scenarios from '../data/scenarios.json';
+import { planFlight, reachM } from '../physics/ballistics/flight';
 import weapons from '../data/weapons.json';
 
 const root = join(import.meta.dirname, '..');
@@ -198,5 +199,54 @@ describe('catalog', () => {
       expect(Math.abs(s.lat)).toBeLessThanOrEqual(90);
       expect(Math.abs(s.lng)).toBeLessThanOrEqual(180);
     }
+  });
+
+  it('every missile flies: a flight plan exists out to its published range on every path', () => {
+    const missiles = weapons.filter((w) => w.rangeKm !== null);
+    expect(missiles.length).toBeGreaterThan(30);
+    for (const w of missiles) {
+      const rangeM = (w.rangeKm as number) * 1000;
+      expect(rangeM, w.id).toBeGreaterThan(0);
+      expect(w.warheadsMax, w.id).toBeGreaterThanOrEqual(1);
+      for (const shape of ['minimumEnergy', 'lofted', 'depressed'] as const) {
+        const reach = reachM(w.category, rangeM, shape);
+        expect(reach, w.id).toBeGreaterThan(0);
+        expect(reach, w.id).toBeLessThanOrEqual(rangeM);
+        const plan = planFlight(w.category, reach, shape);
+        expect(plan, `${w.id} ${shape}`).not.toBeNull();
+        expect(plan!.flightTimeS, w.id).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
+describe('great circles', () => {
+  const athens = { lat: 37.98, lng: 23.73 };
+  const tokyo = { lat: 35.68, lng: 139.69 };
+
+  it('walks from one end to the other', () => {
+    const total = distanceM(athens, tokyo);
+    expect(distanceM(alongGreatCircle(athens, tokyo, 0), athens)).toBeLessThan(1);
+    expect(distanceM(alongGreatCircle(athens, tokyo, 1), tokyo)).toBeLessThan(5);
+    const mid = alongGreatCircle(athens, tokyo, 0.5);
+    expect(distanceM(athens, mid) / total).toBeCloseTo(0.5, 6);
+    expect(distanceM(mid, tokyo) / total).toBeCloseTo(0.5, 6);
+  });
+
+  it('gives the compass bearing of the start of the path', () => {
+    expect(initialBearing({ lat: 0, lng: 0 }, { lat: 10, lng: 0 })).toBeCloseTo(0, 6);
+    expect(initialBearing({ lat: 0, lng: 0 }, { lat: 0, lng: 10 })).toBeCloseTo(90, 6);
+    expect(initialBearing({ lat: 0, lng: 0 }, { lat: -10, lng: 0 })).toBeCloseTo(180, 6);
+    // Athens to Tokyo starts towards the north-east, over the Black Sea.
+    const bearing = initialBearing(athens, tokyo);
+    expect(bearing).toBeGreaterThan(40);
+    expect(bearing).toBeLessThan(60);
+  });
+
+  it('tells inside from outside a ring', () => {
+    const square = [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]];
+    expect(pointInRing({ lng: 5, lat: 5 }, square)).toBe(true);
+    expect(pointInRing({ lng: 15, lat: 5 }, square)).toBe(false);
+    expect(pointInRing({ lng: 5, lat: -1 }, square)).toBe(false);
   });
 });

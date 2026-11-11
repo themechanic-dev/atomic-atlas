@@ -7,3 +7,7 @@ export const panelOpen = signal(true);
 
 /** Width in pixels from which the panel sits beside the map instead of over its lower half. */
 export const WIDE_LAYOUT = 900;
+
+/** Which simulator is on screen. */
+export type Mode = 'detonation' | 'missiles';
+export const mode = signal<Mode>('detonation');

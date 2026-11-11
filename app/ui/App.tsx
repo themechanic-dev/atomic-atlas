@@ -1,26 +1,37 @@
 // The frame of the app: top bar, map, side panel, dialogs.
 
+import { lazy, Suspense } from 'preact/compat';
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { syncNativeTheme } from '../lib/platform';
 import { MapView } from '../map/MapView';
 import { settings } from '../state/settings';
 import { detonation } from '../state/simulation';
-import { panelOpen } from '../state/ui';
+import { mode, panelOpen, type Mode } from '../state/ui';
 import { BusyIndicator } from './BusyIndicator';
 import { CatalogDialog } from './CatalogDialog';
-import { IconButton } from './controls';
+import { IconButton, Segmented } from './controls';
 import { HowDialog } from './HowDialog';
 import { Logo } from './Logo';
+import { MissilePanel } from './MissilePanel';
 import { ResultsPanel } from './ResultsPanel';
 import { ScenarioPanel } from './ScenarioPanel';
 import { SettingsDialog } from './SettingsDialog';
 
 type DialogName = 'settings' | 'catalog' | null;
 
+// The globe brings a large library with it, so it is loaded when first needed.
+const GlobeView = lazy(() => import('../globe/GlobeView'));
+
 export function App() {
   const [dialog, setDialog] = useState<DialogName>(null);
   const open = panelOpen.value;
+  const current = mode.value;
+  // Once opened, the globe stays loaded; it is only hidden while the map is in front.
+  const [globeLoaded, setGlobeLoaded] = useState(false);
+  useEffect(() => {
+    if (current === 'missiles') setGlobeLoaded(true);
+  }, [current]);
   const theme = settings.value.theme;
 
   useEffect(() => {
@@ -43,7 +54,18 @@ export function App() {
             <span class="brand-by">by The Mechanic</span>
           </div>
         </div>
-        <div class="topbar-title">{t('app.mode.detonation')}</div>
+        <div class="topbar-modes">
+          <Segmented<Mode>
+            label={t('app.mode')}
+            value={current}
+            onChange={(value) => (mode.value = value)}
+            options={[
+              { value: 'detonation', label: t('app.mode.detonation') },
+              { value: 'missiles', label: t('app.mode.missiles') },
+            ]}
+            testId="mode"
+          />
+        </div>
         <div class="topbar-actions">
           <IconButton icon="panel" label={t(open ? 'app.panel.hide' : 'app.panel.show')} onClick={() => (panelOpen.value = !open)} active={open} testId="toggle-panel" />
           <IconButton icon="list" label={t('catalog.title')} onClick={() => setDialog('catalog')} testId="open-catalog-top" />
@@ -52,17 +74,32 @@ export function App() {
       </header>
       <div class="hazard-stripe" aria-hidden="true" />
 
-      <main class="stage">
-        <MapView />
+      <main class={`stage${open ? ' panel-open' : ''}`}>
+        <div class={`view${current === 'detonation' ? '' : ' is-hidden'}`}>
+          <MapView />
+        </div>
+        {globeLoaded ? (
+          <div class={`view view-globe${current === 'missiles' ? '' : ' is-hidden'}`}>
+            <Suspense fallback={null}>
+              <GlobeView active={current === 'missiles'} />
+            </Suspense>
+          </div>
+        ) : null}
         <aside class={`panel${open ? '' : ' is-closed'}`} aria-label={t('scenario.title')} data-testid="panel">
           <div class="panel-scroll">
-            <ScenarioPanel onOpenCatalog={() => setDialog('catalog')} />
-            <ResultsPanel />
+            {current === 'detonation' ? (
+              <>
+                <ScenarioPanel onOpenCatalog={() => setDialog('catalog')} />
+                <ResultsPanel />
+              </>
+            ) : (
+              <MissilePanel />
+            )}
             <p class="panel-foot">{t('app.disclaimer')}</p>
           </div>
         </aside>
         <div class="map-hint" data-testid="map-hint">
-          {t('map.hint')}
+          {t(current === 'detonation' ? 'map.hint' : 'globe.hint')}
         </div>
       </main>
 

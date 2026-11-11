@@ -49,6 +49,12 @@ export const SOURCES = {
     citation: 'Open-Meteo.com weather API: wind speed and direction at 10 m and at the 850, 500 and 250 hPa levels.',
     url: 'https://open-meteo.com',
   },
+  bmw1971: {
+    id: 'bmw1971',
+    short: 'Bate, Mueller & White 1971',
+    citation:
+      'R. R. Bate, D. D. Mueller and J. E. White, Fundamentals of Astrodynamics. Dover Publications, 1971. Chapter 6, Ballistic Missile Trajectories.',
+  },
   glasstoneLib: {
     id: 'glasstoneLib',
     short: 'glasstone library',

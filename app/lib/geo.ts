@@ -60,3 +60,33 @@ export function fromWindFrame(origin: LngLat, towardsDeg: number, xM: number, yM
   const bearing = towardsDeg - Math.atan2(yM, xM) * R2D;
   return destination(origin, bearing, range);
 }
+
+/** Initial bearing of the great circle from a to b, degrees clockwise from north. */
+export function initialBearing(a: LngLat, b: LngLat): number {
+  const phi1 = a.lat * D2R;
+  const phi2 = b.lat * D2R;
+  const dLambda = (b.lng - a.lng) * D2R;
+  const y = Math.sin(dLambda) * Math.cos(phi2);
+  const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLambda);
+  return ((Math.atan2(y, x) * R2D) + 360) % 360;
+}
+
+/** The point a fraction f (0..1) of the way along the great circle from a to b. */
+export function alongGreatCircle(a: LngLat, b: LngLat, f: number): LngLat {
+  const total = distanceM(a, b);
+  if (total === 0) return { ...a };
+  return destination(a, initialBearing(a, b), total * f);
+}
+
+/** True when a point lies inside a polygon ring of [lng, lat] pairs (even-odd rule). */
+export function pointInRing(point: LngLat, ring: ReadonlyArray<readonly [number, number] | number[]>): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i]![0]!;
+    const yi = ring[i]![1]!;
+    const xj = ring[j]![0]!;
+    const yj = ring[j]![1]!;
+    if (yi > point.lat !== yj > point.lat && point.lng < ((xj - xi) * (point.lat - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}

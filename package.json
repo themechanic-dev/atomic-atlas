@@ -2,7 +2,7 @@
   "name": "atomic-atlas",
   "productName": "Atomic Atlas",
   "desktopName": "atomic-atlas.desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Educational simulator of the effects of nuclear weapons, missiles and nuclear accidents on a real map and globe.",
   "author": {
     "name": "The Mechanic",
@@ -34,6 +34,8 @@
     "@capacitor/android": "^8.6.0",
     "@capacitor/cli": "^8.6.0",
     "@capacitor/core": "^8.6.0",
+    "@cesium/core": "^0.1.1",
+    "@cesium/engine": "^26.5.0",
     "@preact/signals": "^2.11.4",
     "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.20.5",

@@ -7,6 +7,7 @@ import { t } from '../i18n';
 import { formatPercent, formatQuantity } from '../lib/format';
 import { openExternal } from '../lib/platform';
 import { settings } from '../state/settings';
+import { flights } from '../state/missiles';
 import { detonation, explaining } from '../state/simulation';
 import { Dialog, Icon } from './controls';
 
@@ -69,8 +70,12 @@ function ExplanationView({ explanation }: { explanation: Explanation }) {
           </table>
         </div>
       </div>
-      <h3>{t('how.where')}</h3>
-      <p>{explanation.where}</p>
+      {explanation.where ? (
+        <>
+          <h3>{t('how.where')}</h3>
+          <p>{explanation.where}</p>
+        </>
+      ) : null}
       {explanation.uncertainty ? (
         <>
           <h3>{t('how.uncertainty')}</h3>
@@ -79,8 +84,12 @@ function ExplanationView({ explanation }: { explanation: Explanation }) {
           </p>
         </>
       ) : null}
-      <h3>{t('how.sources')}</h3>
-      <SourceList ids={explanation.sources} />
+      {explanation.sources.length > 0 ? (
+        <>
+          <h3>{t('how.sources')}</h3>
+          <SourceList ids={explanation.sources} />
+        </>
+      ) : null}
     </>
   );
 }
@@ -153,10 +162,21 @@ export function HowDialog() {
   const id = explaining.value;
   const current = detonation.value;
   void settings.value;
-  if (!id || !current) return null;
+  if (!id) return null;
   const close = (): void => {
     explaining.value = null;
   };
+
+  if (id.startsWith('flight:')) {
+    const plan = flights.value[Number(id.slice(7))]?.plan;
+    if (!plan) return null;
+    return (
+      <Dialog title={`${t('how.title')}: ${t(`how.${plan.explanation.id}.title`)}`} onClose={close} wide testId="how-dialog">
+        <ExplanationView explanation={plan.explanation} />
+      </Dialog>
+    );
+  }
+  if (!current) return null;
 
   if (id === 'casualties') {
     return (
