@@ -332,7 +332,7 @@
   "missiles.speed": "Playback speed",
   "missiles.arrived.one": "Impact. Opening the city map…",
   "missiles.arrived.many": "All warheads have come down. Choose a flight above to see the effects there.",
-  "missiles.assumptions": "Times are for the coasting part of the flight on a round Earth that does not turn. The powered climb adds a few minutes. Cruise missiles are timed at a typical subsonic speed. Every warhead can be given any target within range; on a real missile the warheads of one launch come down much closer together.",
+  "missiles.assumptions": "Times are for the coasting part of the flight on a round Earth that does not turn. The powered climb adds a few minutes. Cruise missiles are timed at a typical subsonic speed; supersonic ones arrive sooner. Every warhead can be given any target within range; on a real missile the warheads of one launch come down much closer together.",
   "quantity.groundRange": "Distance over the ground",
   "quantity.flightPathAngle": "Climb angle when the engines stop",
   "quantity.burnoutSpeed": "Speed when the engines stop",

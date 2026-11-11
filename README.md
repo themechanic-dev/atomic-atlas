@@ -35,7 +35,7 @@ Free and open source (MIT).
   map to see the effects there.
 - **"How was this calculated?"** Next to every number: the formula, the inputs,
   the source (section, figure or table) and how uncertain it is.
-- **Weapons catalog.** 46 systems of all nine nuclear-armed states, in service
+- **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
   and historical, each with its public source.
 - **Settings.** English or Greek, kilometres or miles, °C or °F, dark or light,
   the map source and the weather source.
