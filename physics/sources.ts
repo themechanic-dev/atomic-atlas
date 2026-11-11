@@ -82,6 +82,7 @@ export interface Explanation {
 
 export type Quantity =
   | 'length'
+  | 'height'
   | 'area'
   | 'pressure'
   | 'energyDensity'

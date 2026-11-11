@@ -146,7 +146,7 @@
   "assumptions.visibility.clear": "καθαρή μέρα",
   "assumptions.wind": "Άνεμος",
   "assumptions.wind.live": "Ζωντανός καιρός σε τέσσερα ύψη, ισχύει για {time} UTC",
-  "assumptions.wind.manual": "Ένας άνεμος για όλα τα ύψη, ορισμένος με το χέρι, με τυπική διάτμηση",
+  "assumptions.wind.manual": "Ένας άνεμος για όλα τα ύψη, ορισμένος με το χέρι, που στρίβει 15° μέσα στο σύννεφο",
   "assumptions.population": "Πληθυσμός",
   "assumptions.population.value": "Κάτοικοι (εκεί που κοιμούνται), GHS-POP 2025, κελιά περίπου 1 km",
   "assumptions.shelter": "Προστασία",

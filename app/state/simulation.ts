@@ -45,6 +45,8 @@ export interface ScenarioForm {
   manualWindFromDeg: number;
   /** Catalog entry the yield was taken from, if any. */
   weaponId: string | null;
+  /** True until the user types a fission fraction: it then follows the yield. */
+  fissionAuto: boolean;
 }
 
 export const DEFAULT_FORM: ScenarioForm = {
@@ -57,7 +59,27 @@ export const DEFAULT_FORM: ScenarioForm = {
   manualWindSpeedMs: 6.7,
   manualWindFromDeg: 270,
   weaponId: null,
+  fissionAuto: true,
 };
+
+/**
+ * Fission fraction assumed for a yield typed in by hand: pure fission up to 50 kt, half above.
+ * Half is the figure Glasstone & Dolan use for thermonuclear weapons.
+ */
+export function defaultFissionFraction(yieldKt: number): number {
+  return yieldKt <= 50 ? 1 : 0.5;
+}
+
+/** Sets a yield by hand: detaches the catalog entry and, unless the user fixed it, updates the fission fraction. */
+export function setManualYield(yieldKt: number): void {
+  const f = form.value;
+  form.value = {
+    ...f,
+    yieldKt,
+    weaponId: null,
+    fissionFraction: f.fissionAuto ? defaultFissionFraction(yieldKt) : f.fissionFraction,
+  };
+}
 
 export const form = signal<ScenarioForm>({ ...DEFAULT_FORM });
 export const groundZero = signal<LngLat | null>(null);
@@ -117,7 +139,7 @@ export function buildScenario(): Scenario {
     fissionFraction: f.fissionFraction,
     visibilityM: f.visibilityM,
     wind: currentWind(),
-    defaultShearMsPerKm: DEFAULT_SCENARIO.defaultShearMsPerKm,
+    defaultShearDeg: DEFAULT_SCENARIO.defaultShearDeg,
   };
 }
 

@@ -136,6 +136,8 @@ export function formatQuantity(value: number, quantity: Quantity): string {
   switch (quantity) {
     case 'length':
       return formatDistance(value);
+    case 'height':
+      return formatHeight(value);
     case 'area':
       return formatArea(value);
     case 'pressure':

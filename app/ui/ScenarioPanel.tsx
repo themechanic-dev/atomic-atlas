@@ -15,6 +15,7 @@ import {
   form,
   groundZero,
   runDetonation,
+  setManualYield,
   updateForm,
   weather,
   weatherState,
@@ -58,6 +59,7 @@ export function ScenarioPanel({ onOpenCatalog }: { onOpenCatalog: () => void }) 
       heightM: preset.heightM,
       fissionFraction: preset.fissionFraction,
       weaponId: preset.weaponId,
+      fissionAuto: true,
     });
     groundZero.value = { lat: preset.lat, lng: preset.lng };
     mapHandle.map?.flyTo({ center: [preset.lng, preset.lat], zoom: 11, duration: s.reduceMotion ? 0 : 2200 });
@@ -125,7 +127,7 @@ export function ScenarioPanel({ onOpenCatalog }: { onOpenCatalog: () => void }) 
           max={SLIDER_STEPS}
           step={1}
           value={sliderFromYield(f.yieldKt)}
-          onInput={(event) => updateForm({ yieldKt: yieldFromSlider(Number(event.currentTarget.value)), weaponId: null })}
+          onInput={(event) => setManualYield(yieldFromSlider(Number(event.currentTarget.value)))}
           aria-label={t('quantity.yield')}
           data-testid="yield-slider"
         />
@@ -141,7 +143,7 @@ export function ScenarioPanel({ onOpenCatalog }: { onOpenCatalog: () => void }) 
             value={f.yieldKt}
             min={0.01}
             max={100000}
-            onChange={(value) => updateForm({ yieldKt: value, weaponId: null })}
+            onChange={(value) => setManualYield(value)}
             label={t('scenario.yield.exact')}
             suffix="kt"
             testId="yield-input"
@@ -292,7 +294,7 @@ export function ScenarioPanel({ onOpenCatalog }: { onOpenCatalog: () => void }) 
                 min={0}
                 max={100}
                 step={1}
-                onChange={(value) => updateForm({ fissionFraction: value / 100 })}
+                onChange={(value) => updateForm({ fissionFraction: value / 100, fissionAuto: false })}
                 label={t('quantity.fissionFraction')}
                 suffix="%"
                 width={70}

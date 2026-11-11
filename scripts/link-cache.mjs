@@ -7,6 +7,9 @@
 //
 // The target is $ATOMIC_ATLAS_CACHE, or <user cache dir>/atomic-atlas.
 // Nothing in the build depends on the links: plain folders work the same.
+//
+// npm replaces a linked node_modules with a real folder when it installs.
+// With the links in place, install packages with scripts/npm-install.mjs instead.
 
 import { existsSync, lstatSync, mkdirSync, readlinkSync, symlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -20,7 +23,7 @@ const cacheRoot =
 
 // project path -> folder name inside the cache
 const LINKS = {
-  'node_modules': 'node_modules',
+  'node_modules': 'workspace/node_modules',
   'dist': 'dist',
   'release': 'release',
   'mobile/android/.gradle': 'android/dot-gradle',

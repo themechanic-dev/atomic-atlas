@@ -1,0 +1,202 @@
+// Tests for the parts of the web UI that do not need a browser: translations,
+// settings, formatting inputs, geometry, the weather parser and the catalog.
+
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import el from '../app/i18n/el.json';
+import en from '../app/i18n/en.json';
+import { parseWeather, weatherUrl } from '../app/data/weather';
+import { circleRing, destination, distanceM, fromWindFrame } from '../app/lib/geo';
+import { DEFAULT_SETTINGS, parseSettings } from '../app/state/settings';
+import scenarios from '../data/scenarios.json';
+import weapons from '../data/weapons.json';
+
+const root = join(import.meta.dirname, '..');
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return entry.name === 'public' ? [] : sourceFiles(path);
+    return /\.(ts|tsx)$/.test(entry.name) ? [path] : [];
+  });
+}
+
+describe('translations', () => {
+  const enKeys = Object.keys(en);
+  const elKeys = Object.keys(el);
+
+  it('Greek has every English key and no extra ones', () => {
+    expect(elKeys.filter((k) => !(k in en))).toEqual([]);
+    expect(enKeys.filter((k) => !(k in el))).toEqual([]);
+  });
+
+  it('placeholders match between the languages', () => {
+    const placeholders = (text: string): string[] => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!).sort();
+    for (const key of enKeys) {
+      expect(placeholders((el as Record<string, string>)[key]!), key).toEqual(placeholders((en as Record<string, string>)[key]!));
+    }
+  });
+
+  it('no text is empty', () => {
+    for (const [key, value] of [...Object.entries(en), ...Object.entries(el)]) expect(value.trim().length, key).toBeGreaterThan(0);
+  });
+
+  it('every key written out in the code exists', () => {
+    const missing = new Set<string>();
+    for (const file of sourceFiles('app')) {
+      const text = readFileSync(join(root, file), 'utf8');
+      for (const match of text.matchAll(/\bt\(\s*'([^'$]+)'/g)) {
+        if (!(match[1]! in en)) missing.add(`${file}: ${match[1]}`);
+      }
+    }
+    expect([...missing]).toEqual([]);
+  });
+
+  it('every key built from data exists: effects, presets, countries, categories, platforms, status', () => {
+    const needed = [
+      ...['fireball', 'blast20', 'blast5', 'blast2', 'blast1', 'burn3', 'burn2', 'burn1', 'radiation450'].flatMap((id) => [`effect.${id}`, `effect.${id}.short`]),
+      ...['fireball', 'blast', 'thermal', 'radiation', 'fallout'].flatMap((id) => [`how.${id}.body`, `how.${id}.uncertainty`]),
+      ...scenarios.map((s) => `preset.${s.id}`),
+      ...weapons.map((w) => `country.${w.country}`),
+      ...weapons.map((w) => `category.${w.category}`),
+      ...weapons.map((w) => `status.${w.status}`),
+      ...weapons.flatMap((w) => w.platform.map((p) => `platform.${p}`)),
+      ...['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'].map((c) => `compass.${c}`),
+      ...['openfreemap', 'builtin', 'satellite'].map((m) => `settings.map.${m}.hint`),
+      ...['openmeteo', 'manual'].map((w) => `settings.weather.${w}.hint`),
+      ...['airburst', 'surface', 'custom'].map((b) => `scenario.burst.${b}`),
+    ];
+    expect([...new Set(needed)].filter((k) => !(k in en))).toEqual([]);
+  });
+});
+
+describe('settings', () => {
+  it('start with English, kilometres, Celsius and the dark theme', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({ language: 'en', distance: 'km', temperature: 'C', theme: 'dark' });
+  });
+
+  it('survive a round trip', () => {
+    const custom = { ...DEFAULT_SETTINGS, language: 'el', distance: 'mi', temperature: 'F', theme: 'light', terrain3d: true } as const;
+    expect(parseSettings(JSON.stringify(custom))).toEqual(custom);
+  });
+
+  it('ignore damaged or unknown values', () => {
+    expect(parseSettings('not json')).toEqual(DEFAULT_SETTINGS);
+    expect(parseSettings(null)).toEqual(DEFAULT_SETTINGS);
+    expect(parseSettings(JSON.stringify({ language: 'xx', distance: 7, theme: 'neon', extra: true }))).toEqual(DEFAULT_SETTINGS);
+  });
+});
+
+describe('geometry', () => {
+  const athens = { lat: 37.98, lng: 23.73 };
+
+  it('destination and distance agree', () => {
+    for (const bearing of [0, 37, 90, 181, 270, 333]) {
+      const p = destination(athens, bearing, 12345);
+      expect(distanceM(athens, p)).toBeCloseTo(12345, 0);
+    }
+  });
+
+  it('a circle is closed and every point is at the radius', () => {
+    const ring = circleRing(athens, 5000, 64);
+    expect(ring[0]).toEqual(ring[ring.length - 1]);
+    for (const [lng, lat] of ring) expect(distanceM(athens, { lng, lat })).toBeCloseTo(5000, 0);
+  });
+
+  it('wind coordinates: downwind of a westerly wind is to the east, left of the wind is north', () => {
+    const downwind = fromWindFrame(athens, 90, 10000, 0);
+    expect(downwind.lng).toBeGreaterThan(athens.lng);
+    expect(downwind.lat).toBeCloseTo(athens.lat, 2);
+    const left = fromWindFrame(athens, 90, 0, 10000);
+    expect(left.lat).toBeGreaterThan(athens.lat);
+  });
+
+  it('circles near the antimeridian do not jump across the map', () => {
+    const ring = circleRing({ lat: 11.7, lng: 179.9 }, 50000, 32);
+    for (const [lng] of ring) expect(Math.abs(lng - 179.9)).toBeLessThan(2);
+  });
+});
+
+describe('weather', () => {
+  const response = {
+    elevation: 99,
+    current: {
+      time: '2026-11-11T12:45',
+      temperature_2m: 20.3,
+      wind_speed_10m: 1.53,
+      wind_direction_10m: 212,
+      wind_speed_850hPa: 14.84,
+      wind_direction_850hPa: 294,
+      geopotential_height_850hPa: 1522,
+      wind_speed_500hPa: 17.16,
+      wind_direction_500hPa: 299,
+      geopotential_height_500hPa: 5751,
+      wind_speed_250hPa: 27.83,
+      wind_direction_250hPa: 317,
+      geopotential_height_250hPa: 10603.81,
+    },
+  };
+
+  it('reads four wind levels with heights above ground', () => {
+    const snapshot = parseWeather(response);
+    expect(snapshot.levels).toHaveLength(4);
+    expect(snapshot.levels[1]).toEqual({ heightM: 1423, speedMs: 14.84, fromDeg: 294 });
+    expect(snapshot.temperatureK).toBeCloseTo(293.45, 2);
+    expect(snapshot.time).toBe('2026-11-11T12:45');
+  });
+
+  it('drops pressure levels that lie below high ground', () => {
+    const tibet = { ...response, elevation: 4500 };
+    expect(parseWeather(tibet).levels.map((l) => Math.round(l.heightM))).toEqual([10, 1251, 6104]);
+  });
+
+  it('rejects an incomplete answer', () => {
+    expect(() => parseWeather({ current: { temperature_2m: 1 } })).toThrow();
+    expect(() => parseWeather({})).toThrow();
+  });
+
+  it('asks only for the point and the wind fields', () => {
+    const url = new URL(weatherUrl({ lat: 37.98, lng: 23.73 }));
+    expect(url.origin).toBe('https://api.open-meteo.com');
+    expect(url.searchParams.get('wind_speed_unit')).toBe('ms');
+    expect(url.searchParams.get('current')).toContain('wind_speed_250hPa');
+  });
+});
+
+describe('catalog', () => {
+  it('has all nine nuclear-armed states', () => {
+    const countries = new Set(weapons.map((w) => (w.country === 'SU' ? 'RU' : w.country)));
+    expect([...countries].sort()).toEqual(['CN', 'FR', 'GB', 'IL', 'IN', 'KP', 'PK', 'RU', 'US']);
+  });
+
+  it('every entry has a unique id, a yield and a source that can be opened', () => {
+    const ids = new Set<string>();
+    for (const w of weapons) {
+      expect(ids.has(w.id), w.id).toBe(false);
+      ids.add(w.id);
+      expect(w.yieldsKt.length, w.id).toBeGreaterThan(0);
+      for (const y of w.yieldsKt) expect(y, w.id).toBeGreaterThan(0);
+      expect(w.sources.length, w.id).toBeGreaterThan(0);
+      for (const s of w.sources) expect(s.url, w.id).toMatch(/^https:\/\//);
+      expect(w.warheadsMax, w.id).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('holds effects data only: no accuracy or targeting fields', () => {
+    const allowed = new Set([
+      'id', 'name', 'designations', 'country', 'category', 'platform', 'carrier', 'rangeKm', 'warheadsMax', 'mirv',
+      'yieldsKt', 'fissionFraction', 'year', 'status', 'estimate', 'sources', 'note',
+    ]);
+    for (const w of weapons) for (const key of Object.keys(w)) expect(allowed.has(key), `${w.id}.${key}`).toBe(true);
+    expect(JSON.stringify(weapons)).not.toMatch(/\bCEP\b|circular error/i);
+  });
+
+  it('presets point at catalog entries that exist', () => {
+    for (const s of scenarios) {
+      if (s.weaponId) expect(weapons.some((w) => w.id === s.weaponId), s.id).toBe(true);
+      expect(Math.abs(s.lat)).toBeLessThanOrEqual(90);
+      expect(Math.abs(s.lng)).toBeLessThanOrEqual(180);
+    }
+  });
+});

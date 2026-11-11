@@ -30,23 +30,21 @@
     "android:apk": "npm run check && npm run android:sync && node scripts/build-apk.mjs"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.6.0",
     "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@preact/signals": "^2.11.4",
     "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.20.5",
     "electron": "^45.3.0",
     "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2",
     "geotiff": "^3.0.5",
+    "maplibre-gl": "^6.17.0",
     "png-to-ico": "^3.0.2",
+    "preact": "^11.2.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
-  },
-  "dependencies": {
-    "@capacitor/android": "^8.6.0",
-    "@capacitor/core": "^8.6.0",
-    "@preact/signals": "^2.11.4",
-    "maplibre-gl": "^6.17.0",
-    "preact": "^11.2.0"
   }
 }

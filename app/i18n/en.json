@@ -146,7 +146,7 @@
   "assumptions.visibility.clear": "clear day",
   "assumptions.wind": "Wind",
   "assumptions.wind.live": "Live weather at four heights, valid {time} UTC",
-  "assumptions.wind.manual": "One wind for all heights, set by hand, with typical shear",
+  "assumptions.wind.manual": "One wind for all heights, set by hand, turning 15° across the cloud",
   "assumptions.population": "Population",
   "assumptions.population.value": "Residents (where people sleep), GHS-POP 2025, cells of about 1 km",
   "assumptions.shelter": "Shelter",

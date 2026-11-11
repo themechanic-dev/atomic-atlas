@@ -82,6 +82,33 @@ describe('fallout switch', () => {
     expect(d.fallout.model!.contourExtentM(10)![1]).toBeGreaterThan(20000);
   });
 
+  it('with one wind and the default 15 degrees of shear the pattern matches Glasstone & Dolan Table 9.93 within a factor of 2', () => {
+    // Table 9.93, contact surface burst, 15 mph: downwind distance and maximum width in statute miles.
+    const table: Array<[number, number, number, number]> = [
+      // dose rate, downwind coefficient (x W^0.45), width coefficient, width exponent
+      [100, 8.9, 0.38, 0.6],
+      [10, 24, 1.4, 0.53],
+      [1, 40, 3.3, 0.48],
+    ];
+    for (const yieldKt of [1, 100, 1000]) {
+      const d = detonate(
+        scenario({ yieldKt, burstMode: 'surface', fissionFraction: 1, wind: [{ heightM: 10, speedMs: 15 * 0.44704, fromDeg: 270 }] }),
+      );
+      const model = d.fallout.model!;
+      for (const [rate, downwind, widthCoefficient, widthExponent] of table) {
+        const extent = model.contourExtentM(rate)!;
+        let width = 0;
+        for (let i = 0; i <= 200; i++) width = Math.max(width, 2 * model.contourHalfWidthM(extent[0] + ((extent[1] - extent[0]) * i) / 200, rate));
+        const bookLength = downwind * Math.pow(yieldKt, 0.45) * 1609.344;
+        const bookWidth = widthCoefficient * Math.pow(yieldKt, widthExponent) * 1609.344;
+        expect(extent[1] / bookLength).toBeGreaterThan(0.5);
+        expect(extent[1] / bookLength).toBeLessThan(2);
+        expect(width / bookWidth).toBeGreaterThan(0.5);
+        expect(width / bookWidth).toBeLessThan(2.2);
+      }
+    }
+  });
+
   it('a clean (no fission) device has none', () => {
     expect(detonate(scenario({ burstMode: 'surface', fissionFraction: 0 })).fallout.significant).toBe(false);
   });

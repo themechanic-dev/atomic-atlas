@@ -47,7 +47,7 @@ export function CatalogDialog({ onClose }: { onClose: () => void }) {
   }, [country, category, status, query]);
 
   const use = (weapon: Weapon, yieldKt: number): void => {
-    updateForm({ yieldKt, weaponId: weapon.id, fissionFraction: assumedFissionFraction(weapon, yieldKt) });
+    updateForm({ yieldKt, weaponId: weapon.id, fissionFraction: assumedFissionFraction(weapon, yieldKt), fissionAuto: true });
     onClose();
   };
 

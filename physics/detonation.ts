@@ -37,8 +37,11 @@ export interface Scenario {
   visibilityM: number;
   /** Wind profile; an empty list means calm. */
   wind: WindLevel[];
-  /** Crosswind shear to use when the profile has a single level, (m/s)/km. */
-  defaultShearMsPerKm: number;
+  /**
+   * Change of wind direction across the cloud, in degrees, assumed when the profile has a
+   * single level. Glasstone & Dolan draw their idealised fallout patterns for 15 degrees (§9.93).
+   */
+  defaultShearDeg: number;
 }
 
 export const DEFAULT_SCENARIO: Scenario = {
@@ -48,7 +51,7 @@ export const DEFAULT_SCENARIO: Scenario = {
   fissionFraction: 0.5,
   visibilityM: REFERENCE_VISIBILITY_M,
   wind: [{ heightM: 10, speedMs: 6.7, fromDeg: 270 }],
-  defaultShearMsPerKm: 0.5,
+  defaultShearDeg: 15,
 };
 
 /** Pressure used to pick the height of an "optimum" air burst: 5 psi, where most houses collapse. */
@@ -148,14 +151,14 @@ export function detonate(scenario: Scenario): DetonationResult {
       formula: 'R_max ≈ 2 × R_breakaway;  R_breakaway = 110 W^0.4 ft (air burst) … 145 W^0.4 ft (contact surface burst)',
       inputs: [
         { symbol: 'W', labelKey: 'yield', value: W, quantity: 'yield' },
-        { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'length' },
+        { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'height' },
       ],
       outputs: [
         { symbol: 'R_max', labelKey: 'fireballRadius', value: fireballR, quantity: 'length' },
         { symbol: 'r', labelKey: 'radiusOnGround', value: fireballGround, quantity: 'length' },
       ],
       sources: ['gd1977'],
-      where: '§2.127, eqs. (2.127.1) and (2.127.2)',
+      where: 'Glasstone & Dolan (1977) §2.127, eqs. (2.127.1), (2.127.2)',
       uncertainty: 'rough',
     },
   });
@@ -177,7 +180,7 @@ export function detonate(scenario: Scenario): DetonationResult {
         formula: 'p = f(r / W^(1/3), H / W^(1/3));  r = r₁ × W^(1/3),  H = H₁ × W^(1/3)',
         inputs: [
           { symbol: 'W', labelKey: 'yield', value: W, quantity: 'yield' },
-          { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'length' },
+          { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'height' },
           { symbol: 'p', labelKey: 'overpressure', value: ring.psi, quantity: 'pressure' },
         ],
         outputs: [
@@ -186,7 +189,7 @@ export function detonate(scenario: Scenario): DetonationResult {
           { symbol: 'u', labelKey: 'windSpeed', value: windSpeedMs(ring.psi), quantity: 'speed' },
         ],
         sources: ['brode1986', 'gd1977'],
-        where: 'Brode (1986) fit to the height-of-burst curves; Glasstone & Dolan Figs. 3.73a–c, §3.61–3.63, eqs. (3.55.1)–(3.55.3)',
+        where: 'Brode (1986); Glasstone & Dolan (1977) Figs. 3.73a–c, §3.61–3.63, eqs. (3.55.1)–(3.55.3)',
         uncertainty: '±10%',
       },
     });
@@ -210,7 +213,7 @@ export function detonate(scenario: Scenario): DetonationResult {
         formula: 'Q = 10¹² f W τ / (4π D²)   [cal/cm², D in cm];  D = √(r² + H²)',
         inputs: [
           { symbol: 'W', labelKey: 'yield', value: W, quantity: 'yield' },
-          { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'length' },
+          { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'height' },
           { symbol: 'f', labelKey: 'thermalPartition', value: f, quantity: 'fraction' },
           { symbol: 'V', labelKey: 'visibility', value: visibilityM, quantity: 'length' },
           { symbol: 'Q', labelKey: 'radiantExposure', value: q, quantity: 'energyDensity' },
@@ -221,7 +224,7 @@ export function detonate(scenario: Scenario): DetonationResult {
           { symbol: 'τ', labelKey: 'transmittance', value: transmittance(slant, heightM, visibilityM), quantity: 'fraction' },
         ],
         sources: ['gd1977'],
-        where: 'eq. (7.96.2); Tables 7.88 and 7.101 (f); Fig. 7.98 (τ, two-layer fit); Fig. 12.65 (burn thresholds)',
+        where: 'Glasstone & Dolan (1977) eq. (7.96.2); Tables 7.88, 7.101 (f); Fig. 7.98 (τ); Fig. 12.65 (Q)',
         uncertainty: '±25%',
       },
     });
@@ -244,7 +247,7 @@ export function detonate(scenario: Scenario): DetonationResult {
       formula: 'D = W·n(D_s) + W·γ₂(D_s) + W_eff·F·γ_fp(D_s);  D_s = √(r² + H²)',
       inputs: [
         { symbol: 'W', labelKey: 'yield', value: W, quantity: 'yield' },
-        { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'length' },
+        { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'height' },
         { symbol: 'F', labelKey: 'fissionFraction', value: scenario.fissionFraction, quantity: 'fraction' },
         { symbol: 'D', labelKey: 'dose', value: RADIATION_RING_RAD, quantity: 'dose' },
       ],
@@ -253,7 +256,7 @@ export function detonate(scenario: Scenario): DetonationResult {
         { symbol: 'r_max', labelKey: 'radiusHigh', value: radR.high, quantity: 'length' },
       ],
       sources: ['gd1977', 'glasstoneLib'],
-      where: 'Figs. 8.123a–b (neutrons), 8.127a–b (secondary gamma rays), 8.130a–b and 8.132 (fission product gamma rays)',
+      where: 'Glasstone & Dolan (1977) Figs. 8.123a–b (n), 8.127a–b (γ₂), 8.130a–b, 8.132 (γ_fp)',
       uncertainty: '×0.5–2',
     },
   });
@@ -262,7 +265,10 @@ export function detonate(scenario: Scenario): DetonationResult {
   const cloud = stabilisedCloud(W);
   const profile = scenario.wind.length > 0 ? scenario.wind : [{ heightM: 10, speedMs: 0, fromDeg: 0 }];
   const wind = effectiveWind(profile, cloud);
-  const shear = Math.min(profile.length > 1 ? wind.shearMsPerKm : scenario.defaultShearMsPerKm, MAX_SHEAR);
+  // With a single wind the shear is the assumed turning of the wind across the depth of the cloud.
+  const cloudDepthKm = Math.max(cloud.topM - cloud.bottomM, 100) / 1000;
+  const assumedShear = (wind.speedMs * Math.sin((scenario.defaultShearDeg * Math.PI) / 180)) / cloudDepthKm;
+  const shear = Math.min(profile.length > 1 ? wind.shearMsPerKm : assumedShear, MAX_SHEAR);
   const freeHeight = falloutFreeHeightM(W);
   const localFraction = 1 - surfaceInteraction(W, heightM);
   const significant = localFraction > 0 && scenario.fissionFraction > 0;
@@ -287,18 +293,18 @@ export function detonate(scenario: Scenario): DetonationResult {
       inputs: [
         { symbol: 'W', labelKey: 'yield', value: W, quantity: 'yield' },
         { symbol: 'F', labelKey: 'fissionFraction', value: scenario.fissionFraction, quantity: 'fraction' },
-        { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'length' },
-        { symbol: 'H_f', labelKey: 'falloutFreeHeight', value: freeHeight, quantity: 'length' },
+        { symbol: 'H', labelKey: 'burstHeight', value: heightM, quantity: 'height' },
+        { symbol: 'H_f', labelKey: 'falloutFreeHeight', value: freeHeight, quantity: 'height' },
         { symbol: 'v', labelKey: 'effectiveWindSpeed', value: wind.speedMs, quantity: 'speed' },
         { symbol: 'θ', labelKey: 'effectiveWindFrom', value: wind.fromDeg, quantity: 'angle' },
       ],
       outputs: [
-        { symbol: 'z_top', labelKey: 'cloudTop', value: cloud.topM, quantity: 'length' },
-        { symbol: 'z_base', labelKey: 'cloudBottom', value: cloud.bottomM, quantity: 'length' },
+        { symbol: 'z_top', labelKey: 'cloudTop', value: cloud.topM, quantity: 'height' },
+        { symbol: 'z_base', labelKey: 'cloudBottom', value: cloud.bottomM, quantity: 'height' },
         { symbol: 'k', labelKey: 'localFraction', value: localFraction, quantity: 'fraction' },
       ],
       sources: ['hanifen1980', 'gd1977'],
-      where: 'WSEG-10, Hanifen (1980) eqs. (1)–(27); Glasstone & Dolan eq. (2.128.1), Fig. 9.96, §9.84, eqs. (9.147.1) and (9.150.1)',
+      where: 'Hanifen (1980) eqs. (1)–(27); Glasstone & Dolan (1977) eq. (2.128.1), Fig. 9.96, §9.84, eqs. (9.147.1), (9.150.1)',
       uncertainty: '×0.5–2',
     },
   };
