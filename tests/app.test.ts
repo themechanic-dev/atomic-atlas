@@ -7,7 +7,17 @@ import { describe, expect, it } from 'vitest';
 import el from '../app/i18n/el.json';
 import en from '../app/i18n/en.json';
 import { parseWeather, weatherUrl } from '../app/data/weather';
-import { alongGreatCircle, circleRing, destination, distanceM, fromWindFrame, initialBearing, pointInRing } from '../app/lib/geo';
+import {
+  alongGreatCircle,
+  beyondHorizon,
+  circleRing,
+  destination,
+  distanceM,
+  fromWindFrame,
+  initialBearing,
+  pointInRing,
+  sideViewHeading,
+} from '../app/lib/geo';
 import { DEFAULT_SETTINGS, parseSettings } from '../app/state/settings';
 import scenarios from '../data/scenarios.json';
 import { planFlight, reachM } from '../physics/ballistics/flight';
@@ -248,5 +258,32 @@ describe('great circles', () => {
     expect(pointInRing({ lng: 5, lat: 5 }, square)).toBe(true);
     expect(pointInRing({ lng: 15, lat: 5 }, square)).toBe(false);
     expect(pointInRing({ lng: 5, lat: -1 }, square)).toBe(false);
+  });
+});
+
+describe('looking at the globe', () => {
+  it('looks at a flight from the side that keeps north towards the top', () => {
+    expect(sideViewHeading(90)).toBe(0); // eastward flight: look north
+    expect(sideViewHeading(270)).toBe(0); // westward flight: look north
+    expect(sideViewHeading(0)).toBe(90); // northward flight: look east
+    for (let bearing = 0; bearing < 360; bearing += 7) {
+      const heading = sideViewHeading(bearing);
+      expect(Math.cos((heading * Math.PI) / 180)).toBeGreaterThanOrEqual(-1e-12);
+      expect(Math.abs(Math.cos(((heading - bearing) * Math.PI) / 180))).toBeLessThan(1e-9);
+    }
+  });
+
+  it('knows which ground is hidden behind the curve of the Earth', () => {
+    const r = 6_371_000;
+    const camera = { x: r * 3, y: 0, z: 0 }; // high above 0 N, 0 E
+    expect(beyondHorizon(camera, { x: r, y: 0, z: 0 })).toBe(false); // straight below
+    expect(beyondHorizon(camera, { x: -r, y: 0, z: 0 })).toBe(true); // the other side
+    expect(beyondHorizon(camera, { x: 0, y: r, z: 0 })).toBe(true); // 90 degrees away: past the horizon from this height
+    // From 3 radii the horizon is acos(1/3) = 70.5 degrees away.
+    const at = (deg: number) => ({ x: r * Math.cos((deg * Math.PI) / 180), y: r * Math.sin((deg * Math.PI) / 180), z: 0 });
+    expect(beyondHorizon(camera, at(65))).toBe(false);
+    expect(beyondHorizon(camera, at(76))).toBe(true);
+    // A camera on or under the surface hides nothing.
+    expect(beyondHorizon({ x: r * 0.9, y: 0, z: 0 }, at(170))).toBe(false);
   });
 });

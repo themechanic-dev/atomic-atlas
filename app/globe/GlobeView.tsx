@@ -38,7 +38,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { positionAt, type FlightPlan } from '@physics/ballistics/flight';
 import { t } from '../i18n';
 import { formatDistance } from '../lib/format';
-import { alongGreatCircle, circleRing, initialBearing, type LngLat } from '../lib/geo';
+import { alongGreatCircle, beyondHorizon, circleRing, initialBearing, sideViewHeading, type LngLat } from '../lib/geo';
 import { clock, flights, launchPoint, missile, placePoint, reach } from '../state/missiles';
 import { settings } from '../state/settings';
 import { beginBusy } from '../state/simulation';
@@ -78,16 +78,6 @@ function wholeEarthHeight(element: HTMLElement): number {
   // The globe's edge at 43 % of the shorter side from the centre; the view is 60 degrees wide.
   const edgeAngle = Math.atan((Math.tan(CesiumMath.toRadians(30)) * 0.43 * shorter) / (longer / 2));
   return radius / Math.sin(edgeAngle) - radius;
-}
-
-/**
- * The compass direction to look in so a flight is seen from the side with north towards
- * the top of the screen rather than the bottom.
- */
-export function sideViewHeading(flightBearingDeg: number): number {
-  const right = (flightBearingDeg + 90) % 360;
-  const left = (flightBearingDeg + 270) % 360;
-  return Math.cos(CesiumMath.toRadians(right)) >= 0 ? right : left;
 }
 
 /** A phone-sized view: fewer names and more room around what is shown. */
@@ -179,31 +169,45 @@ export default function GlobeView({ active }: { active: boolean }) {
 
     // Country names, for orientation.
     const nameEntities: Entity[] = [];
+    const namePositions = new Map<Entity, Cartesian3>();
+    const cullNames = (): void => {
+      const eye = camera.positionWC;
+      for (const entity of nameEntities) {
+        const at = namePositions.get(entity);
+        if (at) entity.show = !beyondHorizon(eye, at);
+      }
+    };
+    camera.percentageChanged = 0.02;
+    const removeCameraChanged = camera.changed.addEventListener(cullNames);
+    const removeCameraMoved = camera.moveEnd.addEventListener(cullNames);
     let countryData: Array<{ name: string; name_el: string; rank: number; lng: number; lat: number }> | null = null;
     const drawNames = (): void => {
       nameEntities.splice(0).forEach((entity) => entities.remove(entity));
+      namePositions.clear();
       if (!countryData) return;
       const greek = settings.value.language === 'el';
       const maxRank = isNarrow(element) ? 2 : 4;
       for (const c of countryData) {
         if (c.rank > maxRank) continue;
-        nameEntities.push(
-          entities.add({
-            position: Cartesian3.fromDegrees(c.lng, c.lat, 0),
-            label: {
-              text: (greek ? c.name_el : c.name).toUpperCase(),
-              font: '500 12px system-ui, sans-serif',
-              fillColor: WHITE.withAlpha(0.85),
-              outlineColor: HALO,
-              outlineWidth: 3,
-              style: LabelStyle.FILL_AND_OUTLINE,
-              scaleByDistance: new NearFarScalar(2e6, 1.1, 2.5e7, 0.75),
-              // Fewer names from far away, so they do not pile up on each other.
-              distanceDisplayCondition: new DistanceDisplayCondition(0, c.rank <= 2 ? 4e7 : c.rank === 3 ? 1.3e7 : 6e6),
-            },
-          }),
-        );
+        const at = Cartesian3.fromDegrees(c.lng, c.lat, 0);
+        const entity = entities.add({
+          position: at,
+          label: {
+            text: (greek ? c.name_el : c.name).toUpperCase(),
+            font: '500 12px system-ui, sans-serif',
+            fillColor: WHITE.withAlpha(0.85),
+            outlineColor: HALO,
+            outlineWidth: 3,
+            style: LabelStyle.FILL_AND_OUTLINE,
+            scaleByDistance: new NearFarScalar(2e6, 1.1, 2.5e7, 0.75),
+            // Fewer names from far away, so they do not pile up on each other.
+            distanceDisplayCondition: new DistanceDisplayCondition(0, c.rank <= 2 ? 4e7 : c.rank === 3 ? 1.3e7 : 6e6),
+          },
+        });
+        namePositions.set(entity, at);
+        nameEntities.push(entity);
       }
+      cullNames();
       scene.requestRender();
     };
     fetch('./data/basemap/countries.json')
@@ -225,7 +229,13 @@ export default function GlobeView({ active }: { active: boolean }) {
           entities.add({
             position: cartesian(from),
             point: { pixelSize: 12, color: AMBER, outlineColor: HALO, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
-            label: labelStyle(t('missiles.launchPoint'), AMBER),
+            // Above its mark, so it stays clear of a target close by (those read to the right).
+            label: {
+              ...labelStyle(t('missiles.launchPoint'), AMBER),
+              horizontalOrigin: HorizontalOrigin.CENTER,
+              verticalOrigin: VerticalOrigin.BOTTOM,
+              pixelOffset: new Cartesian2(0, -14),
+            },
           }),
         );
         if (weapon && reach.value > 0) {
@@ -354,6 +364,8 @@ export default function GlobeView({ active }: { active: boolean }) {
       endLoading();
       resize.disconnect();
       disposers.forEach((dispose) => dispose());
+      removeCameraChanged();
+      removeCameraMoved();
       handler.destroy();
       widget.destroy();
       widgetRef.current = null;

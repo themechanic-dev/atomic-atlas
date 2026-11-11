@@ -90,3 +90,33 @@ export function pointInRing(point: LngLat, ring: ReadonlyArray<readonly [number,
   }
   return inside;
 }
+
+/**
+ * The compass direction to look in so a flight is seen from the side with north towards
+ * the top of the screen rather than the bottom.
+ */
+export function sideViewHeading(flightBearingDeg: number): number {
+  const right = (flightBearingDeg + 90) % 360;
+  const left = (flightBearingDeg + 270) % 360;
+  return Math.cos(right * D2R) >= 0 ? right : left;
+}
+
+/**
+ * True when a point on the ground is hidden behind the curve of the Earth, seen from the camera.
+ * Worked out here rather than left to the graphics card: software renderers (virtual machines,
+ * remote desktops) let names from the far side show through the globe.
+ */
+export function beyondHorizon(camera: { x: number; y: number; z: number }, point: { x: number; y: number; z: number }): boolean {
+  // In units of the Earth's smallest radius the ground is never inside the unit sphere.
+  const r = 6_356_752;
+  const cx = camera.x / r;
+  const cy = camera.y / r;
+  const cz = camera.z / r;
+  const tx = point.x / r - cx;
+  const ty = point.y / r - cy;
+  const tz = point.z / r - cz;
+  const horizonSq = cx * cx + cy * cy + cz * cz - 1;
+  if (horizonSq <= 0) return false;
+  const along = -(tx * cx + ty * cy + tz * cz);
+  return along > horizonSq && (along * along) / (tx * tx + ty * ty + tz * tz) > horizonSq;
+}
