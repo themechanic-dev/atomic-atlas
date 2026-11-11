@@ -1,6 +1,7 @@
 // What a detonation draws on the map: effect rings, the fallout pattern, and
 // the colour of each 3D building by the damage zone it stands in.
 
+import { damageBand } from '@physics/damage/levels';
 import type { DetonationResult, EffectRing } from '@physics/detonation';
 import type { Feature, FeatureCollection, Polygon } from 'geojson';
 import { circleRing, destination, fromWindFrame, unwrap, type LngLat } from '../lib/geo';
@@ -136,6 +137,28 @@ export function buildingColorExpression(at: LngLat | null, result: DetonationRes
   const expression: unknown[] = ['step', ['distance', { type: 'Point', coordinates: [at.lng, at.lat] }], usable[0]![1]];
   for (let i = 0; i < usable.length; i++) {
     expression.push(usable[i]![0], i + 1 < usable.length ? usable[i + 1]![1] : base);
+  }
+  return expression;
+}
+
+/**
+ * Share of its height that a 3D building keeps, by distance from ground zero: buildings in
+ * the heavy blast rings are drawn low, as rubble or part-collapsed.
+ * Returns a MapLibre expression that gives a number from 0 to 1.
+ */
+export function buildingHeightFactorExpression(at: LngLat | null, result: DetonationResult | null): unknown {
+  if (!at || !result) return 1;
+  const kept = (psi: number): number => damageBand(psi).heightKept;
+  const stops: Array<[number, number]> = [
+    [radius(result, 'blast20'), kept(20)],
+    [radius(result, 'blast5'), kept(5)],
+    [radius(result, 'blast2'), kept(2)],
+  ];
+  const usable = stops.filter(([r]) => r > 0);
+  if (usable.length === 0) return 1;
+  const expression: unknown[] = ['step', ['distance', { type: 'Point', coordinates: [at.lng, at.lat] }], usable[0]![1]];
+  for (let i = 0; i < usable.length; i++) {
+    expression.push(usable[i]![0], i + 1 < usable.length ? usable[i + 1]![1] : 1);
   }
   return expression;
 }

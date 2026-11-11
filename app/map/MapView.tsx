@@ -15,6 +15,7 @@ import { settings } from '../state/settings';
 import { beginBusy, detonation, groundZero } from '../state/simulation';
 import {
   buildingColorExpression,
+  buildingHeightFactorExpression,
   falloutFeatures,
   resultBounds,
   ringFeatures,
@@ -181,6 +182,10 @@ function applyBuildings(map: MapLibreMap): void {
     'fill-extrusion-color',
     buildingColorExpression(current?.at ?? null, current?.result ?? null, settings.value.theme) as never,
   );
+  // Height shows the damage too: what the blast brings down is drawn low.
+  const factor = buildingHeightFactorExpression(current?.at ?? null, current?.result ?? null);
+  map.setPaintProperty(BUILDING_LAYER, 'fill-extrusion-height', ['*', ['coalesce', ['get', 'render_height'], 6], factor] as never);
+  map.setPaintProperty(BUILDING_LAYER, 'fill-extrusion-base', ['*', ['coalesce', ['get', 'render_min_height'], 0], factor] as never);
 }
 
 function applyDetonation(map: MapLibreMap): void {
