@@ -15,6 +15,7 @@ import {
 } from '@cesium/core';
 import {
   CallbackPositionProperty,
+  CallbackProperty,
   CesiumWidget,
   Credit,
   HorizontalOrigin,
@@ -241,6 +242,19 @@ export default function GlobeView({ active }: { active: boolean }) {
               return cartesian(alongGreatCircle(from, flight.target, p.downrangeM / plan.rangeM), Math.max(p.altitudeM, MIN_DRAW_HEIGHT));
             }, false),
             point: { pixelSize: 9, color: Color.WHITE, outlineColor: RED, outlineWidth: 3, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+          }),
+        );
+        // The impact: a bright mark at the target from the moment the warhead arrives.
+        launchEntities.push(
+          entities.add({
+            position: cartesian(flight.target),
+            point: {
+              show: new CallbackProperty(() => clock.value > 0 && clock.value >= plan.flightTimeS, false),
+              pixelSize: 26,               color: AMBER.withAlpha(0.55),
+              outlineColor: Color.WHITE.withAlpha(0.9),
+              outlineWidth: 2,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            },
           }),
         );
       });

@@ -122,8 +122,14 @@ export function clearMissiles(): void {
     targets.value = [];
     picking.value = 'launch';
     platformWarning.value = null;
+    cameFromFlight.value = false;
     stop();
   });
+}
+
+/** Back from the city map to the flight that led there. */
+export function returnToFlight(): void {
+  mode.value = 'missiles';
 }
 
 // --- Playback ------------------------------------------------------------------
@@ -138,6 +144,30 @@ export const PLAYBACK_RATES = [10, 60, 300] as const;
 let frame = 0;
 let lastTick = 0;
 
+/** True while the detonation on the city map was opened from a flight on the globe. */
+export const cameFromFlight = signal(false);
+
+/** How long the globe stays on the impact before the city map opens, milliseconds. */
+const ARRIVAL_PAUSE_MS = 1500;
+let arrivalTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Indexes of the flights that reach their target. */
+function reachable(): number[] {
+  return flights.value.flatMap((flight, index) => (flight.plan ? [index] : []));
+}
+
+/** True when the played flight has one target only, so the app follows it down to the city by itself. */
+export const followsToCity = computed(() => reachable().length === 1);
+
+// When the last warhead has come down: with one target the city map opens by itself,
+// with several the user chooses which one to look at.
+function onArrival(): void {
+  const indexes = reachable();
+  if (indexes.length !== 1) return;
+  clearTimeout(arrivalTimer);
+  arrivalTimer = setTimeout(() => showEffectsAt(indexes[0]!), ARRIVAL_PAUSE_MS);
+}
+
 function tick(now: number): void {
   if (!playing.value) return;
   const elapsed = Math.min(now - lastTick, 100) / 1000;
@@ -146,6 +176,7 @@ function tick(now: number): void {
   if (next >= duration.value) {
     clock.value = duration.value;
     playing.value = false;
+    onArrival();
     return;
   }
   clock.value = next;
@@ -153,6 +184,7 @@ function tick(now: number): void {
 }
 
 export function play(): void {
+  clearTimeout(arrivalTimer);
   if (duration.value <= 0) return;
   if (clock.value >= duration.value) clock.value = 0;
   playing.value = true;
@@ -162,6 +194,7 @@ export function play(): void {
 }
 
 export function pause(): void {
+  clearTimeout(arrivalTimer);
   playing.value = false;
   cancelAnimationFrame(frame);
 }
@@ -193,6 +226,7 @@ export function showEffectsAt(index: number): void {
       burstMode: 'airburst',
     });
     groundZero.value = flight.target;
+    cameFromFlight.value = true;
     mode.value = 'detonation';
   });
   void runDetonation();

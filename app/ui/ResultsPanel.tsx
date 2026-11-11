@@ -20,8 +20,9 @@ import {
 } from '../lib/format';
 import { EFFECT_COLORS, FALLOUT_COLORS, FALLOUT_LEVELS } from '../map/overlays';
 import { settings } from '../state/settings';
+import { cameFromFlight, returnToFlight } from '../state/missiles';
 import { casualties, detonation, explaining } from '../state/simulation';
-import { HowButton } from './controls';
+import { Button, HowButton } from './controls';
 
 function ringValue(ring: EffectRing): string {
   if (!(ring.radiusM > 0)) return t('results.notReached');
@@ -77,6 +78,11 @@ export function ResultsPanel() {
           height: result.heightM > 0 ? formatHeight(result.heightM) : t('results.summary.surface'),
         })}
       </p>
+      {cameFromFlight.value ? (
+        <Button kind="ghost" onClick={returnToFlight} testId="back-to-flight">
+          ← {t('results.backToFlight')}
+        </Button>
+      ) : null}
 
       <div class="card" data-testid="casualties-card">
         <div class="card-head">

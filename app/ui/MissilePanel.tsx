@@ -12,6 +12,7 @@ import {
   clock,
   duration,
   flights,
+  followsToCity,
   launchPoint,
   missile,
   MISSILES,
@@ -254,6 +255,11 @@ export function MissilePanel() {
               testId="playback-rate"
             />
           </div>
+          {clock.value >= total ? (
+            <p class="hint" data-testid="playback-arrived">
+              {t(followsToCity.value ? 'missiles.arrived.one' : 'missiles.arrived.many')}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

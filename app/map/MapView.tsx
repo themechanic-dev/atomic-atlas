@@ -335,6 +335,11 @@ export function MapView() {
       applyDetonation(map);
     });
     map.on('idle', finishLoading);
+    // Online styles sometimes name an icon their sprite does not have; an empty image
+    // stands in for it, so the rest of the layer still draws.
+    map.on('styleimagemissing', (event) => {
+      if (!map.hasImage(event.id)) map.addImage(event.id, { width: 1, height: 1, data: new Uint8Array(4) });
+    });
     map.on('error', (event) => {
       // A failed tile or font must not leave the working indicator up.
       console.warn('map:', event.error?.message ?? event);

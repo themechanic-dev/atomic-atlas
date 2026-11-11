@@ -94,6 +94,7 @@
   "quantity.localFraction": "Share of fallout that comes down locally",
 
   "results.title": "Results",
+  "results.backToFlight": "Back to the missile flight",
   "results.summary": "{yield} at {height}",
   "results.summary.surface": "the surface",
   "results.notReached": "not reached",
@@ -329,6 +330,8 @@
   "missiles.play": "Play",
   "missiles.pause": "Pause",
   "missiles.speed": "Playback speed",
+  "missiles.arrived.one": "Impact. Opening the city map…",
+  "missiles.arrived.many": "All warheads have come down. Choose a flight above to see the effects there.",
   "missiles.assumptions": "Times are for the coasting part of the flight on a round Earth that does not turn. The powered climb adds a few minutes. Cruise missiles are timed at a typical subsonic speed. Every warhead can be given any target within range; on a real missile the warheads of one launch come down much closer together.",
   "quantity.groundRange": "Distance over the ground",
   "quantity.flightPathAngle": "Climb angle when the engines stop",
