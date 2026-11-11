@@ -1,0 +1,4 @@
+#!/bin/sh
+# Stand-in for Wine while the Windows installer is built on Linux or macOS.
+# See wine-stand-in.cjs next to this file.
+exec node "$(dirname "$0")/wine-stand-in.cjs" "$@"

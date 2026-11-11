@@ -24,12 +24,14 @@ const config = {
   asar: true,
   electronLanguages: ['en-US', 'el'],
   artifactName: 'atomic-atlas-${version}-${os}-${arch}.${ext}',
+  afterPack: './installer/after-pack.mjs',
 
   linux: {
     target: [{ target: 'deb', arch: ['x64'] }],
     icon: 'installer/icons',
     category: 'Education',
     executableName: 'atomic-atlas',
+    syncDesktopName: true,
     synopsis: 'Educational simulator of the effects of nuclear weapons',
     description:
       'Atomic Atlas shows what nuclear explosions do: blast, heat, radiation and fallout, on a real map and globe. Built for learning, with public scientific models and the source of every number one click away.',
@@ -47,6 +49,7 @@ const config = {
   },
   deb: {
     priority: 'optional',
+    packageCategory: 'education',
     compression: 'xz',
   },
 
@@ -54,6 +57,8 @@ const config = {
     target: [{ target: 'nsis', arch: ['x64'] }],
     icon: 'installer/icons/icon.ico',
     legalTrademarks: 'The Mechanic',
+    // The icon and version details are written by installer/after-pack.mjs, which needs no Wine.
+    signAndEditExecutable: false,
   },
   nsis: {
     oneClick: false,

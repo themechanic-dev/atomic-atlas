@@ -1,6 +1,7 @@
 {
   "name": "atomic-atlas",
   "productName": "Atomic Atlas",
+  "desktopName": "atomic-atlas.desktop",
   "version": "0.1.0",
   "description": "Educational simulator of the effects of nuclear weapons, missiles and nuclear accidents on a real map and globe.",
   "author": {
@@ -25,7 +26,7 @@
     "check": "npm run typecheck && npm run test",
     "icons": "node scripts/make-icons.mjs",
     "dist:linux": "npm run check && npm run build && electron-builder --config electron-builder.config.mjs --linux",
-    "dist:win": "npm run check && npm run build && electron-builder --config electron-builder.config.mjs --win",
+    "dist:win": "npm run check && npm run build && node scripts/dist-win.mjs",
     "android:sync": "npm run build:web && cap sync android",
     "android:apk": "npm run check && npm run android:sync && node scripts/build-apk.mjs"
   },
@@ -43,6 +44,7 @@
     "maplibre-gl": "^6.17.0",
     "png-to-ico": "^3.0.2",
     "preact": "^11.2.0",
+    "resedit": "^3.1.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
