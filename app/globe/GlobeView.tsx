@@ -141,6 +141,8 @@ export default function GlobeView({ active }: { active: boolean }) {
       return;
     }
     widgetRef.current = widget;
+    // A handle for diagnostics from the developer tools.
+    (globalThis as { __atomicAtlasGlobe?: CesiumWidget }).__atomicAtlasGlobe = widget;
     const { scene, camera, entities } = widget;
     scene.globe.enableLighting = false;
     scene.globe.baseColor = Color.fromCssColorString('#0e1317');
