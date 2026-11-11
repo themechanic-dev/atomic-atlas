@@ -55,6 +55,60 @@ export const SOURCES = {
     citation:
       'R. R. Bate, D. D. Mueller and J. E. White, Fundamentals of Astrodynamics. Dover Publications, 1971. Chapter 6, Ballistic Missile Trajectories.',
   },
+  hotspot2013: {
+    id: 'hotspot2013',
+    short: 'HotSpot 3.0 User\'s Guide',
+    citation:
+      'S. G. Homann and F. Aluzzi, HotSpot Health Physics Codes Version 3.0 User\'s Guide. Lawrence Livermore National Laboratory, LLNL-SM-636474, 2013.',
+    url: 'https://narac.llnl.gov/hotspot',
+  },
+  icrp119: {
+    id: 'icrp119',
+    short: 'ICRP Publication 119',
+    citation:
+      'ICRP, Compendium of Dose Coefficients based on ICRP Publication 60. ICRP Publication 119, Annals of the ICRP 41 (Suppl.), 2012.',
+    url: 'https://www.icrp.org/publication.asp?id=ICRP%20Publication%20119',
+  },
+  fgr12: {
+    id: 'fgr12',
+    short: 'Federal Guidance Report 12',
+    citation:
+      'K. F. Eckerman and J. C. Ryman, External Exposure to Radionuclides in Air, Water, and Soil. Federal Guidance Report No. 12, U.S. Environmental Protection Agency, EPA-402-R-93-081, 1993.',
+    url: 'https://www.epa.gov/radiation/federal-guidance-report-no-12-external-exposure-radionuclides-air-water-and-soil',
+  },
+  iaeaGsr7: {
+    id: 'iaeaGsr7',
+    short: 'IAEA GSR Part 7',
+    citation:
+      'IAEA, Preparedness and Response for a Nuclear or Radiological Emergency. IAEA Safety Standards Series No. GSR Part 7, 2015. Appendix II, Table II.2.',
+    url: 'https://www.iaea.org/publications/10905/preparedness-and-response-for-a-nuclear-or-radiological-emergency',
+  },
+  unscear2008c: {
+    id: 'unscear2008c',
+    short: 'UNSCEAR 2008, Annex C',
+    citation: 'UNSCEAR, Sources and Effects of Ionizing Radiation, 2008 Report, Volume II, Annex C: Radiation exposures in accidents. United Nations, 2011.',
+    url: 'https://www.unscear.org/unscear/en/publications/2008_2.html',
+  },
+  unscear2008d: {
+    id: 'unscear2008d',
+    short: 'UNSCEAR 2008, Annex D',
+    citation:
+      'UNSCEAR, Sources and Effects of Ionizing Radiation, 2008 Report, Volume II, Annex D: Health effects due to radiation from the Chernobyl accident, Table A1. United Nations, 2011.',
+    url: 'https://www.unscear.org/unscear/en/publications/2008_2.html',
+  },
+  unscear2013a: {
+    id: 'unscear2013a',
+    short: 'UNSCEAR 2013, Annex A',
+    citation:
+      'UNSCEAR, Sources, Effects and Risks of Ionizing Radiation, 2013 Report, Volume I, Annex A: Levels and effects of radiation exposure due to the nuclear accident after the 2011 great east-Japan earthquake and tsunami, Table B4. United Nations, 2014.',
+    url: 'https://www.unscear.org/unscear/en/publications/2013_1.html',
+  },
+  nrpa2007: {
+    id: 'nrpa2007',
+    short: 'NRPA Bulletin 8/2007',
+    citation: 'Norwegian Radiation Protection Authority, The Kyshtym accident, 29th September 1957. NRPA Bulletin 8, 2007, Table 1.',
+    url: 'https://dsa.no/publikasjoner/straleverninfo-8-2007-the-kyshtym-accident-29th-september-1957/StralevernInfo_8_2007.pdf',
+  },
   glasstoneLib: {
     id: 'glasstoneLib',
     short: 'glasstone library',
@@ -100,7 +154,9 @@ export type Quantity =
   | 'angle'
   | 'fraction'
   | 'count'
-  | 'number';
+  | 'number'
+  | 'activity'
+  | 'effectiveDose';
 
 export interface ExplanationValue {
   symbol: string;

@@ -133,6 +133,31 @@ export function formatLatLon(lat: number, lon: number): string {
 }
 
 /** Formats a physics value by its kind; used by "How was this calculated?". */
+/** Activity in becquerels with a prefix: kBq, MBq, GBq, TBq, PBq, EBq. */
+export function formatActivity(bq: number): string {
+  if (!Number.isFinite(bq)) return '–';
+  const prefixes: Array<[number, string]> = [
+    [1e18, 'EBq'],
+    [1e15, 'PBq'],
+    [1e12, 'TBq'],
+    [1e9, 'GBq'],
+    [1e6, 'MBq'],
+    [1e3, 'kBq'],
+  ];
+  for (const [size, unit] of prefixes) if (Math.abs(bq) >= size) return `${formatNumber(bq / size, 3)} ${unit}`;
+  return `${formatNumber(bq, 3)} Bq`;
+}
+
+/** Effective dose in sieverts with a prefix: µSv, mSv, Sv. */
+export function formatEffectiveDose(sv: number): string {
+  if (!Number.isFinite(sv)) return '–';
+  const a = Math.abs(sv);
+  if (a >= 1) return `${formatNumber(sv, 3)} Sv`;
+  if (a >= 1e-3) return `${formatNumber(sv * 1e3, 3)} mSv`;
+  if (a >= 1e-7) return `${formatNumber(sv * 1e6, 2)} µSv`;
+  return `< 0.1 µSv`;
+}
+
 export function formatQuantity(value: number, quantity: Quantity): string {
   switch (quantity) {
     case 'length':
@@ -163,5 +188,9 @@ export function formatQuantity(value: number, quantity: Quantity): string {
       return formatPeople(value);
     case 'number':
       return formatNumber(value, 3);
+    case 'activity':
+      return formatActivity(value);
+    case 'effectiveDose':
+      return formatEffectiveDose(value);
   }
 }

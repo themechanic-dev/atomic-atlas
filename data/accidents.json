@@ -1,0 +1,83 @@
+[
+  {
+    "id": "chernobyl-1986",
+    "name": "Chernobyl, 26 April 1986",
+    "lat": 51.3894,
+    "lng": 30.0994,
+    "kind": "reactor",
+    "nuclides": [
+      { "nuclide": "Xe-133", "activityBq": 6.5e18 },
+      { "nuclide": "I-131", "activityBq": 1.76e18 },
+      { "nuclide": "I-133", "activityBq": 9.1e17 },
+      { "nuclide": "Te-132", "activityBq": 1.15e18 },
+      { "nuclide": "Cs-134", "activityBq": 4.7e16 },
+      { "nuclide": "Cs-137", "activityBq": 8.5e16 },
+      { "nuclide": "Sr-90", "activityBq": 1.0e16 },
+      { "nuclide": "Ru-106", "activityBq": 7.3e16 },
+      { "nuclide": "Kr-85", "activityBq": 3.3e16 }
+    ],
+    "source": "unscear2008d",
+    "note": "Released over about ten days in changing winds and carried high by the fire; one steady plume is a coarse picture of it."
+  },
+  {
+    "id": "fukushima-2011",
+    "name": "Fukushima Daiichi, March 2011",
+    "lat": 37.4214,
+    "lng": 141.0325,
+    "kind": "reactor",
+    "nuclides": [
+      { "nuclide": "Xe-133", "activityBq": 7.32e18 },
+      { "nuclide": "I-131", "activityBq": 1.24e17 },
+      { "nuclide": "I-133", "activityBq": 9.56e15 },
+      { "nuclide": "Te-132", "activityBq": 2.85e16 },
+      { "nuclide": "Cs-134", "activityBq": 9.01e15 },
+      { "nuclide": "Cs-137", "activityBq": 8.83e15 }
+    ],
+    "source": "unscear2013a",
+    "note": "Released over weeks from three reactors; much of it blew out over the Pacific."
+  },
+  {
+    "id": "kyshtym-1957",
+    "name": "Kyshtym (Mayak), 29 September 1957",
+    "lat": 55.7128,
+    "lng": 60.8481,
+    "kind": "reprocessing",
+    "nuclides": [
+      { "nuclide": "Ce-144", "activityBq": 2.44e16 },
+      { "nuclide": "Zr-95", "activityBq": 9.2e15 },
+      { "nuclide": "Sr-90", "activityBq": 2.0e15 },
+      { "nuclide": "Ru-106", "activityBq": 1.35e15 },
+      { "nuclide": "Cs-137", "activityBq": 3.0e13 }
+    ],
+    "source": "nrpa2007",
+    "note": "The 74 PBq carried beyond the site by the plume; nine tenths of the 740 PBq came down within 5 km. The source lists each nuclide with its short-lived daughter; half of each pair is taken as the parent."
+  },
+  {
+    "id": "windscale-1957",
+    "name": "Windscale, 10 October 1957",
+    "lat": 54.4239,
+    "lng": -3.4975,
+    "kind": "reactor",
+    "nuclides": [
+      { "nuclide": "Xe-133", "activityBq": 1.6e16 },
+      { "nuclide": "I-131", "activityBq": 7.4e14 },
+      { "nuclide": "Cs-137", "activityBq": 2.2e13 },
+      { "nuclide": "Ru-106", "activityBq": 3.0e12 }
+    ],
+    "source": "unscear2008c",
+    "note": "A fire in a graphite reactor that burned for three days. The source also lists 8.8 TBq of polonium-210, which is not in this model."
+  },
+  {
+    "id": "three-mile-island-1979",
+    "name": "Three Mile Island, 28 March 1979",
+    "lat": 40.1531,
+    "lng": -76.7247,
+    "kind": "reactor",
+    "nuclides": [
+      { "nuclide": "Xe-133", "activityBq": 3.7e17 },
+      { "nuclide": "I-131", "activityBq": 5.5e11 }
+    ],
+    "source": "unscear2008c",
+    "note": "About 370 PBq of noble gases, mainly xenon-133, and 550 GBq of iodine-131; the containment held nearly everything else."
+  }
+]
