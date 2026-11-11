@@ -67,7 +67,24 @@ if (existsSync(res)) {
     const adaptive = Math.round(108 * scale);
     write(join(res, `mipmap-${name}/ic_launcher_foreground.png`), png(adaptive, { background: false, inset: 0.58, variant: 'full' }));
   }
-  console.log('android launcher icons written');
+  // Splash images: the mark on the app's dark background.
+  const splash = (width, height) => {
+    const mark = Math.round(Math.min(width, height) * 0.42);
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+      `<rect width="${width}" height="${height}" fill="#16181b"/>` +
+      `<svg x="${(width - mark) / 2}" y="${(height - mark) / 2}" width="${mark}" height="${mark}" viewBox="-100 -100 200 200">` +
+      logoMarkup({ variant: 'full', uid: 's', background: false }) +
+      '</svg></svg>';
+    return new Resvg(svg, { fitTo: { mode: 'width', value: width } }).render().asPng();
+  };
+  const splashSizes = { mdpi: [320, 480], hdpi: [480, 800], xhdpi: [720, 1280], xxhdpi: [960, 1600], xxxhdpi: [1280, 1920] };
+  for (const [name, [short, long]] of Object.entries(splashSizes)) {
+    write(join(res, `drawable-port-${name}/splash.png`), splash(short, long));
+    write(join(res, `drawable-land-${name}/splash.png`), splash(long, short));
+  }
+  write(join(res, 'drawable/splash.png'), splash(480, 320));
+  console.log('android launcher icons and splash images written');
 }
 
 console.log(`icons: ${webSizes.length} web, ${linuxSizes.length} linux, 1 ico`);

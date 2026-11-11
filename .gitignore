@@ -9,7 +9,7 @@
 !/tsconfig.json
 !/vite.config.ts
 !/vitest.config.ts
-!/capacitor.config.ts
+!/capacitor.config.json
 !/electron-builder.config.mjs
 !/app/
 !/physics/
@@ -35,10 +35,8 @@ Thumbs.db
 /mobile/android/build
 /mobile/android/app/build
 /mobile/android/local.properties
-/mobile/android/app/src/main/assets/public
+/mobile/android/app/src/main/assets
 /mobile/android/capacitor-cordova-android-plugins
-/mobile/android/app/src/main/assets/capacitor.config.json
-/mobile/android/app/src/main/assets/capacitor.plugins.json
 /mobile/android/app/src/main/res/xml/config.xml
 *.keystore
 *.jks

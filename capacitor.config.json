@@ -1,0 +1,13 @@
+{
+  "appId": "store.themechanic.atomicatlas",
+  "appName": "Atomic Atlas",
+  "webDir": "dist/app",
+  "android": {
+    "path": "mobile/android",
+    "backgroundColor": "#16181b",
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The dark theme of the web UI, so the app never flashes white while it starts. -->
+    <color name="colorPrimary">#1E2125</color>
+    <color name="colorPrimaryDark">#16181B</color>
+    <color name="colorAccent">#F5A524</color>
+    <color name="appBackground">#16181B</color>
+</resources>
