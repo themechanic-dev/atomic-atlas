@@ -355,5 +355,24 @@
   "how.trajectory.uncertainty": "The powered climb, the turning of the Earth and the air on the way down are left out. Real flight times are a few minutes longer.",
   "how.cruise.title": "Cruise flight",
   "how.cruise.body": "A cruise missile flies through the air like an aircraft, low and at a steady speed. The time is the distance divided by a typical subsonic speed.",
-  "how.cruise.uncertainty": "Individual missiles are faster or slower, and real routes are not straight."
+  "how.cruise.uncertainty": "Individual missiles are faster or slower, and real routes are not straight.",
+
+  "playback.title": "Watch it happen",
+  "playback.preparing": "Getting ready…",
+  "playback.hint": "Plays the detonation on the map, timed by the same models: the fireball, the heat, the blast wave reaching each ring, the cloud.",
+  "playback.jump": "Go to this moment",
+  "playback.end": "Show the end result",
+  "playback.cloud": "Top of the cloud now: {height}",
+  "playback.event.heatPeak": "The fireball is at its brightest",
+  "playback.event.heatMost": "Most of the heat has been given off",
+  "playback.event.blast20": "Blast wave reaches the 20 psi ring",
+  "playback.event.blast5": "Blast wave reaches the 5 psi ring",
+  "playback.event.blast2": "Blast wave reaches the 2 psi ring",
+  "playback.event.blast1": "Blast wave reaches the 1 psi ring",
+  "playback.event.cloudTop": "The cloud stops rising",
+  "how.arrival.title": "Timing of the explosion",
+  "how.arrival.body": "The blast wave is a shock front. The stronger it is, the faster it moves, well above the speed of sound close in and at the speed of sound far out. Following the front outwards at the speed that belongs to its strength gives the time at which it reaches each distance. The heat arrives at once and lasts a few seconds; the cloud rises for a few minutes.",
+  "how.arrival.uncertainty": "Within about 15 % of the arrival-time charts of the source. The growth of the fireball and the rise of the cloud are rough averages; fires and their spread are not simulated.",
+  "quantity.blastArrival": "Arrival of the blast wave",
+  "quantity.heatPeak": "Peak of the heat pulse"
 }

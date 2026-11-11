@@ -110,6 +110,7 @@ export function formatTemperature(kelvin: number): string {
 
 export function formatDuration(hours: number): string {
   if (!Number.isFinite(hours)) return '–';
+  if (hours < 1 / 60) return `${formatNumber(hours * 3600, 2)} s`;
   if (hours < 1) return `${formatNumber(hours * 60, 2)} min`;
   if (hours < 48) return `${formatNumber(hours, 2)} h`;
   return `${formatNumber(hours / 24, 2)} d`;

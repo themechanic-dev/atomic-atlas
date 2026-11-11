@@ -1,6 +1,6 @@
 // The map: MapLibre GL with a globe at low zoom and 3D buildings in cities.
 
-import { effect, signal } from '@preact/signals';
+import { effect, signal, untracked } from '@preact/signals';
 import type { FeatureCollection } from 'geojson';
 import type { GeoJSONSource, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
 import * as maplibregl from 'maplibre-gl';
@@ -12,16 +12,18 @@ import { t } from '../i18n';
 import { formatDistance, formatDoseRate, formatExposure, formatLatLon, formatPressure, formatDose } from '../lib/format';
 import { distanceM, type LngLat } from '../lib/geo';
 import { settings } from '../state/settings';
+import { blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, flashCount } from '../state/blastPlayback';
 import { beginBusy, detonation, groundZero } from '../state/simulation';
 import {
-  buildingColorExpression,
-  buildingHeightFactorExpression,
+  buildingBands,
   falloutFeatures,
   resultBounds,
   ringFeatures,
   ringLabelFeatures,
+  ringsAt,
 } from './overlays';
 import { panelOpen, WIDE_LAYOUT } from '../state/ui';
+import { createBuildingDamage, DAMAGE_LAYER } from './buildingDamage';
 import { LABEL_FONT, skyFor, styleFor, TERRAIN_TILES, tuneStyle } from './style';
 
 maplibregl.setWorkerUrl(new URL(workerUrl, document.baseURI).href);
@@ -66,7 +68,9 @@ function addOverlays(map: MapLibreMap): void {
         type: 'fill-extrusion',
         source: 'openmaptiles',
         'source-layer': 'building',
-        minzoom: 13,
+        // Below zoom 14 the tiles hold the buildings of a whole area merged into a few
+        // shapes, which cannot be coloured one by one.
+        minzoom: 14,
         filter: ['!=', ['get', 'hide_3d'], true],
         paint: {
           'fill-extrusion-color': theme === 'dark' ? '#3a4047' : '#d9d3c7',
@@ -78,6 +82,9 @@ function addOverlays(map: MapLibreMap): void {
       labelStartLayer(map),
     );
   }
+
+  // Our own single buildings, drawn in place of the map's while a detonation is shown.
+  if (map.getLayer(BUILDING_LAYER)) buildingDamage?.addTo(theme, labelStartLayer(map));
 
   const below = map.getLayer(BUILDING_LAYER) ? BUILDING_LAYER : labelStartLayer(map);
 
@@ -110,7 +117,7 @@ function addOverlays(map: MapLibreMap): void {
       source: 'aa-rings',
       paint: {
         'fill-color': ['get', 'color'],
-        'fill-opacity': ['match', ['get', 'kind'], 'fireball', 0.55, 'blast', 0.1, 'thermal', 0.06, 0.08],
+        'fill-opacity': ['match', ['get', 'kind'], 'fireball', 0.55, 'blast', 0.1, 'thermal', ['coalesce', ['get', 'glow'], 0.06], 'front', 0, 0.08],
       },
     },
     below,
@@ -136,6 +143,14 @@ function addOverlays(map: MapLibreMap): void {
     source: 'aa-rings',
     filter: ['==', ['get', 'kind'], 'radiation'],
     paint: { 'line-color': ['get', 'color'], 'line-width': 2.4, 'line-dasharray': [0.6, 1.6] },
+  });
+  // The blast front during playback: a bright line that sweeps outwards.
+  map.addLayer({
+    id: 'aa-rings-line-front',
+    type: 'line',
+    source: 'aa-rings',
+    filter: ['==', ['get', 'kind'], 'front'],
+    paint: { 'line-color': '#ffffff', 'line-width': 3.5, 'line-blur': 2, 'line-opacity': 0.95 },
   });
   map.addLayer({
     id: 'aa-ring-labels',
@@ -173,40 +188,63 @@ function applyTerrain(map: MapLibreMap): void {
   map.setTerrain(wanted ? { source: TERRAIN_SOURCE, exaggeration: 1 } : null);
 }
 
+/** Splits buildings into single ones and shows their damage; made with the map. */
+let buildingDamage: ReturnType<typeof createBuildingDamage> | null = null;
+
+/** During playback: the buildings the blast front has reached show their damage. */
+function applyReach(exact = false): void {
+  const frame = blastFrame.value;
+  buildingDamage?.setFront(frame ? frame.frontM : null, exact);
+}
+
+/** Shows the map's own buildings, or ours with their damage while a detonation is on the map. */
 function applyBuildings(map: MapLibreMap): void {
   if (!map.getLayer(BUILDING_LAYER)) return;
   const current = detonation.value;
-  map.setLayoutProperty(BUILDING_LAYER, 'visibility', settings.value.buildings3d ? 'visible' : 'none');
-  map.setPaintProperty(
-    BUILDING_LAYER,
-    'fill-extrusion-color',
-    buildingColorExpression(current?.at ?? null, current?.result ?? null, settings.value.theme) as never,
-  );
-  // Height shows the damage too: what the blast brings down is drawn low.
-  const factor = buildingHeightFactorExpression(current?.at ?? null, current?.result ?? null);
-  map.setPaintProperty(BUILDING_LAYER, 'fill-extrusion-height', ['*', ['coalesce', ['get', 'render_height'], 6], factor] as never);
-  map.setPaintProperty(BUILDING_LAYER, 'fill-extrusion-base', ['*', ['coalesce', ['get', 'render_min_height'], 0], factor] as never);
+  const wanted = settings.value.buildings3d;
+  buildingDamage?.setResult(current?.at ?? null, buildingBands(current?.result ?? null));
+  applyReach();
+  const ours = wanted && current !== null && map.getLayer(DAMAGE_LAYER) !== undefined;
+  map.setLayoutProperty(BUILDING_LAYER, 'visibility', wanted && !ours ? 'visible' : 'none');
+  if (map.getLayer(DAMAGE_LAYER)) map.setLayoutProperty(DAMAGE_LAYER, 'visibility', ours ? 'visible' : 'none');
 }
 
-function applyDetonation(map: MapLibreMap): void {
+function applyDetonation(map: MapLibreMap, playbackOnly = false): void {
   const current = detonation.value;
   const rings = map.getSource('aa-rings') as GeoJSONSource | undefined;
   const labels = map.getSource('aa-ring-labels') as GeoJSONSource | undefined;
   const fallout = map.getSource('aa-fallout') as GeoJSONSource | undefined;
   if (!rings || !labels || !fallout) return;
+  const frame = blastFrame.value;
+  if (playbackOnly && frame) {
+    // The rings follow the clock about five times a second. Measured: with the 3D buildings
+    // on screen, fifteen updates a second bring the map down to two frames a second.
+    const now = performance.now();
+    if (now - ringsAppliedAt < 180) return;
+    ringsAppliedAt = now;
+    applyReach();
+  }
   if (!current) {
     rings.setData(EMPTY);
     labels.setData(EMPTY);
     fallout.setData(EMPTY);
   } else {
-    rings.setData(ringFeatures(current.at, current.result));
+    rings.setData(ringFeatures(current.at, current.result, frame));
     labels.setData(
-      ringLabelFeatures(current.at, current.result.rings, (ring) => `${t(`effect.${ring.id}.short`)} · ${formatDistance(ring.radiusM)}`),
+      ringLabelFeatures(current.at, ringsAt(current.result, frame), (ring) => `${t(`effect.${ring.id}.short`)} · ${formatDistance(ring.radiusM)}`),
     );
-    fallout.setData(falloutFeatures(current.at, current.result));
+    const showFallout = !frame || frame.falloutShown;
+    if (showFallout !== falloutDrawn || !playbackOnly) {
+      falloutDrawn = showFallout;
+      fallout.setData(showFallout ? falloutFeatures(current.at, current.result) : EMPTY);
+    }
   }
-  applyBuildings(map);
+  if (playbackOnly) applyReach();
+  else applyBuildings(map);
 }
+
+let falloutDrawn = true;
+let ringsAppliedAt = 0;
 
 /** Text of the read-out for a point: what the detonation does there. */
 function probeHtml(point: LngLat): string {
@@ -259,6 +297,7 @@ function createMap(element: HTMLElement): MapLibreMap {
 
 export function MapView() {
   const container = useRef<HTMLDivElement>(null);
+  const flashElement = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = container.current;
@@ -339,7 +378,13 @@ export function MapView() {
       applyTerrain(map);
       applyDetonation(map);
     });
+    buildingDamage = createBuildingDamage(map);
     map.on('idle', finishLoading);
+    // Buildings that came in with new tiles are taken over when the map comes to rest.
+    map.on('idle', () => {
+      // Not during playback: looking through the tiles takes a tenth of a second.
+      if (!blastPlaying.value) buildingDamage?.collect();
+    });
     // Online styles sometimes name an icon their sprite does not have; an empty image
     // stands in for it, so the rest of the layer still draws.
     map.on('styleimagemissing', (event) => {
@@ -397,7 +442,37 @@ export function MapView() {
         void settings.value.language;
         void settings.value.distance;
         void settings.value.buildings3d;
-        if (styleReady) applyDetonation(map);
+        // Not tied to the playback clock: that has its own, lighter update below.
+        if (styleReady) untracked(() => applyDetonation(map));
+      }),
+      // Playback: the picture follows the clock.
+      effect(() => {
+        const frame = blastFrame.value;
+        if (!styleReady) return;
+        applyDetonation(map, true);
+        if (!frame) applyReach();
+      }),
+      // Play was pressed: once the buildings stand again as before the burst, the clock may start.
+      effect(() => {
+        if (!blastPreparing.value) return;
+        // The buildings stand again at once; one frame is enough for the map to show it.
+        requestAnimationFrame(() => blastPrepared());
+      }),
+      // When the clock stops (pause, end, a jump on the slider) the moment it stopped at is drawn exactly.
+      effect(() => {
+        if (blastPlaying.value || !styleReady) return;
+        void blastClock.value;
+        ringsAppliedAt = 0;
+        applyDetonation(map, true);
+        applyReach(true);
+      }),
+      effect(() => {
+        const count = flashCount.value;
+        const flash = flashElement.current;
+        if (!flash || count === 0 || settings.value.reduceMotion) return;
+        flash.classList.remove('is-on');
+        void flash.offsetWidth;
+        flash.classList.add('is-on');
       }),
       effect(() => {
         void settings.value.terrain3d;
@@ -451,6 +526,7 @@ export function MapView() {
   return (
     <div class="map" data-testid="map">
       <div class="map-canvas" ref={container} />
+      <div class="map-flash" ref={flashElement} aria-hidden="true" />
       {mapFailed.value ? (
         <div class="map-failed" role="alert" data-testid="map-failed">
           <strong>{t('map.failed.title')}</strong>

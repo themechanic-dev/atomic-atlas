@@ -7,6 +7,7 @@ import { t } from '../i18n';
 import { formatPercent, formatQuantity } from '../lib/format';
 import { openExternal } from '../lib/platform';
 import { settings } from '../state/settings';
+import { timeline } from '../state/blastPlayback';
 import { flights } from '../state/missiles';
 import { detonation, explaining } from '../state/simulation';
 import { Dialog, Icon } from './controls';
@@ -173,6 +174,15 @@ export function HowDialog() {
     return (
       <Dialog title={`${t('how.title')}: ${t(`how.${plan.explanation.id}.title`)}`} onClose={close} wide testId="how-dialog">
         <ExplanationView explanation={plan.explanation} />
+      </Dialog>
+    );
+  }
+  if (id === 'timeline') {
+    const line = timeline.value;
+    if (!line) return null;
+    return (
+      <Dialog title={`${t('how.title')}: ${t('how.arrival.title')}`} onClose={close} wide testId="how-dialog">
+        <ExplanationView explanation={line.explanation} />
       </Dialog>
     );
   }

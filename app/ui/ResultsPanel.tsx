@@ -23,6 +23,7 @@ import { settings } from '../state/settings';
 import { cameFromFlight, returnToFlight } from '../state/missiles';
 import { casualties, detonation, explaining } from '../state/simulation';
 import { Button, HowButton } from './controls';
+import { PlaybackCard } from './PlaybackCard';
 
 function ringValue(ring: EffectRing): string {
   if (!(ring.radiusM > 0)) return t('results.notReached');
@@ -83,6 +84,7 @@ export function ResultsPanel() {
           ← {t('results.backToFlight')}
         </Button>
       ) : null}
+      <PlaybackCard />
 
       <div class="card" data-testid="casualties-card">
         <div class="card-head">

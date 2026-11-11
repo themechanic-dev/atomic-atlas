@@ -728,6 +728,71 @@ p {
   white-space: nowrap;
 }
 
+.card-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.events {
+  list-style: none;
+  margin: 10px 0 6px;
+  padding: 0;
+  font-size: 12.5px;
+}
+
+.events li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 2px 0;
+  color: var(--text-dim);
+}
+
+.events li.is-past {
+  color: var(--text);
+}
+
+.event-time {
+  flex: none;
+  min-width: 68px;
+  text-align: right;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.event-time:hover {
+  text-decoration: underline;
+}
+
+/* The flash of the detonation at the start of the playback. */
+.map-flash {
+  position: absolute;
+  inset: 0;
+  background: #fffbe8;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.map-flash.is-on {
+  animation: map-flash 0.9s ease-out;
+}
+
+@keyframes map-flash {
+  0% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 .playback-row {
   display: flex;
   align-items: center;

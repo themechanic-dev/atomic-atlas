@@ -28,16 +28,49 @@ export const FALLOUT_COLORS: Record<number, string> = {
   1: '#fbb938',
 };
 
-export function ringFeatures(at: LngLat, result: DetonationResult): FeatureCollection<Polygon> {
-  const rings = result.rings.filter((r) => r.radiusM > 0).sort((a, b) => b.radiusM - a.radiusM);
-  return {
-    type: 'FeatureCollection',
-    features: rings.map((ring) => ({
+/** What of a detonation is on screen at a moment of its playback. */
+export interface PlaybackView {
+  /** Ground range the blast front has reached, metres. */
+  frontM: number;
+  fireballM: number;
+  /** Strength of the heat pulse now, 0 to 1. */
+  heat: number;
+  timeS: number;
+}
+
+/** The rings that are drawn at a moment of the playback: heat and radiation at once, blast rings as the front passes them. */
+export function ringsAt(result: DetonationResult, view: PlaybackView | null): EffectRing[] {
+  const all = result.rings.filter((r) => r.radiusM > 0);
+  if (!view) return all;
+  if (!(view.timeS > 0)) return [];
+  return all.filter((ring) => (ring.kind === 'blast' ? ring.radiusM <= view.frontM : true));
+}
+
+export function ringFeatures(at: LngLat, result: DetonationResult, view: PlaybackView | null = null): FeatureCollection<Polygon> {
+  const rings = ringsAt(result, view).sort((a, b) => b.radiusM - a.radiusM);
+  const features: FeatureCollection<Polygon>['features'] = rings.map((ring) => {
+    const radiusM = view && ring.kind === 'fireball' ? Math.max(view.fireballM, 1) : ring.radiusM;
+    return {
       type: 'Feature',
-      properties: { id: ring.id, kind: ring.kind, color: EFFECT_COLORS[ring.id] ?? '#ffffff', radius: ring.radiusM },
-      geometry: { type: 'Polygon', coordinates: [circleRing(at, ring.radiusM)] },
-    })),
-  };
+      properties: {
+        id: ring.id,
+        kind: ring.kind,
+        color: EFFECT_COLORS[ring.id] ?? '#ffffff',
+        radius: radiusM,
+        // While the heat pulse lasts the burn zones glow.
+        glow: ring.kind === 'thermal' ? 0.06 + 0.3 * (view?.heat ?? 0) : 0.1,
+      },
+      geometry: { type: 'Polygon', coordinates: [circleRing(at, radiusM)] },
+    };
+  });
+  if (view && view.frontM > 0) {
+    features.push({
+      type: 'Feature',
+      properties: { id: 'front', kind: 'front', color: '#ffffff', radius: view.frontM, glow: 0 },
+      geometry: { type: 'Polygon', coordinates: [circleRing(at, view.frontM)] },
+    });
+  }
+  return { type: 'FeatureCollection', features };
 }
 
 /** A point on each ring where its label sits: spread around the north-east so labels do not pile up. */
@@ -119,48 +152,42 @@ export function resultBounds(at: LngLat, result: DetonationResult, includeFallou
 
 const BUILDING_BASE: Record<'dark' | 'light', string> = { dark: '#3a4047', light: '#d9d3c7' };
 
-/**
- * Colour of 3D buildings by distance from ground zero: each blast ring recolours the buildings inside it.
- * Returns a MapLibre expression for `fill-extrusion-color`.
- */
-export function buildingColorExpression(at: LngLat | null, result: DetonationResult | null, theme: 'dark' | 'light'): unknown {
-  const base = BUILDING_BASE[theme];
-  if (!at || !result) return base;
-  const stops: Array<[number, string]> = [
-    [radius(result, 'blast20'), '#3b0a0a'], // destroyed
-    [radius(result, 'blast5'), '#a4161a'], // most buildings collapse
-    [radius(result, 'blast2'), '#e85d04'], // severe damage
-    [radius(result, 'blast1'), '#ffba08'], // light damage, windows
-  ];
-  const usable = stops.filter(([r]) => r > 0);
-  if (usable.length === 0) return base;
-  const expression: unknown[] = ['step', ['distance', { type: 'Point', coordinates: [at.lng, at.lat] }], usable[0]![1]];
-  for (let i = 0; i < usable.length; i++) {
-    expression.push(usable[i]![0], i + 1 < usable.length ? usable[i + 1]![1] : base);
-  }
-  return expression;
+/** A ring-shaped zone of buildings with the same damage: between two blast rings. */
+export interface BuildingBand {
+  id: string;
+  /** Which of the four zones this is, 0 (heaviest) to 3: the value of a building's "damage" state. */
+  zone: number;
+  innerM: number;
+  outerM: number;
+  /** Colour of the buildings once the blast has reached them. */
+  color: string;
+  /** Share of their height left standing, 0 to 1. */
+  heightKept: number;
 }
 
-/**
- * Share of its height that a 3D building keeps, by distance from ground zero: buildings in
- * the heavy blast rings are drawn low, as rubble or part-collapsed.
- * Returns a MapLibre expression that gives a number from 0 to 1.
- */
-export function buildingHeightFactorExpression(at: LngLat | null, result: DetonationResult | null): unknown {
-  if (!at || !result) return 1;
-  const kept = (psi: number): number => damageBand(psi).heightKept;
-  const stops: Array<[number, number]> = [
-    [radius(result, 'blast20'), kept(20)],
-    [radius(result, 'blast5'), kept(5)],
-    [radius(result, 'blast2'), kept(2)],
+/** Colour of buildings the blast does not reach, or has not reached yet. */
+export function buildingBaseColor(theme: 'dark' | 'light'): string {
+  return BUILDING_BASE[theme];
+}
+
+/** The damage zones of a result, from ground zero outwards. Rings that do not reach the ground are left out. */
+export function buildingBands(result: DetonationResult | null): BuildingBand[] {
+  if (!result) return [];
+  const rings: Array<[string, number, string]> = [
+    ['blast20', 20, '#3b0a0a'], // destroyed
+    ['blast5', 5, '#a4161a'], // most buildings collapse
+    ['blast2', 2, '#e85d04'], // severe damage
+    ['blast1', 1, '#ffba08'], // light damage, windows
   ];
-  const usable = stops.filter(([r]) => r > 0);
-  if (usable.length === 0) return 1;
-  const expression: unknown[] = ['step', ['distance', { type: 'Point', coordinates: [at.lng, at.lat] }], usable[0]![1]];
-  for (let i = 0; i < usable.length; i++) {
-    expression.push(usable[i]![0], i + 1 < usable.length ? usable[i + 1]![1] : 1);
-  }
-  return expression;
+  const bands: BuildingBand[] = [];
+  let inner = 0;
+  rings.forEach(([id, psi, color], zone) => {
+    const outer = radius(result, id);
+    if (!(outer > inner)) return;
+    bands.push({ id, zone, innerM: inner, outerM: outer, color, heightKept: damageBand(psi).heightKept });
+    inner = outer;
+  });
+  return bands;
 }
 
 function radius(result: DetonationResult, id: string): number {
