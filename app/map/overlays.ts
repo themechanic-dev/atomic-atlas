@@ -219,3 +219,47 @@ export function siteFeatures(
     })),
   };
 }
+
+/** Dose levels drawn as plume outlines: projected effective dose in the first year, Sv, strongest first. */
+export const PLUME_LEVELS_SV = [1, 0.1, 0.02, 0.001] as const;
+export const PLUME_COLORS: Record<number, string> = { 1: '#7a0403', 0.1: '#d7263d', 0.02: '#f5a524', 0.001: '#57cc99' };
+
+/**
+ * The area in which a dose is at or above each level, as polygons along the wind.
+ * `halfWidth` gives the half-width of the area at a distance downwind for a level (0 where
+ * the level is not reached); `reach` the furthest distance for a level.
+ */
+export function plumeFeatures(
+  at: LngLat,
+  towardsDeg: number,
+  levels: readonly number[],
+  reach: (level: number) => number,
+  halfWidth: (level: number, downwindM: number) => number,
+): FeatureCollection<Polygon> {
+  const features: FeatureCollection<Polygon>['features'] = [];
+  // Weakest (largest) first, so stronger areas are drawn on top.
+  for (const level of [...levels].sort((a, b) => a - b)) {
+    const furthest = reach(level);
+    if (!(furthest > 0)) continue;
+    const steps = 48;
+    const left: Array<[number, number]> = [];
+    const right: Array<[number, number]> = [];
+    for (let i = 0; i <= steps; i++) {
+      // Closer steps near the source, where the outline changes fastest.
+      const x = furthest * Math.pow(i / steps, 2);
+      const w = i === steps ? 0 : halfWidth(level, Math.max(x, 50));
+      const a = fromWindFrame(at, towardsDeg, x, w);
+      const b = fromWindFrame(at, towardsDeg, x, -w);
+      left.push([unwrap(a.lng, at.lng), a.lat]);
+      right.push([unwrap(b.lng, at.lng), b.lat]);
+    }
+    const ring = [...left, ...right.reverse()];
+    ring.push(ring[0]!);
+    features.push({
+      type: 'Feature',
+      properties: { level, color: PLUME_COLORS[level] ?? '#ffffff' },
+      geometry: { type: 'Polygon', coordinates: [ring] },
+    });
+  }
+  return { type: 'FeatureCollection', features };
+}

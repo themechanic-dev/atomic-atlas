@@ -7,6 +7,7 @@ import { t } from '../i18n';
 import { formatPercent, formatQuantity } from '../lib/format';
 import { openExternal } from '../lib/platform';
 import { settings } from '../state/settings';
+import { accidentRun } from '../state/accident';
 import { timeline } from '../state/blastPlayback';
 import { flights } from '../state/missiles';
 import { detonation, explaining } from '../state/simulation';
@@ -183,6 +184,16 @@ export function HowDialog() {
     return (
       <Dialog title={`${t('how.title')}: ${t('how.arrival.title')}`} onClose={close} wide testId="how-dialog">
         <ExplanationView explanation={line.explanation} />
+      </Dialog>
+    );
+  }
+  if (id === 'plume') {
+    const run = accidentRun.value;
+    if (!run) return null;
+    return (
+      <Dialog title={`${t('how.title')}: ${t('how.plume.title')}`} onClose={close} wide testId="how-dialog">
+        <ExplanationView explanation={run.result.explanation} />
+        <SourceList ids={[run.accident.source]} />
       </Dialog>
     );
   }

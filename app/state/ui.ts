@@ -9,7 +9,7 @@ export const panelOpen = signal(true);
 export const WIDE_LAYOUT = 900;
 
 /** Which simulator is on screen. */
-export type Mode = 'detonation' | 'missiles';
+export type Mode = 'detonation' | 'missiles' | 'accident';
 export const mode = signal<Mode>('detonation');
 
 /** Ground range of the point shown in the close view, metres; null while it is closed. */

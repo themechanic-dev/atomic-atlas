@@ -10,10 +10,9 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 0.3 adds the explosion played back in time on the city map, a close
-> view of what the effects do to ordinary things, and airports and power
-> stations on the map. Reactor accidents, water effects, a war timeline and an
-> offline assistant follow in later versions.
+> Version 0.4 adds accidents: a release of radioactive material into the air,
+> as large as a historical accident or a share of it, with the dose downwind.
+> Water effects, a war timeline and an offline assistant follow in later versions.
 
 ## What it does
 
@@ -42,6 +41,11 @@ Free and open source (MIT).
   vehicles and aircraft, with the numbers of that point.
 - **Infrastructure.** Airports and power stations on the map; for those inside
   the blast rings, what the source reports for that kind of installation.
+- **Accidents.** A release as large as Chernobyl, Fukushima, Kyshtym, Windscale
+  or Three Mile Island (or a share of one), anywhere, in a wind and weather you
+  choose: the dose in the first week and the first year, the caesium left on
+  the ground, and how far the international criteria for sheltering,
+  evacuation and relocation would be reached.
 - **"How was this calculated?"** Next to every number: the formula, the inputs,
   the source (section, figure or table) and how uncertain it is.
 - **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
@@ -74,11 +78,13 @@ buildings, weather and people do not behave like a formula.
 | Missile flight | Free-flight ellipse over a round, non-rotating Earth: speed, highest point and time from the distance and the climb angle | R. R. Bate, D. D. Mueller and J. E. White, *Fundamentals of Astrodynamics* (1971), chapter 6 |
 | Timing | Blast arrival from the shock-front speed along the slant range; heat pulse; cloud rise | Glasstone & Dolan (1977), eq. 3.55.2, Figs. 3.77a–b, §7.85–7.86, Table 2.12 |
 | Damage to things | Houses, vehicles, parked aircraft, electricity networks, ignition of tinder | Glasstone & Dolan (1977), §5.52–5.68, §5.87–5.89, Tables 5.145, 5.153 and 7.40, §5.99–5.105 |
+| Release into the air | Gaussian plume of the HotSpot codes with depletion; dose from breathing, cloud and ground; generic criteria for protective actions | HotSpot Health Physics Codes 3.0 User's Guide (LLNL, 2013), ch. 7; ICRP Publication 119, Table G.1; Federal Guidance Report 12, Tables III.1 and III.3; IAEA GSR Part 7, Table II.2 |
+| Historical releases | Activity released per radionuclide | UNSCEAR 2008 Annexes C and D; UNSCEAR 2013 Annex A; NRPA Bulletin 8/2007 |
 | Population | GHS-POP R2023A, epoch 2025, about 1 km cells | European Commission, Joint Research Centre |
 
 ### Accuracy tests
 
-`npm test` runs 250+ checks. The physics is tested against values printed in the
+`npm test` runs 260+ checks. The physics is tested against values printed in the
 sources: the worked examples next to Glasstone & Dolan's charts (for example
 1,000 psi at 110 ft for 1 kt at 200 ft; 4 psi out to 2,600 ft), their tables of
 wind speed against overpressure, thermal partition and fallout contours, the
@@ -88,6 +94,10 @@ Assessment. A change that breaks one of them fails the build.
 The missile flights are checked against the closed-form results of the source and
 against an independent step-by-step simulation of the same flight (10,000 km:
 about 7.2 km/s, 1,300 km high, 32 minutes).
+
+The plume model reproduces the worked example of the HotSpot guide (krypton-85
+from 10 m in unstable air) at every distance from 30 m to 80 km within the
+rounding of the printed table.
 
 Where the sources disagree or are only charts, the code says so. The heat model,
 for instance, reproduces the transmittance chart within 0.06 and the range chart

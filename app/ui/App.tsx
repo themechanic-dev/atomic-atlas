@@ -8,6 +8,7 @@ import { MapView } from '../map/MapView';
 import { settings } from '../state/settings';
 import { detonation } from '../state/simulation';
 import { mode, panelOpen, type Mode } from '../state/ui';
+import { AccidentPanel } from './AccidentPanel';
 import { BusyIndicator } from './BusyIndicator';
 import { CatalogDialog } from './CatalogDialog';
 import { CloseupDialog } from './CloseupDialog';
@@ -63,6 +64,7 @@ export function App() {
             options={[
               { value: 'detonation', label: t('app.mode.detonation') },
               { value: 'missiles', label: t('app.mode.missiles') },
+              { value: 'accident', label: t('app.mode.accident') },
             ]}
             testId="mode"
           />
@@ -76,7 +78,7 @@ export function App() {
       <div class="hazard-stripe" aria-hidden="true" />
 
       <main class={`stage${open ? ' panel-open' : ''}`}>
-        <div class={`view${current === 'detonation' ? '' : ' is-hidden'}`}>
+        <div class={`view${current !== 'missiles' ? '' : ' is-hidden'}`}>
           <MapView />
         </div>
         {globeLoaded ? (
@@ -93,14 +95,16 @@ export function App() {
                 <ScenarioPanel onOpenCatalog={() => setDialog('catalog')} />
                 <ResultsPanel />
               </>
-            ) : (
+            ) : current === 'missiles' ? (
               <MissilePanel />
+            ) : (
+              <AccidentPanel />
             )}
             <p class="panel-foot">{t('app.disclaimer')}</p>
           </div>
         </aside>
         <div class="map-hint" data-testid="map-hint">
-          {t(current === 'detonation' ? 'map.hint' : 'globe.hint')}
+          {t(current === 'detonation' ? 'map.hint' : current === 'missiles' ? 'globe.hint' : 'accident.map.hint')}
         </div>
       </main>
 

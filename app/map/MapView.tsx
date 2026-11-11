@@ -7,12 +7,24 @@ import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { useEffect, useRef } from 'preact/hooks';
+import { distanceToDose, doseAt, halfWidthAt, type PointDose } from '@physics/dispersion/release';
 import { accumulatedDose } from '@physics/fallout/wseg10';
 import { t } from '../i18n';
-import { formatDistance, formatDoseRate, formatExposure, formatLatLon, formatPressure, formatDose } from '../lib/format';
-import { distanceM, type LngLat } from '../lib/geo';
+import {
+  formatActivity,
+  formatDistance,
+  formatDoseRate,
+  formatEffectiveDose,
+  formatExposure,
+  formatLatLon,
+  formatPressure,
+  formatDose,
+} from '../lib/format';
+import { formatSeconds } from '../ui/PlaybackCard';
+import { destination, distanceM, type LngLat } from '../lib/geo';
 import { ensureSites, sites } from '../state/infrastructure';
 import { settings } from '../state/settings';
+import { accidentRun, accidentSite } from '../state/accident';
 import { blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, flashCount } from '../state/blastPlayback';
 import { beginBusy, detonation, groundZero } from '../state/simulation';
 import {
@@ -21,10 +33,12 @@ import {
   resultBounds,
   ringFeatures,
   ringLabelFeatures,
+  PLUME_LEVELS_SV,
+  plumeFeatures,
   ringsAt,
   siteFeatures,
 } from './overlays';
-import { closeupRange, panelOpen, WIDE_LAYOUT } from '../state/ui';
+import { closeupRange, mode, panelOpen, WIDE_LAYOUT } from '../state/ui';
 import { createBuildingDamage, DAMAGE_LAYER } from './buildingDamage';
 import { LABEL_FONT, skyFor, styleFor, TERRAIN_TILES, tuneStyle } from './style';
 
@@ -146,6 +160,11 @@ function addOverlays(map: MapLibreMap): void {
     filter: ['==', ['get', 'kind'], 'radiation'],
     paint: { 'line-color': ['get', 'color'], 'line-width': 2.4, 'line-dasharray': [0.6, 1.6] },
   });
+  // The plume of an accident: areas of dose along the wind.
+  map.addSource('aa-plume', { type: 'geojson', data: EMPTY });
+  map.addLayer({ id: 'aa-plume-fill', type: 'fill', source: 'aa-plume', paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.24 } }, below);
+  map.addLayer({ id: 'aa-plume-line', type: 'line', source: 'aa-plume', paint: { 'line-color': ['get', 'color'], 'line-width': 1.8 } });
+
   // Airports (squares would need an icon; a ringed dot does) and power stations, by fuel.
   map.addSource('aa-sites', { type: 'geojson', data: siteFeatures(sites.value) });
   map.addLayer({
@@ -287,10 +306,64 @@ function applyDetonation(map: MapLibreMap, playbackOnly = false): void {
 let falloutDrawn = true;
 let ringsAppliedAt = 0;
 
+const firstYear = (dose: PointDose): number => dose.firstYearSv;
+
+/** Draws the plume of the current accident run and shows only the layers of the simulator in front. */
+function applyAccident(map: MapLibreMap): void {
+  const plume = map.getSource('aa-plume') as GeoJSONSource | undefined;
+  if (!plume) return;
+  const inAccident = mode.value === 'accident';
+  const run = accidentRun.value;
+  if (run && inAccident) {
+    const release = run.result.release;
+    plume.setData(
+      plumeFeatures(
+        run.at,
+        run.towardsDeg,
+        PLUME_LEVELS_SV,
+        (level) => distanceToDose(release, firstYear, level),
+        (level, downwindM) => halfWidthAt(release, firstYear, level, downwindM),
+      ),
+    );
+  } else {
+    plume.setData(EMPTY);
+  }
+  // Each simulator shows its own shapes.
+  const detonationLayers = ['aa-fallout-fill', 'aa-fallout-line', 'aa-rings-fill', 'aa-rings-line', 'aa-rings-line-thermal', 'aa-rings-line-radiation', 'aa-rings-line-front', 'aa-ring-labels'];
+  for (const id of detonationLayers) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', inAccident ? 'none' : 'visible');
+  for (const id of ['aa-plume-fill', 'aa-plume-line']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', inAccident ? 'visible' : 'none');
+}
+
+/** Read-out for a point in the accident simulator: the dose there. */
+function accidentProbeRows(point: LngLat): Array<[string, string]> {
+  const run = accidentRun.value;
+  if (!run) return [];
+  const towards = (run.towardsDeg * Math.PI) / 180;
+  const north = ((point.lat - run.at.lat) * Math.PI) / 180;
+  const east = (((point.lng - run.at.lng) * Math.PI) / 180) * Math.cos((run.at.lat * Math.PI) / 180);
+  const R = 6371008.8;
+  const x = (east * Math.sin(towards) + north * Math.cos(towards)) * R;
+  const y = (-east * Math.cos(towards) + north * Math.sin(towards)) * R;
+  const rows: Array<[string, string]> = [[t('probe.distance'), formatDistance(distanceM(run.at, point))]];
+  if (!(x > 0)) {
+    rows.push([t('accident.dose1y'), t('accident.upwind')]);
+    return rows;
+  }
+  const dose = doseAt(run.result.release, x, y);
+  rows.push([t('accident.dose7d'), formatEffectiveDose(dose.first7dSv)]);
+  rows.push([t('accident.dose1y'), formatEffectiveDose(dose.firstYearSv)]);
+  const caesium = dose.depositionBqM2['Cs-137'];
+  if (caesium) rows.push(['Cs-137', `${formatActivity(caesium)}/m²`]);
+  rows.push([t('accident.arrival'), formatSeconds(dose.arrivalS)]);
+  return rows;
+}
+
 /** Text of the read-out for a point: what the detonation does there. */
 function probeHtml(point: LngLat): string {
-  const current = detonation.value;
+  const inAccident = mode.value === 'accident';
+  const current = inAccident ? null : detonation.value;
   const rows: Array<[string, string]> = [[t('probe.position'), formatLatLon(point.lat, point.lng)]];
+  if (inAccident) rows.push(...accidentProbeRows(point));
   if (current) {
     const range = distanceM(current.at, point);
     const e = current.result.effects;
@@ -420,6 +493,7 @@ export function MapView() {
       addOverlays(map);
       applyTerrain(map);
       applyDetonation(map);
+      applyAccident(map);
     });
     buildingDamage = createBuildingDamage(map);
     ensureSites();
@@ -442,7 +516,8 @@ export function MapView() {
 
     map.on('click', (event) => {
       popup?.remove();
-      groundZero.value = normalise(event.lngLat);
+      if (mode.value === 'accident') accidentSite.value = normalise(event.lngLat);
+      else groundZero.value = normalise(event.lngLat);
     });
     map.on('contextmenu', (event) => {
       const point = normalise(event.lngLat);
@@ -462,17 +537,42 @@ export function MapView() {
         });
     });
     marker.on('dragend', () => {
-      groundZero.value = normalise(marker.getLngLat());
+      if (mode.value === 'accident') accidentSite.value = normalise(marker.getLngLat());
+      else groundZero.value = normalise(marker.getLngLat());
     });
 
     const disposers = [
       // Ground zero marker follows the state.
       effect(() => {
-        const at = groundZero.value;
-        markerElement.title = t('map.groundZero');
+        // One marker: ground zero, or the place of the release in the accident simulator.
+        const inAccident = mode.value === 'accident';
+        const at = inAccident ? accidentSite.value : groundZero.value;
+        markerElement.title = t(inAccident ? 'accident.place' : 'map.groundZero');
+        markerElement.classList.toggle('is-release', inAccident);
         syncTilt();
         if (at) marker.setLngLat([at.lng, at.lat]).addTo(map);
         else marker.remove();
+      }),
+      // The accident simulator: its plume, and which simulator's shapes are on the map.
+      effect(() => {
+        const run = accidentRun.value;
+        const inAccident = mode.value === 'accident';
+        if (!styleReady) return;
+        untracked(() => applyAccident(map));
+        if (!run || !inAccident) return;
+        const reach = Math.max(distanceToDose(run.result.release, firstYear, PLUME_LEVELS_SV[PLUME_LEVELS_SV.length - 1]!), 3000);
+        const tip = destination(run.at, run.towardsDeg, reach);
+        const side = reach * 0.35;
+        const corners = [run.at, tip, destination(tip, run.towardsDeg + 90, side), destination(tip, run.towardsDeg - 90, side), destination(run.at, run.towardsDeg + 90, side), destination(run.at, run.towardsDeg - 90, side)];
+        const lngs = corners.map((c) => c.lng);
+        const lats = corners.map((c) => c.lat);
+        map.fitBounds(
+          [
+            [Math.min(...lngs), Math.min(...lats)],
+            [Math.max(...lngs), Math.max(...lats)],
+          ],
+          { padding: 60, duration: settings.value.reduceMotion ? 0 : 1400, maxZoom: 13 },
+        );
       }),
       // Style follows the settings.
       effect(() => {
