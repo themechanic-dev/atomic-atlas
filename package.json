@@ -1,0 +1,49 @@
+{
+  "name": "atomic-atlas",
+  "productName": "Atomic Atlas",
+  "version": "0.1.0",
+  "description": "Educational simulator of the effects of nuclear weapons, missiles and nuclear accidents on a real map and globe.",
+  "author": {
+    "name": "The Mechanic",
+    "email": "support@themechanic.store",
+    "url": "https://themechanic.store"
+  },
+  "homepage": "https://themechanic.store",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "dist/desktop/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:web && npm run build:desktop",
+    "build:web": "vite build",
+    "build:desktop": "node scripts/build-desktop.mjs",
+    "start": "electron .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run test",
+    "icons": "node scripts/make-icons.mjs",
+    "dist:linux": "npm run check && npm run build && electron-builder --config electron-builder.config.mjs --linux",
+    "dist:win": "npm run check && npm run build && electron-builder --config electron-builder.config.mjs --win",
+    "android:sync": "npm run build:web && cap sync android",
+    "android:apk": "npm run check && npm run android:sync && node scripts/build-apk.mjs"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
+    "@types/node": "^22.20.5",
+    "electron": "^45.3.0",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@preact/signals": "^2.11.4",
+    "maplibre-gl": "^6.17.0",
+    "preact": "^11.2.0"
+  }
+}

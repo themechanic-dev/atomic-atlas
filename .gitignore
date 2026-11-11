@@ -1,0 +1,44 @@
+# Allowlist: everything at the top level is ignored unless it is listed here.
+/*
+!/.gitignore
+!/.gitattributes
+!/README.md
+!/LICENSE
+!/package.json
+!/package-lock.json
+!/tsconfig.json
+!/vite.config.ts
+!/vitest.config.ts
+!/capacitor.config.ts
+!/electron-builder.config.mjs
+!/app/
+!/physics/
+!/data/
+!/assistant/
+!/desktop/
+!/mobile/
+!/installer/
+!/scripts/
+!/tests/
+
+# Never tracked, wherever they appear.
+node_modules
+.DS_Store
+Thumbs.db
+*.log
+*.local
+.env
+.env.*
+
+# Android build output (the Gradle project itself is tracked).
+/mobile/android/.gradle
+/mobile/android/build
+/mobile/android/app/build
+/mobile/android/local.properties
+/mobile/android/app/src/main/assets/public
+/mobile/android/capacitor-cordova-android-plugins
+/mobile/android/app/src/main/assets/capacitor.config.json
+/mobile/android/app/src/main/assets/capacitor.plugins.json
+/mobile/android/app/src/main/res/xml/config.xml
+*.keystore
+*.jks
