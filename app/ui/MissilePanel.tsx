@@ -10,6 +10,7 @@ import {
   chooseMissile,
   clearMissiles,
   clock,
+  directed,
   duration,
   flights,
   followsToCity,
@@ -28,6 +29,8 @@ import {
   seek,
   shape,
   showEffectsAt,
+  skipToImpact,
+  stage,
   targets,
   warheadYieldKt,
   type PickTarget,
@@ -225,6 +228,11 @@ export function MissilePanel() {
         <div class="card" data-testid="playback-card">
           <div class="card-head">
             <h3>{t('missiles.playback')}</h3>
+            {stage.value !== 'idle' ? (
+              <span class="stage-chip" data-testid="playback-stage">
+                {t(`missiles.stage.${stage.value}`)}
+              </span>
+            ) : null}
             <span class="clock" data-testid="playback-clock">
               T+ {formatClock(clock.value)} / {formatClock(total)}
             </span>
@@ -254,6 +262,21 @@ export function MissilePanel() {
               options={PLAYBACK_RATES.map((rate) => ({ value: String(rate), label: `×${rate}` }))}
               testId="playback-rate"
             />
+          </div>
+          <div class="playback-row">
+            <Segmented<string>
+              label={t('missiles.camera')}
+              value={directed.value ? 'directed' : 'free'}
+              onChange={(value) => (directed.value = value === 'directed')}
+              options={[
+                { value: 'directed', label: t('missiles.camera.directed') },
+                { value: 'free', label: t('missiles.camera.free') },
+              ]}
+              testId="playback-camera"
+            />
+            <Button kind="ghost" disabled={clock.value >= total} onClick={skipToImpact} testId="playback-skip">
+              {t('missiles.skip')}
+            </Button>
           </div>
           {clock.value >= total ? (
             <p class="hint" data-testid="playback-arrived">

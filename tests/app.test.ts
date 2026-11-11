@@ -287,3 +287,43 @@ describe('looking at the globe', () => {
     expect(beyondHorizon({ x: r * 0.9, y: 0, z: 0 }, at(170))).toBe(false);
   });
 });
+
+describe('the director of a flight', () => {
+  it('splits a flight into the flight and its last seconds', async () => {
+    const { stageAt, timelineFor } = await import('../app/globe/director');
+    const icbm = timelineFor(1800, 'ballistic');
+    expect(icbm).toEqual({ terminalStartS: 1755, durationS: 1800 });
+    expect(stageAt(0.1, icbm)).toBe('midcourse');
+    expect(stageAt(1754, icbm)).toBe('midcourse');
+    expect(stageAt(1755, icbm)).toBe('terminal');
+    expect(stageAt(1800, icbm)).toBe('impact');
+    // A short flight keeps most of its time for the flight itself.
+    const short = timelineFor(180, 'ballistic');
+    expect(short.terminalStartS).toBeCloseTo(158.4, 6);
+    const cruise = timelineFor(8000, 'cruise');
+    expect(cruise.terminalStartS).toBe(7940);
+    expect(stageAt(5, timelineFor(0, 'ballistic'))).toBe('idle');
+  });
+
+  it('plays the last seconds slowly, the rest at the chosen speed', async () => {
+    const { directedRate, TERMINAL_RATE } = await import('../app/globe/director');
+    expect(directedRate('terminal', 300)).toBe(TERMINAL_RATE);
+    expect(directedRate('midcourse', 300)).toBe(300);
+    expect(directedRate('terminal', 5)).toBe(5);
+  });
+
+  it('has a launcher for every platform in the catalog that carries a missile', async () => {
+    const { launcherKind } = await import('../app/globe/director');
+    expect(launcherKind(['silo'])).toBe('silo');
+    expect(launcherKind(['road-mobile'])).toBe('vehicle');
+    expect(launcherKind(['rail-mobile', 'silo'])).toBe('vehicle');
+    expect(launcherKind(['submarine', 'ship'])).toBe('submarine');
+    expect(launcherKind(['ship'])).toBe('ship');
+    expect(launcherKind(['aircraft'])).toBe('aircraft');
+    expect(launcherKind(['surface'])).toBe('pad');
+    const known = new Set(['silo', 'road-mobile', 'rail-mobile', 'submarine', 'ship', 'aircraft', 'surface', 'tower']);
+    for (const w of weapons.filter((entry) => entry.rangeKm !== null)) {
+      expect(w.platform.some((p) => known.has(p)), w.id).toBe(true);
+    }
+  });
+});

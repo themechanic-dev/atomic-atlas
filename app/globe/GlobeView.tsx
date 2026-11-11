@@ -33,15 +33,31 @@ import {
   type Entity,
 } from '@cesium/engine';
 import '@cesium/engine/Source/Widget/CesiumWidget.css';
-import { effect } from '@preact/signals';
+import { effect, untracked } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { positionAt, type FlightPlan } from '@physics/ballistics/flight';
 import { t } from '../i18n';
 import { formatDistance } from '../lib/format';
 import { alongGreatCircle, beyondHorizon, circleRing, initialBearing, sideViewHeading, type LngLat } from '../lib/geo';
-import { clock, flights, launchPoint, missile, placePoint, reach } from '../state/missiles';
+import {
+  cinematic,
+  clock,
+  flights,
+  launcherProgress,
+  launchPoint,
+  liftoffProgress,
+  leadIndex,
+  missile,
+  placePoint,
+  playing,
+  reach,
+  stage,
+  timeline,
+} from '../state/missiles';
 import { settings } from '../state/settings';
 import { beginBusy } from '../state/simulation';
+import { launcherKind } from './director';
+import { createLaunchScene } from './launchScene';
 
 // Cesium fetches its workers and textures from here (copied by the build, see vite.config.ts).
 (globalThis as { CESIUM_BASE_URL?: string }).CESIUM_BASE_URL = new URL('./cesium/', document.baseURI).href;
@@ -55,8 +71,10 @@ const RED = Color.fromCssColorString('#ff4d3d');
 const WHITE = Color.fromCssColorString('#f4efe6');
 const HALO = Color.fromCssColorString('#101214');
 
-/** Heights are drawn a little above the true value near the ground so lines do not sink into the surface. */
+/** The range ring is drawn a little above the ground so it does not sink into the surface. */
 const MIN_DRAW_HEIGHT = 3000;
+/** Flight paths start close to the ground, so the path meets the launcher in the close view. */
+const PATH_MIN_HEIGHT = 150;
 
 function cartesian(point: LngLat, heightM = 0): Cartesian3 {
   return Cartesian3.fromDegrees(point.lng, point.lat, heightM);
@@ -64,7 +82,7 @@ function cartesian(point: LngLat, heightM = 0): Cartesian3 {
 
 /** 3D positions of a flight from launch to target. */
 function flightPositions(from: LngLat, to: LngLat, plan: FlightPlan): Cartesian3[] {
-  return plan.points.map((p) => cartesian(alongGreatCircle(from, to, p.downrangeM / plan.rangeM), Math.max(p.altitudeM, MIN_DRAW_HEIGHT)));
+  return plan.points.map((p) => cartesian(alongGreatCircle(from, to, p.downrangeM / plan.rangeM), Math.max(p.altitudeM, PATH_MIN_HEIGHT)));
 }
 
 /**
@@ -220,6 +238,8 @@ export default function GlobeView({ active }: { active: boolean }) {
 
     // Everything that belongs to the current launch is rebuilt when it changes.
     const launchEntities: Entity[] = [];
+    // In the close view of the launch the launcher and missile are drawn instead of marks.
+    const notCloseUp = new CallbackProperty(() => !(cinematic.value && (stage.value === 'launcher' || stage.value === 'boost')), false);
     const drawLaunch = (): void => {
       launchEntities.splice(0).forEach((entity) => entities.remove(entity));
       const from = launchPoint.value;
@@ -228,10 +248,11 @@ export default function GlobeView({ active }: { active: boolean }) {
         launchEntities.push(
           entities.add({
             position: cartesian(from),
-            point: { pixelSize: 12, color: AMBER, outlineColor: HALO, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+            point: { show: notCloseUp, pixelSize: 12, color: AMBER, outlineColor: HALO, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
             // Above its mark, so it stays clear of a target close by (those read to the right).
             label: {
               ...labelStyle(t('missiles.launchPoint'), AMBER),
+              show: notCloseUp,
               horizontalOrigin: HorizontalOrigin.CENTER,
               verticalOrigin: VerticalOrigin.BOTTOM,
               pixelOffset: new Cartesian2(0, -14),
@@ -282,9 +303,17 @@ export default function GlobeView({ active }: { active: boolean }) {
           entities.add({
             position: new CallbackPositionProperty(() => {
               const p = positionAt(plan, clock.value);
-              return cartesian(alongGreatCircle(from, flight.target, p.downrangeM / plan.rangeM), Math.max(p.altitudeM, MIN_DRAW_HEIGHT));
+              return cartesian(alongGreatCircle(from, flight.target, p.downrangeM / plan.rangeM), Math.max(p.altitudeM, PATH_MIN_HEIGHT));
             }, false),
-            point: { pixelSize: 9, color: Color.WHITE, outlineColor: RED, outlineWidth: 3, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+            point: {
+              // In the close view of the launch the missile itself is drawn instead.
+              show: notCloseUp,
+              pixelSize: 9,
+              color: Color.WHITE,
+              outlineColor: RED,
+              outlineWidth: 3,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            },
           }),
         );
         // The impact: a bright mark at the target from the moment the warhead arrives.
@@ -301,23 +330,91 @@ export default function GlobeView({ active }: { active: boolean }) {
           }),
         );
       });
-      if (all.length >= 2) {
-        const sphere = BoundingSphere.fromPoints(all);
-        sphere.radius = Math.max(sphere.radius, 4e5);
-        // Look at the flight from the side and from well back: the arc shows its height,
-        // and nothing ends up behind the panel.
-        const first = flights.value[0];
-        camera.flyToBoundingSphere(sphere, {
-          duration: settings.value.reduceMotion ? 0 : 1.4,
-          offset: new HeadingPitchRange(
-            CesiumMath.toRadians(from && first ? sideViewHeading(initialBearing(from, first.target)) : 0),
-            CesiumMath.toRadians(-38),
-            // A small screen needs more room around the flight for the labels.
-            sphere.radius * (isNarrow(element) ? 4.3 : 3.4),
-          ),
-        });
+      // The highest point of the flight the view follows, and where its warheads part.
+      const lead = flights.value[leadIndex.value];
+      if (from && lead?.plan && lead.plan.kind === 'ballistic') {
+        const plan = lead.plan;
+        launchEntities.push(
+          entities.add({
+            position: cartesian(alongGreatCircle(from, lead.target, 0.5), plan.apogeeM),
+            point: { pixelSize: 5, color: AMBER, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+            label: {
+              ...labelStyle(`${t('quantity.apogee')} · ${formatDistance(plan.apogeeM, 3)}`, AMBER),
+              horizontalOrigin: HorizontalOrigin.CENTER,
+              verticalOrigin: VerticalOrigin.BOTTOM,
+              pixelOffset: new Cartesian2(0, -10),
+              show: new CallbackProperty(() => !(stage.value === 'launcher' || stage.value === 'boost' || stage.value === 'terminal'), false),
+            },
+          }),
+        );
+        if (flights.value.filter((flight) => flight.plan).length > 1) {
+          const until = plan.flightTimeS * 0.16;
+          launchEntities.push(
+            entities.add({
+              position: new CallbackPositionProperty(() => {
+                const p = positionAt(plan, clock.value);
+                return cartesian(alongGreatCircle(from, lead.target, p.downrangeM / plan.rangeM), p.altitudeM);
+              }, false),
+              label: {
+                ...labelStyle(t('missiles.label.separation')),
+                show: new CallbackProperty(() => stage.value === 'midcourse' && clock.value < until, false),
+              },
+            }),
+          );
+        }
       }
+      framed = all;
+      launch.build(
+        from && weapon && lead?.plan ? { from, target: lead.target, kind: launcherKind(weapon.platform) } : null,
+      );
+      // While a flight is being played the director holds the camera.
+      if (!untracked(() => playing.value)) frameFlights(settings.value.reduceMotion ? 0 : 1.4);
       scene.requestRender();
+    };
+
+    // Looks at everything placed from the side and from well back: the arcs show their
+    // height, and nothing ends up behind the panel.
+    let framed: Cartesian3[] = [];
+    const frameFlights = (duration: number): void => {
+      if (framed.length < 2) return;
+      const sphere = BoundingSphere.fromPoints(framed);
+      sphere.radius = Math.max(sphere.radius, 4e5);
+      const from = launchPoint.value;
+      const first = flights.value[0];
+      camera.flyToBoundingSphere(sphere, {
+        duration,
+        offset: new HeadingPitchRange(
+          CesiumMath.toRadians(from && first ? sideViewHeading(initialBearing(from, first.target)) : 0),
+          CesiumMath.toRadians(-38),
+          // A small screen needs more room around the flight for the labels.
+          sphere.radius * (isNarrow(element) ? 4.3 : 3.4),
+        ),
+      });
+    };
+
+    // The close view of the launch: launcher, missile, and the camera that follows them.
+    const launch = createLaunchScene(widget, {
+      progress: () => launcherProgress.value,
+      liftoff: () => liftoffProgress.value,
+      stage: () => stage.value,
+    });
+    const removeDirector = scene.preUpdate.addEventListener(() => {
+      if (cinematic.value && playing.value) launch.directCamera();
+    });
+    let shownStage = stage.value;
+    const onStage = (): void => {
+      const now = stage.value;
+      const before = shownStage;
+      shownStage = now;
+      if (now === before) return;
+      const instant = settings.value.reduceMotion;
+      if (!cinematic.value) return;
+      if (now === 'midcourse' && playing.value && (before === 'boost' || before === 'launcher')) frameFlights(instant ? 0 : 2.4);
+      else if (now === 'terminal' && playing.value) {
+        const from = launchPoint.value;
+        const lead = flights.value[leadIndex.value];
+        if (from && lead) launch.showArrival(lead.target, from, instant);
+      } else if (now === 'idle' && (before === 'launcher' || before === 'boost')) frameFlights(instant ? 0 : 1);
     };
 
     // A click on the globe places the launch point or a target.
@@ -345,11 +442,19 @@ export default function GlobeView({ active }: { active: boolean }) {
         void missile.value;
         void settings.value.language;
         void settings.value.distance;
+        void leadIndex.value;
+        void timeline.value;
         drawLaunch();
       }),
       effect(() => {
         void clock.value;
+        void launcherProgress.value;
+        void liftoffProgress.value;
         scene.requestRender();
+      }),
+      effect(() => {
+        void stage.value;
+        onStage();
       }),
     ];
 
@@ -366,6 +471,8 @@ export default function GlobeView({ active }: { active: boolean }) {
       disposers.forEach((dispose) => dispose());
       removeCameraChanged();
       removeCameraMoved();
+      removeDirector();
+      launch.destroy();
       handler.destroy();
       widget.destroy();
       widgetRef.current = null;

@@ -4,11 +4,13 @@
 // The user places every point by hand. Nothing here chooses or ranks targets.
 
 import { batch, computed, signal } from '@preact/signals';
-import { planFlight, reachM, type FlightPlan } from '@physics/ballistics/flight';
+import { flightKind, planFlight, reachM, type FlightPlan } from '@physics/ballistics/flight';
 import type { TrajectoryShape } from '@physics/ballistics/trajectory';
 import { assumedFissionFraction, WEAPONS, weaponById, type Weapon } from '../data/catalog';
 import { isLand } from '../data/land';
+import { directedRate, LAUNCHER_HOLD_MS, LIFTOFF_MS, stageAt, timelineFor, type Stage, type Timeline } from '../globe/director';
 import { distanceM, type LngLat } from '../lib/geo';
+import { settings } from './settings';
 import { groundZero, runDetonation, updateForm } from './simulation';
 import { mode } from './ui';
 
@@ -144,6 +146,50 @@ export const PLAYBACK_RATES = [10, 60, 300] as const;
 let frame = 0;
 let lastTick = 0;
 
+// --- The directed view of a flight ---------------------------------------------
+
+/** True when the camera follows the flight by itself: launcher, launch, flight, last seconds. */
+export const directed = signal(true);
+/** The directed view as it is actually played: "less motion" in the settings switches it off. */
+export const cinematic = computed(() => directed.value && !settings.value.reduceMotion);
+/** True while the launcher is shown before lift-off. */
+export const holding = signal(false);
+/** 0 to 1 while the launcher gets ready (lid opens, missile is raised); 1 once the missile is away. */
+export const launcherProgress = signal(0);
+/** True while the lift-off is followed from close by; the flight clock still waits at zero. */
+export const lifting = signal(false);
+/** 0 to 1 through the lift-off. */
+export const liftoffProgress = signal(0);
+let holdStart = 0;
+
+/** The parts of the flight in flight time. */
+export const timeline = computed<Timeline>(() => {
+  const weapon = missile.value;
+  return timelineFor(duration.value, weapon ? flightKind(weapon.category) : 'ballistic');
+});
+
+/** Index of the flight the directed view follows: the last warhead to arrive. */
+export const leadIndex = computed(() => {
+  let best = -1;
+  let longest = -1;
+  flights.value.forEach((flight, index) => {
+    if (flight.plan && flight.plan.flightTimeS > longest) {
+      longest = flight.plan.flightTimeS;
+      best = index;
+    }
+  });
+  return best;
+});
+
+/** The part of the flight on screen now. */
+export const stage = computed<Stage>(() => {
+  if (duration.value <= 0) return 'idle';
+  if (holding.value) return 'launcher';
+  if (lifting.value) return 'boost';
+  if (clock.value <= 0) return 'idle';
+  return stageAt(clock.value, timeline.value);
+});
+
 /** True while the detonation on the city map was opened from a flight on the globe. */
 export const cameFromFlight = signal(false);
 
@@ -170,9 +216,32 @@ function onArrival(): void {
 
 function tick(now: number): void {
   if (!playing.value) return;
+  if (holding.value || lifting.value) {
+    // The launcher gets ready, then the missile lifts off; the flight clock waits at zero.
+    const since = now - holdStart;
+    batch(() => {
+      if (since < LAUNCHER_HOLD_MS) {
+        launcherProgress.value = since / LAUNCHER_HOLD_MS;
+      } else if (since < LAUNCHER_HOLD_MS + LIFTOFF_MS) {
+        launcherProgress.value = 1;
+        holding.value = false;
+        lifting.value = true;
+        liftoffProgress.value = (since - LAUNCHER_HOLD_MS) / LIFTOFF_MS;
+      } else {
+        launcherProgress.value = 1;
+        liftoffProgress.value = 1;
+        holding.value = false;
+        lifting.value = false;
+        lastTick = now;
+      }
+    });
+    frame = requestAnimationFrame(tick);
+    return;
+  }
   const elapsed = Math.min(now - lastTick, 100) / 1000;
   lastTick = now;
-  const next = clock.value + elapsed * playbackRate.value;
+  const rate = cinematic.value ? directedRate(stageAt(clock.value, timeline.value), playbackRate.value) : playbackRate.value;
+  const next = clock.value + elapsed * rate;
   if (next >= duration.value) {
     clock.value = duration.value;
     playing.value = false;
@@ -187,25 +256,66 @@ export function play(): void {
   clearTimeout(arrivalTimer);
   if (duration.value <= 0) return;
   if (clock.value >= duration.value) clock.value = 0;
-  playing.value = true;
   lastTick = performance.now();
+  batch(() => {
+    playing.value = true;
+    if (clock.value === 0 && cinematic.value) {
+      // A flight played from the start opens on its launcher.
+      holding.value = true;
+      holdStart = lastTick;
+      launcherProgress.value = 0;
+      liftoffProgress.value = 0;
+    } else {
+      launcherProgress.value = 1;
+      liftoffProgress.value = 1;
+    }
+  });
   cancelAnimationFrame(frame);
   frame = requestAnimationFrame(tick);
 }
 
 export function pause(): void {
   clearTimeout(arrivalTimer);
-  playing.value = false;
+  batch(() => {
+    playing.value = false;
+    // A pause on the launcher or during the lift-off puts things back as they were.
+    if (holding.value || lifting.value) {
+      holding.value = false;
+      lifting.value = false;
+      launcherProgress.value = 0;
+      liftoffProgress.value = 0;
+    }
+  });
   cancelAnimationFrame(frame);
 }
 
 export function stop(): void {
   pause();
-  clock.value = 0;
+  batch(() => {
+    clock.value = 0;
+    launcherProgress.value = 0;
+    liftoffProgress.value = 0;
+  });
+}
+
+/** Jumps past the flight to the moment the last warhead comes down. */
+export function skipToImpact(): void {
+  if (duration.value <= 0) return;
+  pause();
+  batch(() => {
+    launcherProgress.value = 1;
+    liftoffProgress.value = 1;
+    clock.value = duration.value;
+  });
+  onArrival();
 }
 
 export function seek(seconds: number): void {
-  clock.value = Math.max(0, Math.min(duration.value, seconds));
+  batch(() => {
+    clock.value = Math.max(0, Math.min(duration.value, seconds));
+    launcherProgress.value = clock.value > 0 ? 1 : 0;
+    liftoffProgress.value = launcherProgress.value;
+  });
 }
 
 // --- From the globe to the city ------------------------------------------------
