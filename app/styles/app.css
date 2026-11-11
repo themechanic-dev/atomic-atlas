@@ -894,13 +894,17 @@ p {
 /* --- Dialogs ------------------------------------------------------------------ */
 
 .dialog-backdrop {
+  /* Room taken by the phone's status bar and navigation bar; nothing of a dialog may sit under them. */
+  --dialog-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --dialog-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --dialog-gap: 16px;
   position: fixed;
   inset: 0;
   background: var(--scrim);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: calc(var(--dialog-gap) + var(--dialog-top)) var(--dialog-gap) calc(var(--dialog-gap) + var(--dialog-bottom));
   z-index: 20;
 }
 
@@ -1346,12 +1350,12 @@ p {
   }
 
   .dialog-backdrop {
-    padding: 8px;
+    --dialog-gap: 8px;
     align-items: flex-end;
   }
 
   .dialog {
-    max-height: 92vh;
+    max-height: 100%;
   }
 
   .catalog-head {

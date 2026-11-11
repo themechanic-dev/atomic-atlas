@@ -15,7 +15,12 @@ interface DesktopShell {
 declare global {
   interface Window {
     atomicAtlasShell?: DesktopShell;
-    Capacitor?: { getPlatform?: () => string; isNativePlatform?: () => boolean };
+    Capacitor?: {
+      getPlatform?: () => string;
+      isNativePlatform?: () => boolean;
+      /** Calls a method of a native plugin; part of Capacitor's bridge. */
+      nativePromise?: (plugin: string, method: string, options?: unknown) => Promise<unknown>;
+    };
   }
   const __APP_VERSION__: string;
 }
@@ -42,4 +47,9 @@ export function openExternal(url: string): void {
 /** Lets native window parts follow the UI theme where the shell supports it. */
 export function syncNativeTheme(theme: Theme): void {
   void window.atomicAtlasShell?.setTheme(theme);
+  if (platform() === 'android') {
+    // The clock and icons of the phone's own bars: light on the dark theme, dark on the light one.
+    const style = theme === 'dark' ? 'DARK' : 'LIGHT';
+    void window.Capacitor?.nativePromise?.('SystemBars', 'setStyle', { style })?.catch(() => undefined);
+  }
 }
