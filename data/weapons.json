@@ -1,0 +1,1764 @@
+[
+  {
+    "id": "little-boy",
+    "name": "Little Boy",
+    "designations": [
+      "Mark I"
+    ],
+    "country": "US",
+    "category": "bomb",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "B-29 Superfortress (Enola Gay)",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      16
+    ],
+    "fissionFraction": null,
+    "year": 1945,
+    "status": "retired",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "Nuclear Weapons FAQ, Section 8.0 The First Nuclear Weapons",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "2020-06",
+        "url": "https://nuclearweaponarchive.org/Nwfaq/Nfaq8.html"
+      }
+    ],
+    "note": "Used on Hiroshima, 6 Aug 1945. Source gives 16 kt; earlier estimates 12.5-18 kt, 15 kt commonly cited."
+  },
+  {
+    "id": "fat-man",
+    "name": "Fat Man",
+    "designations": [
+      "Mark III"
+    ],
+    "country": "US",
+    "category": "bomb",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "B-29 Superfortress (Bockscar)",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      21
+    ],
+    "fissionFraction": null,
+    "year": 1945,
+    "status": "retired",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "Nuclear Weapons FAQ, Section 8.0 The First Nuclear Weapons",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "2020-06",
+        "url": "https://nuclearweaponarchive.org/Nwfaq/Nfaq8.html"
+      }
+    ],
+    "note": "Used on Nagasaki, 9 Aug 1945. Source gives 21 kt (1987 reassessment) and 22 +/-2 kt."
+  },
+  {
+    "id": "b61-12",
+    "name": "B61-12",
+    "designations": [
+      "B61 Mod 12"
+    ],
+    "country": "US",
+    "category": "bomb",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "B-2A, F-15E, F-16, F-35A, PA-200 Tornado",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      0.3,
+      1.5,
+      10,
+      50
+    ],
+    "fissionFraction": null,
+    "year": 2023,
+    "status": "active",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "United States nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-03",
+        "url": "https://thebulletin.org/premium/2026-03/united-states-nuclear-weapons-2026/"
+      },
+      {
+        "title": "B61 nuclear bomb",
+        "publisher": "Wikipedia",
+        "date": "2026",
+        "url": "https://en.wikipedia.org/wiki/B61_nuclear_bomb"
+      }
+    ],
+    "note": "Selectable yields 0.3-50 kt; first production unit Nov 2021, operational on B-2 in 2023 and fighters in 2024."
+  },
+  {
+    "id": "b83-1",
+    "name": "B83-1",
+    "designations": [
+      "B83"
+    ],
+    "country": "US",
+    "category": "bomb",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "B-2A Spirit (historically also B-52 and B-1)",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      1200
+    ],
+    "fissionFraction": null,
+    "year": 1983,
+    "status": "active",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "United States nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-03",
+        "url": "https://thebulletin.org/premium/2026-03/united-states-nuclear-weapons-2026/"
+      },
+      {
+        "title": "The B83 Bomb",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "1997-11",
+        "url": "https://nuclearweaponarchive.org/Usa/Weapons/B83.html"
+      }
+    ],
+    "note": "Variable yield from low kt up to 1.2 Mt. A small number remain in the stockpile in 2026 pending retirement."
+  },
+  {
+    "id": "lgm-30g-minuteman-iii",
+    "name": "Minuteman III",
+    "designations": [
+      "LGM-30G"
+    ],
+    "country": "US",
+    "category": "ICBM",
+    "platform": [
+      "silo"
+    ],
+    "carrier": "",
+    "rangeKm": 13000,
+    "warheadsMax": 3,
+    "mirv": true,
+    "yieldsKt": [
+      300,
+      335
+    ],
+    "fissionFraction": null,
+    "year": 1970,
+    "status": "active",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "United States nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-03",
+        "url": "https://thebulletin.org/premium/2026-03/united-states-nuclear-weapons-2026/"
+      },
+      {
+        "title": "Minuteman III",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/minuteman-iii/"
+      }
+    ],
+    "note": "Deployed with one warhead each (W87 300 kt or W78 335 kt); the W78 version can carry up to three."
+  },
+  {
+    "id": "trident-ii-d5-us",
+    "name": "Trident II D5 (US)",
+    "designations": [
+      "UGM-133A",
+      "Trident D5LE"
+    ],
+    "country": "US",
+    "category": "SLBM",
+    "platform": [
+      "submarine"
+    ],
+    "carrier": "Ohio-class submarine",
+    "rangeKm": 12000,
+    "warheadsMax": 8,
+    "mirv": true,
+    "yieldsKt": [
+      8,
+      90,
+      455
+    ],
+    "fissionFraction": null,
+    "year": 1990,
+    "status": "active",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "United States nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-03",
+        "url": "https://thebulletin.org/premium/2026-03/united-states-nuclear-weapons-2026/"
+      },
+      {
+        "title": "Trident D5",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/trident/"
+      }
+    ],
+    "note": "W76-2 8 kt, W76-1 90 kt, W88 455 kt; typically 4-5 warheads loaded. CSIS lists 100 and 475 kt."
+  },
+  {
+    "id": "agm-86b-alcm",
+    "name": "AGM-86B ALCM",
+    "designations": [
+      "AGM-86B",
+      "Air-Launched Cruise Missile"
+    ],
+    "country": "US",
+    "category": "cruise",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "B-52H",
+    "rangeKm": 2500,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      5,
+      150
+    ],
+    "fissionFraction": null,
+    "year": 1982,
+    "status": "active",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "United States nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-03",
+        "url": "https://thebulletin.org/premium/2026-03/united-states-nuclear-weapons-2026/"
+      },
+      {
+        "title": "AGM-86 Air-Launched Cruise Missile (ALCM)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/alcm/"
+      }
+    ],
+    "note": "W80-1 variable yield 5-150 kt per Nuclear Notebook; CSIS lists 200 kt. Replacement (LRSO) planned for 2030."
+  },
+  {
+    "id": "lgm-118-peacekeeper",
+    "name": "LGM-118 Peacekeeper",
+    "designations": [
+      "MX",
+      "LGM-118A"
+    ],
+    "country": "US",
+    "category": "ICBM",
+    "platform": [
+      "silo"
+    ],
+    "carrier": "",
+    "rangeKm": 11000,
+    "warheadsMax": 10,
+    "mirv": true,
+    "yieldsKt": [
+      300
+    ],
+    "fissionFraction": null,
+    "year": 1986,
+    "status": "retired",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "The MX (Peacekeeper) ICBM",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "1997-10",
+        "url": "https://nuclearweaponarchive.org/Usa/Weapons/Mx.html"
+      },
+      {
+        "title": "LGM-118 Peacekeeper",
+        "publisher": "Wikipedia",
+        "date": "2026",
+        "url": "https://en.wikipedia.org/wiki/LGM-118_Peacekeeper"
+      }
+    ],
+    "note": "Carried 10 x 300 kt W87 warheads; deactivated September 2005. Range cited from 9,600 to 14,000 km."
+  },
+  {
+    "id": "castle-bravo",
+    "name": "Castle Bravo",
+    "designations": [
+      "Shrimp",
+      "TX-21 prototype"
+    ],
+    "country": "US",
+    "category": "test",
+    "platform": [
+      "surface"
+    ],
+    "carrier": "",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      15000
+    ],
+    "fissionFraction": 0.67,
+    "year": 1954,
+    "status": "test",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "Operation Castle",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "2006-05",
+        "url": "https://nuclearweaponarchive.org/Usa/Tests/Castle.html"
+      }
+    ],
+    "note": "Surface burst at Bikini Atoll, 1 Mar 1954; 10 Mt of the 15 Mt yield came from fission."
+  },
+  {
+    "id": "ivy-mike",
+    "name": "Ivy Mike",
+    "designations": [
+      "Sausage"
+    ],
+    "country": "US",
+    "category": "test",
+    "platform": [
+      "surface"
+    ],
+    "carrier": "",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10400
+    ],
+    "fissionFraction": 0.77,
+    "year": 1952,
+    "status": "test",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "Operation Ivy",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "1999-05",
+        "url": "https://nuclearweaponarchive.org/Usa/Tests/Ivy.html"
+      }
+    ],
+    "note": "Surface burst at Enewetak Atoll, 1 Nov 1952 local; 77% (8 Mt) of yield from fission."
+  },
+  {
+    "id": "rs-24-yars",
+    "name": "RS-24 Yars",
+    "designations": [
+      "SS-27 Mod 2",
+      "RS-24"
+    ],
+    "country": "RU",
+    "category": "ICBM",
+    "platform": [
+      "road-mobile",
+      "silo"
+    ],
+    "carrier": "",
+    "rangeKm": 10500,
+    "warheadsMax": 3,
+    "mirv": true,
+    "yieldsKt": [
+      100,
+      200
+    ],
+    "fissionFraction": null,
+    "year": 2010,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      },
+      {
+        "title": "RS-24 Yars (SS-27 Mod 2)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/rs-24/"
+      }
+    ],
+    "note": "Estimates differ: Nuclear Notebook 3 x 100 kt; CSIS 150-200 kt per warhead. Values are bounds, not options."
+  },
+  {
+    "id": "rs-28-sarmat",
+    "name": "RS-28 Sarmat",
+    "designations": [
+      "SS-29",
+      "SS-X-30 Satan II"
+    ],
+    "country": "RU",
+    "category": "ICBM",
+    "platform": [
+      "silo"
+    ],
+    "carrier": "",
+    "rangeKm": 18000,
+    "warheadsMax": 10,
+    "mirv": true,
+    "yieldsKt": [
+      500
+    ],
+    "fissionFraction": null,
+    "year": 2026,
+    "status": "development",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      },
+      {
+        "title": "RS-28 Sarmat",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/rs-28-sarmat/"
+      }
+    ],
+    "note": "Not on combat duty as of May 2026; year is planned. Range cited 10,000-18,000 km; yield estimate 10 x 500 kt."
+  },
+  {
+    "id": "r-36m2-voevoda",
+    "name": "R-36M2 Voevoda",
+    "designations": [
+      "SS-18 Mod 6 Satan",
+      "RS-20V"
+    ],
+    "country": "RU",
+    "category": "ICBM",
+    "platform": [
+      "silo"
+    ],
+    "carrier": "",
+    "rangeKm": 11000,
+    "warheadsMax": 10,
+    "mirv": true,
+    "yieldsKt": [
+      500,
+      800
+    ],
+    "fissionFraction": null,
+    "year": 1988,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      },
+      {
+        "title": "R-36 (SS-18 Satan)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/ss-18/"
+      }
+    ],
+    "note": "Notebook: 10 x 500-800 kt (estimate range); CSIS: 500-750 kt. Single-warhead variant listed at 16,000 km."
+  },
+  {
+    "id": "ur-100n-utttkh",
+    "name": "UR-100N UTTKh",
+    "designations": [
+      "SS-19 Mod 3 Stiletto",
+      "RS-18"
+    ],
+    "country": "RU",
+    "category": "ICBM",
+    "platform": [
+      "silo"
+    ],
+    "carrier": "",
+    "rangeKm": 10000,
+    "warheadsMax": 6,
+    "mirv": true,
+    "yieldsKt": [
+      500,
+      600,
+      750
+    ],
+    "fissionFraction": null,
+    "year": 1980,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "UR-100 (SS-19)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/ss-19/"
+      },
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      }
+    ],
+    "note": "CSIS: six MIRVs of 500-600 kt (750 kt option). Remaining missiles carry one Avangard glide vehicle (Notebook 2026)."
+  },
+  {
+    "id": "rsm-56-bulava",
+    "name": "RSM-56 Bulava",
+    "designations": [
+      "SS-N-32",
+      "RSM-56"
+    ],
+    "country": "RU",
+    "category": "SLBM",
+    "platform": [
+      "submarine"
+    ],
+    "carrier": "Borei-class submarine",
+    "rangeKm": 8300,
+    "warheadsMax": 6,
+    "mirv": true,
+    "yieldsKt": [
+      100,
+      150
+    ],
+    "fissionFraction": null,
+    "year": 2014,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      },
+      {
+        "title": "RSM-56 Bulava",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/ss-n-32-bulava/"
+      }
+    ],
+    "note": "Notebook: up to 6 x 100 kt, deployed 2014; CSIS: up to 10 MIRVs of 100-150 kt, in service 2013."
+  },
+  {
+    "id": "r-29rmu2-sineva",
+    "name": "R-29RMU2 Sineva",
+    "designations": [
+      "SS-N-23 M2",
+      "RSM-54"
+    ],
+    "country": "RU",
+    "category": "SLBM",
+    "platform": [
+      "submarine"
+    ],
+    "carrier": "Delta IV-class submarine",
+    "rangeKm": 8300,
+    "warheadsMax": 4,
+    "mirv": true,
+    "yieldsKt": [
+      100
+    ],
+    "fissionFraction": null,
+    "year": 2007,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      },
+      {
+        "title": "R-29RM Shtil (SS-N-23)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/ss-n-23/"
+      }
+    ],
+    "note": "Notebook: 4 x 100 kt, Sineva upgrade deployed 2007; the base R-29RM entered service in 1986."
+  },
+  {
+    "id": "9k720-iskander-m",
+    "name": "9K720 Iskander-M",
+    "designations": [
+      "SS-26 Stone",
+      "9M723"
+    ],
+    "country": "RU",
+    "category": "SRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 500,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10,
+      100
+    ],
+    "fissionFraction": null,
+    "year": 2005,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      },
+      {
+        "title": "9K720 Iskander (SS-26)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/ss-26-2/"
+      }
+    ],
+    "note": "Dual-capable. Notebook estimates nuclear yield 10-100 kt (range); CSIS lists 400-500 km and service entry 2006."
+  },
+  {
+    "id": "kh-102",
+    "name": "Kh-102",
+    "designations": [
+      "AS-23B"
+    ],
+    "country": "RU",
+    "category": "cruise",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "Tu-95MS, Tu-160",
+    "rangeKm": 2800,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      250
+    ],
+    "fissionFraction": null,
+    "year": 2012,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Kh-101 / Kh-102",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/kh-101-kh-102/"
+      },
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      }
+    ],
+    "note": "Nuclear variant of the Kh-101. CSIS lists range 2,500-2,800 km and 250 kt; yield from that single source."
+  },
+  {
+    "id": "tsar-bomba-an602",
+    "name": "Tsar Bomba",
+    "designations": [
+      "AN602",
+      "RDS-220",
+      "Big Ivan"
+    ],
+    "country": "SU",
+    "category": "test",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "Tu-95V",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      50000
+    ],
+    "fissionFraction": 0.03,
+    "year": 1961,
+    "status": "test",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "The Soviet Weapons Program - The Tsar Bomba",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "2007-09",
+        "url": "https://nuclearweaponarchive.org/Russia/TsarBomba.html"
+      },
+      {
+        "title": "Tsar Bomba",
+        "publisher": "Wikipedia",
+        "date": "2026",
+        "url": "https://en.wikipedia.org/wiki/Tsar_Bomba"
+      }
+    ],
+    "note": "Air-dropped over Novaya Zemlya, 30 Oct 1961. Soviet figure 50 Mt, US estimate 58 Mt; about 3% of yield from fission."
+  },
+  {
+    "id": "rds-1",
+    "name": "RDS-1",
+    "designations": [
+      "Joe-1",
+      "First Lightning"
+    ],
+    "country": "SU",
+    "category": "test",
+    "platform": [
+      "tower"
+    ],
+    "carrier": "",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      22
+    ],
+    "fissionFraction": null,
+    "year": 1949,
+    "status": "test",
+    "estimate": false,
+    "sources": [
+      {
+        "title": "The Soviet Nuclear Weapons Program",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "1997-12",
+        "url": "https://nuclearweaponarchive.org/Russia/Sovwpnprog.html"
+      }
+    ],
+    "note": "First Soviet nuclear test, Semipalatinsk, 29 Aug 1949. Source gives 22 kt (20 kt elsewhere on the same page)."
+  },
+  {
+    "id": "trident-ii-d5-uk",
+    "name": "Trident II D5 (UK)",
+    "designations": [
+      "UGM-133A",
+      "Holbrook warhead (Mk4A)"
+    ],
+    "country": "GB",
+    "category": "SLBM",
+    "platform": [
+      "submarine"
+    ],
+    "carrier": "Vanguard-class submarine",
+    "rangeKm": 12000,
+    "warheadsMax": 8,
+    "mirv": true,
+    "yieldsKt": [
+      100
+    ],
+    "fissionFraction": null,
+    "year": 1994,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "United Kingdom nuclear weapons, 2024",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2024-11",
+        "url": "https://thebulletin.org/premium/2024-11/united-kingdom-nuclear-weapons-2024/"
+      },
+      {
+        "title": "Trident D5",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/trident/"
+      }
+    ],
+    "note": "Notebook: 1-8 x 100 kt, range >10,000 km (CSIS 12,000 km); modified low-yield warheads are not deployed."
+  },
+  {
+    "id": "we-177",
+    "name": "WE.177",
+    "designations": [
+      "WE.177A",
+      "WE.177B",
+      "WE.177C"
+    ],
+    "country": "GB",
+    "category": "bomb",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "Vulcan, Buccaneer, Jaguar, Tornado, Sea Harrier",
+    "rangeKm": null,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      0.5,
+      10,
+      190,
+      450
+    ],
+    "fissionFraction": null,
+    "year": 1966,
+    "status": "retired",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Britain's Nuclear Weapons - History of the British Nuclear Arsenal",
+        "publisher": "Nuclear Weapon Archive",
+        "date": "2002-04",
+        "url": "https://nuclearweaponarchive.org/Uk/UKArsenalDev.html"
+      },
+      {
+        "title": "WE.177",
+        "publisher": "Wikipedia",
+        "date": "2026",
+        "url": "https://en.wikipedia.org/wiki/WE.177"
+      }
+    ],
+    "note": "A: 0.5/10 kt, B: 450 kt, C: ~190 kt (Wikipedia); Nuclear Weapon Archive lists 200/400/~10 kt. Retired 1998."
+  },
+  {
+    "id": "m51",
+    "name": "M51",
+    "designations": [
+      "M51.1",
+      "M51.2",
+      "M51.3"
+    ],
+    "country": "FR",
+    "category": "SLBM",
+    "platform": [
+      "submarine"
+    ],
+    "carrier": "Triomphant-class submarine",
+    "rangeKm": 9000,
+    "warheadsMax": 6,
+    "mirv": true,
+    "yieldsKt": [
+      100
+    ],
+    "fissionFraction": null,
+    "year": 2010,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "French nuclear weapons, 2025",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2025-07",
+        "url": "https://thebulletin.org/premium/2025-07/french-nuclear-weapons-2025/"
+      },
+      {
+        "title": "M51",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/m51/"
+      }
+    ],
+    "note": "Notebook: 4-6 x 100 kt; M51.1 6,000+ km, M51.2 9,000+ km. CSIS lists 8,000 km and 150 kt."
+  },
+  {
+    "id": "asmp-a",
+    "name": "ASMP-A",
+    "designations": [
+      "ASMPA",
+      "Air-Sol Moyenne Portee-Ameliore"
+    ],
+    "country": "FR",
+    "category": "cruise",
+    "platform": [
+      "aircraft"
+    ],
+    "carrier": "Rafale BF3/4, Rafale M",
+    "rangeKm": 600,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      100,
+      300
+    ],
+    "fissionFraction": null,
+    "year": 2009,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "French nuclear weapons, 2025",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2025-07",
+        "url": "https://thebulletin.org/premium/2025-07/french-nuclear-weapons-2025/"
+      },
+      {
+        "title": "Air-Sol Moyenne Portee (ASMP/ASMP-A)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/asmp/"
+      }
+    ],
+    "note": "TNA warhead: Notebook says under 300 kt, possibly about 100 kt (bounds, not options). Range cited 500-600 km."
+  },
+  {
+    "id": "df-41",
+    "name": "DF-41",
+    "designations": [
+      "CSS-20",
+      "Dong Feng-41"
+    ],
+    "country": "CN",
+    "category": "ICBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 12000,
+    "warheadsMax": 3,
+    "mirv": true,
+    "yieldsKt": [
+      425
+    ],
+    "fissionFraction": null,
+    "year": 2020,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Chinese nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-07",
+        "url": "https://thebulletin.org/premium/2026-07/chinese-nuclear-weapons-2026/"
+      },
+      {
+        "title": "DF-41 (Dong Feng-41 / CSS-X-20)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/df-41/"
+      }
+    ],
+    "note": "Notebook 2026: up to 3 x 425 kt, 12,000 km, mobile. CSIS: 12,000-15,000 km, up to 10 warheads, rail/silo options."
+  },
+  {
+    "id": "df-5b",
+    "name": "DF-5B",
+    "designations": [
+      "CSS-4 Mod 3",
+      "Dong Feng-5B"
+    ],
+    "country": "CN",
+    "category": "ICBM",
+    "platform": [
+      "silo"
+    ],
+    "carrier": "",
+    "rangeKm": 13000,
+    "warheadsMax": 5,
+    "mirv": true,
+    "yieldsKt": [
+      425
+    ],
+    "fissionFraction": null,
+    "year": 2015,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Chinese nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-07",
+        "url": "https://thebulletin.org/premium/2026-07/chinese-nuclear-weapons-2026/"
+      },
+      {
+        "title": "DF-5",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/df-5-ab/"
+      }
+    ],
+    "note": "Notebook 2026: up to 5 x 425 kt. The single-warhead DF-5A is listed separately at 4.5 Mt and 12,000 km."
+  },
+  {
+    "id": "df-31ag",
+    "name": "DF-31AG",
+    "designations": [
+      "CSS-10 Mod 2",
+      "Dong Feng-31AG"
+    ],
+    "country": "CN",
+    "category": "ICBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 11200,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      425
+    ],
+    "fissionFraction": null,
+    "year": 2018,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Chinese nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-07",
+        "url": "https://thebulletin.org/premium/2026-07/chinese-nuclear-weapons-2026/"
+      },
+      {
+        "title": "DF-31 (Dong Feng-31 / CSS-10)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/df-31/"
+      }
+    ],
+    "note": "Notebook lists DF-31A/AG together: 11,200 km, 1 x 425 kt; the AG launcher was fielded in 2018."
+  },
+  {
+    "id": "df-26",
+    "name": "DF-26",
+    "designations": [
+      "CSS-18",
+      "Dong Feng-26"
+    ],
+    "country": "CN",
+    "category": "IRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 4000,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      425
+    ],
+    "fissionFraction": null,
+    "year": 2016,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Chinese nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-07",
+        "url": "https://thebulletin.org/premium/2026-07/chinese-nuclear-weapons-2026/"
+      },
+      {
+        "title": "DF-26 (Dong Feng-26)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/dong-feng-26-df-26/"
+      }
+    ],
+    "note": "Dual-capable. Notebook assumes about one-third of launchers have a nuclear mission."
+  },
+  {
+    "id": "df-21",
+    "name": "DF-21",
+    "designations": [
+      "CSS-5",
+      "Dong Feng-21"
+    ],
+    "country": "CN",
+    "category": "MRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 2150,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      250,
+      500
+    ],
+    "fissionFraction": null,
+    "year": 1991,
+    "status": "retired",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "DF-21 (CSS-5)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/df-21/"
+      },
+      {
+        "title": "Chinese nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-07",
+        "url": "https://thebulletin.org/premium/2026-07/chinese-nuclear-weapons-2026/"
+      }
+    ],
+    "note": "CSIS: 250 or 500 kt. Notebook 2026 no longer lists the nuclear DF-21 as operational; conventional variants remain."
+  },
+  {
+    "id": "jl-2",
+    "name": "JL-2",
+    "designations": [
+      "CSS-N-14",
+      "Ju Lang-2"
+    ],
+    "country": "CN",
+    "category": "SLBM",
+    "platform": [
+      "submarine"
+    ],
+    "carrier": "Type 094 Jin-class submarine",
+    "rangeKm": 7200,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      700
+    ],
+    "fissionFraction": null,
+    "year": 2016,
+    "status": "retired",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Chinese nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-07",
+        "url": "https://thebulletin.org/premium/2026-07/chinese-nuclear-weapons-2026/"
+      },
+      {
+        "title": "JL-2",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/jl-2/"
+      }
+    ],
+    "note": "Notebook 2026: 1 x 700 kt, 7,000+ km, assessed as replaced by JL-3. CSIS lists 8,000-9,000 km and 1 Mt."
+  },
+  {
+    "id": "jl-3",
+    "name": "JL-3",
+    "designations": [
+      "CSS-N-20",
+      "Ju Lang-3"
+    ],
+    "country": "CN",
+    "category": "SLBM",
+    "platform": [
+      "submarine"
+    ],
+    "carrier": "Type 094/094A Jin-class submarine",
+    "rangeKm": 10000,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      425
+    ],
+    "fissionFraction": null,
+    "year": 2022,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Chinese nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-07",
+        "url": "https://thebulletin.org/premium/2026-07/chinese-nuclear-weapons-2026/"
+      }
+    ],
+    "note": "Notebook table lists 9,000+ km (text: roughly 10,000 km). Multiple-warhead capability reported but unconfirmed."
+  },
+  {
+    "id": "agni-v",
+    "name": "Agni-V",
+    "designations": [
+      "Agni-5"
+    ],
+    "country": "IN",
+    "category": "IRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 5000,
+    "warheadsMax": 3,
+    "mirv": true,
+    "yieldsKt": [
+      10,
+      40
+    ],
+    "fissionFraction": null,
+    "year": 2023,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Indian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-09",
+        "url": "https://thebulletin.org/premium/2026-09/indian-nuclear-weapons-2026/"
+      },
+      {
+        "title": "Agni-V",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/agni-5/"
+      }
+    ],
+    "note": "Notebook: 5,000+ km, 1-3 x 10-40 kt (estimate range), MIRV tested 2024. CSIS calls it an ICBM, 5,000-8,000 km."
+  },
+  {
+    "id": "agni-iii",
+    "name": "Agni-III",
+    "designations": [
+      "Agni-3"
+    ],
+    "country": "IN",
+    "category": "IRBM",
+    "platform": [
+      "rail-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 3500,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10,
+      40
+    ],
+    "fissionFraction": null,
+    "year": 2018,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Indian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-09",
+        "url": "https://thebulletin.org/premium/2026-09/indian-nuclear-weapons-2026/"
+      },
+      {
+        "title": "Agni-III",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/agni-3/"
+      }
+    ],
+    "note": "Notebook: 3,200+ km, 10-40 kt (estimate range), deployed 2018. CSIS: 3,000-3,500 km, 200-300 kt, in service 2011."
+  },
+  {
+    "id": "prithvi-ii",
+    "name": "Prithvi-II",
+    "designations": [
+      "Prithvi-2"
+    ],
+    "country": "IN",
+    "category": "SRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 350,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      12
+    ],
+    "fissionFraction": null,
+    "year": 2003,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Indian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-09",
+        "url": "https://thebulletin.org/premium/2026-09/indian-nuclear-weapons-2026/"
+      }
+    ],
+    "note": "Dual-capable. Indian government states 350 km; NASIC lists 250 km."
+  },
+  {
+    "id": "k-4",
+    "name": "K-4",
+    "designations": [],
+    "country": "IN",
+    "category": "SLBM",
+    "platform": [
+      "submarine"
+    ],
+    "carrier": "Arihant-class submarine (INS Arighaat)",
+    "rangeKm": 3500,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10,
+      40
+    ],
+    "fissionFraction": null,
+    "year": 2027,
+    "status": "development",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Indian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-09",
+        "url": "https://thebulletin.org/premium/2026-09/indian-nuclear-weapons-2026/"
+      }
+    ],
+    "note": "Deployment not officially confirmed; year is the Notebook's expected date. Yield 10-40 kt is an estimate range."
+  },
+  {
+    "id": "shaheen-iii",
+    "name": "Shaheen-III",
+    "designations": [
+      "Shaheen-3"
+    ],
+    "country": "PK",
+    "category": "MRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 2750,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10,
+      40
+    ],
+    "fissionFraction": null,
+    "year": 2025,
+    "status": "development",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Pakistan nuclear weapons, 2025",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2025-09",
+        "url": "https://thebulletin.org/premium/2025-09/pakistan-nuclear-weapons-2025/"
+      },
+      {
+        "title": "Shaheen 3",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/shaheen-3/"
+      }
+    ],
+    "note": "Notebook lists it as entering service (2025), not yet operational. Yield 10-40 kt is an estimate range."
+  },
+  {
+    "id": "shaheen-ii",
+    "name": "Shaheen-II",
+    "designations": [
+      "Hatf-6"
+    ],
+    "country": "PK",
+    "category": "MRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 2000,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10,
+      40
+    ],
+    "fissionFraction": null,
+    "year": 2014,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Pakistan nuclear weapons, 2025",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2025-09",
+        "url": "https://thebulletin.org/premium/2025-09/pakistan-nuclear-weapons-2025/"
+      },
+      {
+        "title": "Shaheen 2 (Hatf 6)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/hatf-6/"
+      }
+    ],
+    "note": "Government states 1,500 km; NASIC 2,000 km. Notebook yield estimate 10-40 kt (range); CSIS 15-35 kt."
+  },
+  {
+    "id": "ghauri",
+    "name": "Ghauri",
+    "designations": [
+      "Hatf-5"
+    ],
+    "country": "PK",
+    "category": "MRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 1300,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10,
+      40
+    ],
+    "fissionFraction": null,
+    "year": 2003,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Pakistan nuclear weapons, 2025",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2025-09",
+        "url": "https://thebulletin.org/premium/2025-09/pakistan-nuclear-weapons-2025/"
+      },
+      {
+        "title": "Ghauri (Hatf 5)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/hatf-5/"
+      }
+    ],
+    "note": "Range cited 1,250 km (NASIC), 1,300 km (government), up to 1,500 km (CSIS). Yield 10-40 kt range; CSIS 12-35 kt."
+  },
+  {
+    "id": "babur",
+    "name": "Babur",
+    "designations": [
+      "Hatf-7",
+      "Babur-1A"
+    ],
+    "country": "PK",
+    "category": "cruise",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 700,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      5,
+      12
+    ],
+    "fissionFraction": null,
+    "year": 2014,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Pakistan nuclear weapons, 2025",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2025-09",
+        "url": "https://thebulletin.org/premium/2025-09/pakistan-nuclear-weapons-2025/"
+      },
+      {
+        "title": "Babur (Hatf 7)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/hatf-7/"
+      }
+    ],
+    "note": "Government claims 700 km; US intelligence reports 350 km. Notebook 5-12 kt (range); CSIS 10-35 kt, in service 2010."
+  },
+  {
+    "id": "nasr",
+    "name": "Nasr",
+    "designations": [
+      "Hatf-9"
+    ],
+    "country": "PK",
+    "category": "SRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 70,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      12
+    ],
+    "fissionFraction": null,
+    "year": 2013,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Pakistan nuclear weapons, 2025",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2025-09",
+        "url": "https://thebulletin.org/premium/2025-09/pakistan-nuclear-weapons-2025/"
+      },
+      {
+        "title": "Nasr (Hatf 9)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/hatf-9/"
+      }
+    ],
+    "note": "Dual-capable short-range missile, range 60-70 km; Notebook lists 1 x 12 kt and counts one warhead per launcher."
+  },
+  {
+    "id": "jericho-iii",
+    "name": "Jericho III",
+    "designations": [
+      "YA-4"
+    ],
+    "country": "IL",
+    "category": "IRBM",
+    "platform": [
+      "road-mobile",
+      "silo",
+      "rail-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 6500,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      150,
+      400
+    ],
+    "fissionFraction": null,
+    "year": 2011,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Jericho 3",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/jericho-3/"
+      },
+      {
+        "title": "Nuclear Notebook: Israeli nuclear weapons, 2021",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2022-01",
+        "url": "https://thebulletin.org/premium/2022-01/nuclear-notebook-israeli-nuclear-weapons-2021/"
+      }
+    ],
+    "note": "Israel publishes no data. Notebook: range over 4,000 km; CSIS: 4,800-6,500 km and 150-400 kt (estimate range)."
+  },
+  {
+    "id": "jericho-ii",
+    "name": "Jericho II",
+    "designations": [
+      "YA-3"
+    ],
+    "country": "IL",
+    "category": "MRBM",
+    "platform": [
+      "road-mobile",
+      "silo",
+      "rail-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 1500,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      1000
+    ],
+    "fissionFraction": null,
+    "year": 1989,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Jericho 2",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/jericho-2/"
+      },
+      {
+        "title": "Nuclear Notebook: Israeli nuclear weapons, 2021",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2022-01",
+        "url": "https://thebulletin.org/premium/2022-01/nuclear-notebook-israeli-nuclear-weapons-2021/"
+      }
+    ],
+    "note": "Israel publishes no data. CSIS: up to 1 Mt, in service 1989; Notebook: 1,500+ km, deployed early 1990s."
+  },
+  {
+    "id": "hwasong-17",
+    "name": "Hwasong-17",
+    "designations": [
+      "KN-28",
+      "HS-17"
+    ],
+    "country": "KP",
+    "category": "ICBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 15000,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      100,
+      140
+    ],
+    "fissionFraction": null,
+    "year": 2022,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Hwasong-17",
+        "publisher": "CSIS Missile Threat",
+        "date": "2026-05",
+        "url": "https://missilethreat.csis.org/missile/hwasong-17/"
+      },
+      {
+        "title": "North Korean Missile Launches & Nuclear Tests: 1984-Present",
+        "publisher": "CSIS Missile Threat",
+        "date": "2023-06",
+        "url": "https://missilethreat.csis.org/north-korea-missile-launches-1984-present/"
+      }
+    ],
+    "note": "First successful test Nov 2022. No per-missile yield published; values are the 2017 test estimate (100-140 kt)."
+  },
+  {
+    "id": "hwasong-15",
+    "name": "Hwasong-15",
+    "designations": [
+      "KN-22"
+    ],
+    "country": "KP",
+    "category": "ICBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 13000,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      100,
+      140
+    ],
+    "fissionFraction": null,
+    "year": 2017,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Hwasong-15 (KN-22)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/hwasong-15-kn-22/"
+      },
+      {
+        "title": "North Korean nuclear weapons, 2024",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2024-07",
+        "url": "https://thebulletin.org/premium/2024-07/north-korean-nuclear-weapons-2024/"
+      }
+    ],
+    "note": "First tested Nov 2017; range 8,500-13,000 km. No per-missile yield published; values are the 2017 test estimate."
+  },
+  {
+    "id": "hwasong-12",
+    "name": "Hwasong-12",
+    "designations": [
+      "KN-17"
+    ],
+    "country": "KP",
+    "category": "IRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 4500,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10,
+      20
+    ],
+    "fissionFraction": null,
+    "year": 2017,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Hwasong-12",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/hwasong-12/"
+      },
+      {
+        "title": "North Korean nuclear weapons, 2024",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2024-07",
+        "url": "https://thebulletin.org/premium/2024-07/north-korean-nuclear-weapons-2024/"
+      }
+    ],
+    "note": "First tested 2017. Notebook lists it as operational, CSIS as in development; yield is the Notebook's typical 10-20 kt."
+  },
+  {
+    "id": "pukguksong-2",
+    "name": "Pukguksong-2",
+    "designations": [
+      "KN-15"
+    ],
+    "country": "KP",
+    "category": "MRBM",
+    "platform": [
+      "road-mobile"
+    ],
+    "carrier": "",
+    "rangeKm": 2000,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      10,
+      20
+    ],
+    "fissionFraction": null,
+    "year": 2017,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Pukguksong-2 (KN-15)",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/pukkuksong-2/"
+      },
+      {
+        "title": "North Korean nuclear weapons, 2024",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2024-07",
+        "url": "https://thebulletin.org/premium/2024-07/north-korean-nuclear-weapons-2024/"
+      }
+    ],
+    "note": "Demonstrated about 1,200 km in 2017 tests; CSIS lists 1,200-2,000 km. Yield is the Notebook's typical 10-20 kt."
+  }
+]

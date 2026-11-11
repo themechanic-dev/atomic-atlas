@@ -1,0 +1,70 @@
+[
+  {
+    "id": "hiroshima-1945",
+    "name": "Hiroshima, 6 August 1945",
+    "lat": 34.3946,
+    "lng": 132.4547,
+    "yieldKt": 16,
+    "burstMode": "custom",
+    "heightM": 600,
+    "fissionFraction": 1,
+    "weaponId": "little-boy",
+    "source": {
+      "title": "Reassessment of the Atomic Bomb Radiation Dosimetry for Hiroshima and Nagasaki: Dosimetry System 2002 (DS02)",
+      "publisher": "Radiation Effects Research Foundation",
+      "date": "2005",
+      "url": "https://www.rerf.or.jp/en/library/list-e/scientific_pub/ds02-en/"
+    }
+  },
+  {
+    "id": "nagasaki-1945",
+    "name": "Nagasaki, 9 August 1945",
+    "lat": 32.7737,
+    "lng": 129.8632,
+    "yieldKt": 21,
+    "burstMode": "custom",
+    "heightM": 503,
+    "fissionFraction": 1,
+    "weaponId": "fat-man",
+    "source": {
+      "title": "Reassessment of the Atomic Bomb Radiation Dosimetry for Hiroshima and Nagasaki: Dosimetry System 2002 (DS02)",
+      "publisher": "Radiation Effects Research Foundation",
+      "date": "2005",
+      "url": "https://www.rerf.or.jp/en/library/list-e/scientific_pub/ds02-en/"
+    }
+  },
+  {
+    "id": "castle-bravo-1954",
+    "name": "Castle Bravo test, Bikini Atoll, 1 March 1954",
+    "lat": 11.6975,
+    "lng": 165.2722,
+    "yieldKt": 15000,
+    "burstMode": "surface",
+    "heightM": 0,
+    "fissionFraction": 0.67,
+    "weaponId": "castle-bravo",
+    "source": {
+      "title": "Operation Castle",
+      "publisher": "Nuclear Weapon Archive",
+      "date": "2006-05",
+      "url": "https://nuclearweaponarchive.org/Usa/Tests/Castle.html"
+    }
+  },
+  {
+    "id": "tsar-bomba-1961",
+    "name": "Tsar Bomba test, Novaya Zemlya, 30 October 1961",
+    "lat": 73.8072,
+    "lng": 54.9817,
+    "yieldKt": 50000,
+    "burstMode": "custom",
+    "heightM": 4000,
+    "fissionFraction": 0.03,
+    "weaponId": "tsar-bomba-an602",
+    "source": {
+      "title": "The Soviet Weapons Program - The Tsar Bomba",
+      "publisher": "Nuclear Weapon Archive",
+      "date": "2007-09",
+      "url": "https://nuclearweaponarchive.org/Russia/TsarBomba.html"
+    }
+  }
+]
