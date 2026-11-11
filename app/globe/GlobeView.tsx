@@ -67,6 +67,34 @@ function flightPositions(from: LngLat, to: LngLat, plan: FlightPlan): Cartesian3
   return plan.points.map((p) => cartesian(alongGreatCircle(from, to, p.downrangeM / plan.rangeM), Math.max(p.altitudeM, MIN_DRAW_HEIGHT)));
 }
 
+/**
+ * Height of the camera from which the whole Earth fills most of the view, whatever its shape.
+ * Cesium's field of view spans the longer side, so a tall phone screen needs the camera closer.
+ */
+function wholeEarthHeight(element: HTMLElement): number {
+  const radius = 6_378_137;
+  const shorter = Math.min(element.clientWidth, element.clientHeight) || 1;
+  const longer = Math.max(element.clientWidth, element.clientHeight) || 1;
+  // The globe's edge at 43 % of the shorter side from the centre; the view is 60 degrees wide.
+  const edgeAngle = Math.atan((Math.tan(CesiumMath.toRadians(30)) * 0.43 * shorter) / (longer / 2));
+  return radius / Math.sin(edgeAngle) - radius;
+}
+
+/**
+ * The compass direction to look in so a flight is seen from the side with north towards
+ * the top of the screen rather than the bottom.
+ */
+export function sideViewHeading(flightBearingDeg: number): number {
+  const right = (flightBearingDeg + 90) % 360;
+  const left = (flightBearingDeg + 270) % 360;
+  return Math.cos(CesiumMath.toRadians(right)) >= 0 ? right : left;
+}
+
+/** A phone-sized view: fewer names and more room around what is shown. */
+function isNarrow(element: HTMLElement): boolean {
+  return Math.min(element.clientWidth, element.clientHeight) < 600;
+}
+
 function labelStyle(text: string, color: Color = WHITE) {
   return {
     text,
@@ -116,7 +144,9 @@ export default function GlobeView({ active }: { active: boolean }) {
     const { scene, camera, entities } = widget;
     scene.globe.enableLighting = false;
     scene.globe.baseColor = Color.fromCssColorString('#0e1317');
-    camera.setView({ destination: Cartesian3.fromDegrees(18, 34, 2.2e7) });
+    widget.creditDisplay.addStaticCredit(new Credit('CesiumJS', true));
+    widget.creditDisplay.addStaticCredit(new Credit('Natural Earth', true));
+    camera.setView({ destination: Cartesian3.fromDegrees(18, 34, wholeEarthHeight(element)) });
     // The first complete frame ends the "loading" indicator.
     const removeLoaded = scene.globe.tileLoadProgressEvent.addEventListener((queued: number) => {
       if (queued === 0) {
@@ -152,8 +182,9 @@ export default function GlobeView({ active }: { active: boolean }) {
       nameEntities.splice(0).forEach((entity) => entities.remove(entity));
       if (!countryData) return;
       const greek = settings.value.language === 'el';
+      const maxRank = isNarrow(element) ? 2 : 4;
       for (const c of countryData) {
-        if (c.rank > 4) continue;
+        if (c.rank > maxRank) continue;
         nameEntities.push(
           entities.add({
             position: Cartesian3.fromDegrees(c.lng, c.lat, 0),
@@ -264,10 +295,14 @@ export default function GlobeView({ active }: { active: boolean }) {
         // Look at the flight from the side and from well back: the arc shows its height,
         // and nothing ends up behind the panel.
         const first = flights.value[0];
-        const heading = from && first ? CesiumMath.toRadians(initialBearing(from, first.target) + 90) : 0;
         camera.flyToBoundingSphere(sphere, {
           duration: settings.value.reduceMotion ? 0 : 1.4,
-          offset: new HeadingPitchRange(heading, CesiumMath.toRadians(-38), sphere.radius * 3.4),
+          offset: new HeadingPitchRange(
+            CesiumMath.toRadians(from && first ? sideViewHeading(initialBearing(from, first.target)) : 0),
+            CesiumMath.toRadians(-38),
+            // A small screen needs more room around the flight for the labels.
+            sphere.radius * (isNarrow(element) ? 4.3 : 3.4),
+          ),
         });
       }
       scene.requestRender();

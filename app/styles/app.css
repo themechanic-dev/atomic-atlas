@@ -152,19 +152,6 @@ p {
   font-weight: 600;
 }
 
-.topbar-title {
-  flex: 1;
-  min-width: 0;
-  text-align: center;
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .topbar-actions {
   display: flex;
   gap: 4px;
@@ -231,15 +218,27 @@ p {
   position: absolute;
   right: 8px;
   bottom: 4px;
-  max-width: 70%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 6px;
+  max-width: 80%;
   font-size: 10.5px;
+  line-height: 1.3;
   color: #c9c5bd;
   text-shadow: 0 0 3px #000;
+}
+
+/* Cesium pins its credit line to the corner of its own box; here it flows inside ours. */
+.globe-credits .cesium-widget-credits {
+  position: static;
+  display: block;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: right;
+  text-shadow: inherit;
+}
+
+/* The logo is that of Cesium's online service, which this app does not use. */
+.globe-credits .cesium-credit-logoContainer {
+  display: none !important;
 }
 
 .globe-credits a {
@@ -1301,25 +1300,25 @@ p {
 /* --- Phones and narrow windows: the panel becomes a bottom sheet -------------- */
 
 @media (max-width: 899px) {
-  .topbar-modes {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  min-width: 0;
-}
-
-.topbar-modes .segmented button {
-  padding: 4px 16px;
-  font-weight: 600;
-}
-
-.topbar-title {
-    display: none;
-  }
-
   .topbar {
     justify-content: space-between;
+    gap: 8px;
+    padding: 0 8px 0 10px;
   }
+
+  .topbar-modes .segmented button {
+    padding: 4px 10px;
+  }
+}
+
+/* On a phone the logo alone stands for the name: the room goes to the simulator switch. */
+@media (max-width: 599px) {
+  .brand-text {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
 
   .panel {
     top: auto;
