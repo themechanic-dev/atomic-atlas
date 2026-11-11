@@ -238,7 +238,8 @@ function tick(now: number): void {
     frame = requestAnimationFrame(tick);
     return;
   }
-  const elapsed = Math.min(now - lastTick, 100) / 1000;
+  // A slow computer still keeps the clock; only a long stall (a hidden window) is cut short.
+  const elapsed = Math.min(now - lastTick, 1000) / 1000;
   lastTick = now;
   const rate = cinematic.value ? directedRate(stageAt(clock.value, timeline.value), playbackRate.value) : playbackRate.value;
   const next = clock.value + elapsed * rate;
