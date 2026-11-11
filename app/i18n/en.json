@@ -9,6 +9,8 @@
 
   "map.hint": "Click the map to place ground zero · right-click a point for the effects there",
   "map.groundZero": "Ground zero. Drag to move.",
+  "map.failed.title": "The map cannot be shown on this device",
+  "map.failed.text": "The map needs WebGL 2, which this device or its graphics driver does not provide. Updating the graphics driver usually fixes it.",
   "map.tilt": "Tilt the view (3D)",
   "map.flat": "Look straight down (2D)",
 

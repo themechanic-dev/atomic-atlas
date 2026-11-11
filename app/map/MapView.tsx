@@ -1,6 +1,6 @@
 // The map: MapLibre GL with a globe at low zoom and 3D buildings in cities.
 
-import { effect } from '@preact/signals';
+import { effect, signal } from '@preact/signals';
 import type { FeatureCollection } from 'geojson';
 import type { GeoJSONSource, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
 import * as maplibregl from 'maplibre-gl';
@@ -28,6 +28,9 @@ maplibregl.setWorkerUrl(new URL(workerUrl, document.baseURI).href);
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] };
 const BUILDING_LAYER = 'building-3d';
 const TERRAIN_SOURCE = 'aa-terrain';
+
+/** True when the map could not start on this device (no WebGL 2). */
+export const mapFailed = signal(false);
 
 /** Handle for tests and for other panels that need to move the camera. */
 export const mapHandle: { map: MapLibreMap | null } = { map: null };
@@ -238,6 +241,17 @@ function probeHtml(point: LngLat): string {
   );
 }
 
+/** Creates the MapLibre map. Throws when the device has no WebGL 2. */
+function createMap(element: HTMLElement): MapLibreMap {
+  return new maplibregl.Map({
+    container: element,
+    center: [18, 34],
+    zoom: 1.7,
+    maxPitch: 78,
+    attributionControl: { compact: true },
+  });
+}
+
 export function MapView() {
   const container = useRef<HTMLDivElement>(null);
 
@@ -260,13 +274,17 @@ export function MapView() {
       });
     };
 
-    const map = new maplibregl.Map({
-      container: element,
-      center: [18, 34],
-      zoom: 1.7,
-      maxPitch: 78,
-      attributionControl: { compact: true },
-    });
+    let map: MapLibreMap;
+    try {
+      map = createMap(element);
+    } catch (error) {
+      // No WebGL 2: the rest of the app still works, so say what is wrong instead of a blank area.
+      console.error('map could not start', error);
+      finishLoading();
+      mapFailed.value = true;
+      return;
+    }
+    mapFailed.value = false;
     mapHandle.map = map;
     // For diagnosis from the developer tools: __atomicAtlas.map is the MapLibre map.
     (globalThis as { __atomicAtlas?: unknown }).__atomicAtlas = mapHandle;
@@ -423,6 +441,12 @@ export function MapView() {
   return (
     <div class="map" data-testid="map">
       <div class="map-canvas" ref={container} />
+      {mapFailed.value ? (
+        <div class="map-failed" role="alert" data-testid="map-failed">
+          <strong>{t('map.failed.title')}</strong>
+          <p>{t('map.failed.text')}</p>
+        </div>
+      ) : null}
     </div>
   );
 }

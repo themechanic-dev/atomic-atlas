@@ -20,6 +20,13 @@ if (process.env.ATOMIC_ATLAS_USER_DATA) {
   app.setPath('userData', resolve(process.env.ATOMIC_ATLAS_USER_DATA));
 }
 
+// The map needs WebGL 2. Chromium refuses it on graphics drivers it does not trust and,
+// without a usable graphics card (virtual machines, remote desktops, old computers), no
+// longer falls back to software rendering by itself. This app only draws its own interface
+// and map tiles, so both are allowed: slower drawing is better than no map.
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('enable-unsafe-swiftshader');
+
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -216,7 +223,15 @@ function createWindow(): void {
   mainWindow = win;
   if (state.maximized) win.maximize();
 
-  win.once('ready-to-show', () => win.show());
+  // Show the window when its first frame is ready, and in any case after a moment:
+  // on a computer with broken graphics the "ready" event may never come.
+  const showTimer = setTimeout(() => {
+    if (!win.isDestroyed() && !win.isVisible()) win.show();
+  }, 4000);
+  win.once('ready-to-show', () => {
+    clearTimeout(showTimer);
+    win.show();
+  });
   win.on('close', () => saveWindowState(win));
   win.on('closed', () => {
     if (mainWindow === win) mainWindow = null;
@@ -262,6 +277,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => {
     if (!mainWindow) return;
     if (mainWindow.isMinimized()) mainWindow.restore();
+    if (!mainWindow.isVisible()) mainWindow.show();
     mainWindow.focus();
   });
 

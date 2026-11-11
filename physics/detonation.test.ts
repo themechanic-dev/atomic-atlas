@@ -45,6 +45,29 @@ describe('rings', () => {
     }
   });
 
+  it('a surface burst has every ring, burns included', () => {
+    // Found by clicking through the installed app: burns once read "not reached" at height 0.
+    for (const yieldKt of [0.1, 1, 20, 425, 15000]) {
+      const d = detonate(scenario({ yieldKt, burstMode: 'surface' }));
+      for (const ring of d.rings) {
+        expect(Number.isFinite(ring.radiusM), `${yieldKt} kt ${ring.id}`).toBe(true);
+        expect(ring.radiusM, `${yieldKt} kt ${ring.id}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('no ring is ever negative or not a number, for any height', () => {
+    for (const yieldKt of [0.01, 1, 100, 100000]) {
+      for (const heightM of [0, 1, 50, 500, 5000, 50000]) {
+        const d = detonate(scenario({ yieldKt, burstMode: 'custom', heightM }));
+        for (const ring of d.rings) {
+          expect(Number.isFinite(ring.radiusM), `${yieldKt} kt at ${heightM} m, ${ring.id}`).toBe(true);
+          expect(ring.radiusM).toBeGreaterThanOrEqual(0);
+        }
+      }
+    }
+  });
+
   it('the fireball of a high air burst does not reach the ground', () => {
     const d = detonate(scenario({ yieldKt: 15, burstMode: 'custom', heightM: 580 }));
     expect(d.rings.find((r) => r.id === 'fireball')!.radiusM).toBe(0);

@@ -84,9 +84,11 @@ export function radiantExposure(groundRangeM: number, c: ThermalConditions): num
 /** Largest ground range at which the radiant exposure is at least `calPerCm2`; 0 when never reached. */
 export function thermalRadiusM(calPerCm2: number, c: ThermalConditions): number {
   if (!(c.yieldKt > 0) || !(calPerCm2 > 0)) return 0;
-  if (radiantExposure(0, c) < calPerCm2) return 0;
+  // Start a metre out: directly under a surface burst the formula has no finite value.
+  const nearest = 1;
+  if (radiantExposure(nearest, c) < calPerCm2) return 0;
   // Exposure falls monotonically with ground range; 2,000 km is beyond any case.
-  const r = bisect((x) => radiantExposure(x, c), calPerCm2, 0, 2e6, 80);
+  const r = bisect((x) => radiantExposure(x, c), calPerCm2, nearest, 2e6, 80);
   return Number.isFinite(r) ? r : 0;
 }
 
