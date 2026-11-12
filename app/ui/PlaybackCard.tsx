@@ -2,7 +2,7 @@
 // slow motion, with the moments worth knowing listed against the clock.
 
 import { t } from '../i18n';
-import { formatHeight, formatNumber } from '../lib/format';
+import { formatDistance, formatHeight, formatNumber } from '../lib/format';
 import {
   blastActive,
   blastClock,
@@ -25,8 +25,10 @@ import { Button, HowButton, Segmented } from './controls';
 export function formatSeconds(seconds: number): string {
   const s = Math.max(0, seconds);
   if (s < 10) return `${formatNumber(Math.round(s * 10) / 10, 2)} s`;
-  if (s < 60) return `${Math.round(s)} s`;
-  return `${Math.floor(s / 60)}:${String(Math.round(s % 60) % 60).padStart(2, '0')} min`;
+  if (s < 59.5) return `${Math.round(s)} s`;
+  // Rounded before it is split, so 119.6 s reads 2:00, not 1:00.
+  const whole = Math.round(s);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')} min`;
 }
 
 export function PlaybackCard() {
@@ -89,7 +91,7 @@ export function PlaybackCard() {
       </ul>
       {frame ? (
         <p class="hint" data-testid="blast-cloud">
-          {t('playback.cloud', { height: formatHeight(frame.cloudTopM) })}
+          {t('playback.cloud', { height: formatHeight(frame.cloudTopM), width: formatDistance(2 * frame.cloud.headRadiusM) })}
         </p>
       ) : (
         <p class="hint">{t('playback.hint')}</p>

@@ -10,9 +10,10 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 1.0: one detonation, missiles on the globe, accidents, water and dams,
+> Version 1.2: one detonation, missiles on the globe, accidents, water and dams,
 > war scenarios with a general missile defence, an offline assistant and a voice,
-> and offline map areas, on Linux, Windows and Android.
+> offline map areas with the population at 100 m, and the mushroom cloud in 3D,
+> on Linux, Windows and Android.
 
 ## What it does
 
@@ -36,6 +37,9 @@ Free and open source (MIT).
 - **Watch it happen.** Play a detonation back on the map in real time or slow
   motion: the fireball grows, the burn zones light up, the blast front sweeps
   outwards and every building changes at the moment the front reaches it.
+  The fireball rises into a 3D mushroom cloud over the city that grows to the
+  height and width the source gives for the yield, glowing at first, then
+  red-brown, then white, until it is stabilised at about ten minutes.
 - **From close up.** A small 3D scene (street, airfield, power station, fuel
   tanks, harbour) shows what the effects at any distance do to buildings,
   vehicles and aircraft, with the numbers of that point.
@@ -111,6 +115,7 @@ buildings, weather and people do not behave like a formula.
 | Casualties | Share of people killed and injured per overpressure zone; burns for those in sight of the fireball; lethality of radiation dose | U.S. Office of Technology Assessment, *The Effects of Nuclear War* (1979) |
 | Missile flight | Free-flight ellipse over a round, non-rotating Earth: speed, highest point and time from the distance and the climb angle | R. R. Bate, D. D. Mueller and J. E. White, *Fundamentals of Astrodynamics* (1971), chapter 6 |
 | Timing | Blast arrival from the shock-front speed along the slant range; heat pulse; cloud rise | Glasstone & Dolan (1977), eq. 3.55.2, Figs. 3.77a–b, §7.85–7.86, Table 2.12 |
+| Mushroom cloud | Height and radius of the stabilised cloud, base of the head, stem radius, spread in time (cube-root scaling), colour | Glasstone & Dolan (1977), Figs. 2.16, 9.96 and 10.158c, §2.05, §2.08, §2.15–2.17, §10.158 |
 | Damage to things | Houses, vehicles, parked aircraft, electricity networks, ignition of tinder | Glasstone & Dolan (1977), §5.52–5.68, §5.87–5.89, Tables 5.145, 5.153 and 7.40, §5.99–5.105 |
 | Release into the air | Gaussian plume of the HotSpot codes with depletion; dose from breathing, cloud and ground; generic criteria for protective actions | HotSpot Health Physics Codes 3.0 User's Guide (LLNL, 2013), ch. 7; ICRP Publication 119, Table G.1; Federal Guidance Report 12, Tables III.1 and III.3; IAEA GSR Part 7, Table II.2 |
 | Historical releases | Activity released per radionuclide | UNSCEAR 2008 Annexes C and D; UNSCEAR 2013 Annex A; NRPA Bulletin 8/2007 |

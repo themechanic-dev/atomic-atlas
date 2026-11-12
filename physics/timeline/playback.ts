@@ -5,7 +5,8 @@
 import type { DetonationResult } from '../detonation';
 import { shockSpeedMs } from '../blast/shock';
 import type { Explanation } from '../sources';
-import { CLOUD_RISE_S, cloudTopAtM, freeAirOverpressurePsi, heatPulse, type HeatPulse } from './events';
+import { CLOUD_RISE_S, freeAirOverpressurePsi, heatPulse, type HeatPulse } from './events';
+import { CLOUD_STABLE_S, cloudGrowth, type CloudGrowth, type CloudShape } from './cloudShape';
 
 export interface ArrivalCurve {
   /** Time at which the blast front reaches a ground range, seconds. */
@@ -68,7 +69,7 @@ export function fireballRadiusAtM(maxRadiusM: number, pulse: HeatPulse, timeS: n
 }
 
 export interface TimelineEvent {
-  /** `heatPeak`, `heatMost`, `cloudTop`, or the id of a blast ring. */
+  /** `heatPeak`, `heatMost`, `cloudTop`, `cloudStable`, or the id of a blast ring. */
   id: string;
   timeS: number;
 }
@@ -81,9 +82,13 @@ export interface BlastTimeline {
   events: TimelineEvent[];
   /** Time by which every blast ring has been reached, seconds. */
   blastEndS: number;
-  /** Time at which the cloud has stopped rising, seconds. */
+  /** Length of the playback: until the cloud has its stabilised size, seconds. */
   durationS: number;
   cloudTopM(timeS: number): number;
+  /** The mushroom cloud at a time, for drawing it. */
+  cloudAt(timeS: number): CloudShape;
+  /** The cloud once stabilised, about 10 minutes after the burst. */
+  cloudFinal: CloudGrowth['stabilised'];
   explanation: Explanation;
 }
 
@@ -98,20 +103,28 @@ export function blastTimeline(result: DetonationResult): BlastTimeline {
     { id: 'heatMost', timeS: heat.mostEmittedS },
     ...blastRings.map((ring) => ({ id: ring.id, timeS: arrival.timeAtS(ring.radiusM) })),
     { id: 'cloudTop', timeS: CLOUD_RISE_S },
+    { id: 'cloudStable', timeS: CLOUD_STABLE_S },
   ].sort((a, b) => a.timeS - b.timeS);
   const blastEndS = blastRings.reduce((max, ring) => Math.max(max, arrival.timeAtS(ring.radiusM)), 0);
   const shown = blastRings.find((ring) => ring.id === 'blast5') ?? blastRings[0];
+  const fireballMaxM = result.rings.find((ring) => ring.id === 'fireball')?.radiusM || 0;
+  const cloud = cloudGrowth(yieldKt, result.heightM, heat, fireballMaxM);
+  const cloudAt = (timeS: number): CloudShape => cloud.at(timeS, fireballRadiusAtM(fireballMaxM, heat, timeS));
   return {
     arrival,
     heat,
-    fireballMaxM: result.rings.find((ring) => ring.id === 'fireball')?.radiusM || 0,
+    fireballMaxM,
     events,
     blastEndS,
-    durationS: Math.max(CLOUD_RISE_S, blastEndS) + 5,
-    cloudTopM: (timeS) => cloudTopAtM(yieldKt, timeS),
+    durationS: Math.max(CLOUD_STABLE_S, blastEndS) + 5,
+    cloudTopM: (timeS) => cloudAt(timeS).topM,
+    cloudAt,
+    cloudFinal: cloud.stabilised,
     explanation: {
       id: 'arrival',
-      formula: 'U = c₀ √(1 + 6 p / 7 P₀);  D = √(d² + h²);  t = ∫₀ᴰ dr / U(p(r));  t_max = 0.0417 W^0.44 s',
+      formula:
+        'U = c₀ √(1 + 6 p / 7 P₀);  D = √(d² + h²);  t = ∫₀ᴰ dr / U(p(r));  t_max = 0.0417 W^0.44 s;  ' +
+        'H(t) = h + R_fb + (H_top − h − R_fb) f(t);  R(t) = max(R_fb, R_cloud s(t));  r_stem = k(W) R(t)',
       inputs: [
         { symbol: 'W', labelKey: 'yield', value: yieldKt, quantity: 'yield' },
         { symbol: 'h', labelKey: 'burstHeight', value: result.heightM, quantity: 'height' },
@@ -120,9 +133,14 @@ export function blastTimeline(result: DetonationResult): BlastTimeline {
       outputs: [
         { symbol: 't', labelKey: 'blastArrival', value: (shown ? arrival.timeAtS(shown.radiusM) : 0) / 3600, quantity: 'time' },
         { symbol: 't_max', labelKey: 'heatPeak', value: heat.peakS / 3600, quantity: 'time' },
+        { symbol: 'H_top', labelKey: 'cloudTop', value: cloud.stabilised.topM, quantity: 'height' },
+        { symbol: 'H_base', labelKey: 'cloudBottom', value: cloud.stabilised.bottomM, quantity: 'height' },
+        { symbol: 'R_cloud', labelKey: 'cloudRadius', value: cloud.stabilised.radiusM, quantity: 'length' },
+        { symbol: 'r_stem', labelKey: 'stemRadius', value: cloud.stabilised.stemRadiusM, quantity: 'length' },
       ],
       sources: ['gd1977'],
-      where: 'Glasstone & Dolan (1977) eq. 3.55.2, Figs. 3.77a-b, §3.14, §7.85-7.86, Table 2.12',
+      where:
+        'Glasstone & Dolan (1977) eq. 3.55.2, Figs. 3.77a-b, §3.14, §7.85-7.86; cloud: Table 2.12, Figs. 2.16, 9.96, 10.158c, §2.05, §2.08, §2.15-2.17',
       uncertainty: '±15%',
     },
   };

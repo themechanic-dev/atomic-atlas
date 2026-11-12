@@ -3,6 +3,7 @@
 
 import { batch, computed, effect, signal } from '@preact/signals';
 import { CLOUD_RISE_S } from '@physics/timeline/events';
+import type { CloudShape } from '@physics/timeline/cloudShape';
 import { blastTimeline, fireballRadiusAtM, type BlastTimeline } from '@physics/timeline/playback';
 import { detonation } from './simulation';
 
@@ -50,6 +51,8 @@ export interface BlastFrame {
   /** Strength of the heat pulse now, 0 to 1. */
   heat: number;
   cloudTopM: number;
+  /** The mushroom cloud, for the 3D view. */
+  cloud: CloudShape;
   /** True once the cloud has risen and fallout begins to come down. */
   falloutShown: boolean;
 }
@@ -61,12 +64,14 @@ export const blastFrame = computed<BlastFrame | null>(() => {
   const t = blastClock.value;
   const { peakS, mostEmittedS } = line.heat;
   const heat = t <= 0 ? 0 : t < peakS ? t / peakS : Math.max(0, 1 - (t - peakS) / (mostEmittedS - peakS));
+  const cloud = line.cloudAt(t);
   return {
     timeS: t,
     frontM: line.arrival.rangeAtM(t),
     fireballM: fireballRadiusAtM(line.fireballMaxM, line.heat, t),
     heat,
-    cloudTopM: line.cloudTopM(t),
+    cloudTopM: cloud.topM,
+    cloud,
     falloutShown: t >= CLOUD_RISE_S,
   };
 });

@@ -31,7 +31,9 @@ describe('timeline of a detonation', () => {
   it('puts the events in order: heat first, then the rings from the inside out, the cloud last', () => {
     const ids = timeline.events.map((event) => event.id);
     expect(ids[0]).toBe('heatPeak');
-    expect(ids[ids.length - 1]).toBe('cloudTop');
+    expect(ids[ids.length - 2]).toBe('cloudTop');
+    expect(ids[ids.length - 1]).toBe('cloudStable');
+    expect(timeline.durationS).toBeGreaterThan(600);
     const at = (id: string): number => timeline.events.find((event) => event.id === id)!.timeS;
     expect(at('blast5')).toBeLessThan(at('blast2'));
     expect(at('blast2')).toBeLessThan(at('blast1'));

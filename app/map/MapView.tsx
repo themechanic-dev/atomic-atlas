@@ -29,7 +29,7 @@ import { addWaterLayers, applyWater } from './waterLayers';
 import { registerOfflineProtocol } from './offline';
 import { settings } from '../state/settings';
 import { accidentRun, accidentSite } from '../state/accident';
-import { blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, flashCount } from '../state/blastPlayback';
+import { blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, flashCount, timeline } from '../state/blastPlayback';
 import { beginBusy, detonation, groundZero } from '../state/simulation';
 import {
   buildingBands,
@@ -44,6 +44,8 @@ import {
 } from './overlays';
 import { closeupRange, mode, panelOpen, WIDE_LAYOUT } from '../state/ui';
 import { createBuildingDamage, DAMAGE_LAYER } from './buildingDamage';
+import { createMushroomLayer, MUSHROOM_LAYER } from './mushroom';
+import { platform } from '../lib/platform';
 import { LABEL_FONT, skyFor, styleFor, TERRAIN_TILES, tuneStyle } from './style';
 
 maplibregl.setWorkerUrl(new URL(workerUrl, document.baseURI).href);
@@ -236,6 +238,26 @@ function addOverlays(map: MapLibreMap): void {
     },
   });
   addWaterLayers(map, theme, below);
+  // The mushroom cloud of the playback, drawn last: it stands over the rings and the labels.
+  if (mushroom && !map.getLayer(MUSHROOM_LAYER)) map.addLayer(mushroom);
+}
+
+/** The 3D mushroom cloud; made with the map. */
+let mushroom: ReturnType<typeof createMushroomLayer> | null = null;
+
+/** During playback the mushroom cloud stands over ground zero as it is at that moment. */
+function applyMushroom(map: MapLibreMap): void {
+  const frame = blastFrame.value;
+  const current = detonation.value;
+  const line = timeline.value;
+  if (!frame || !current || !line || mode.value === 'accident') {
+    mushroom?.show(null);
+    return;
+  }
+  // Layers added after it (water, a restyled map) would draw over the cloud: keep it last.
+  const order = map.getLayersOrder();
+  if (map.getLayer(MUSHROOM_LAYER) && order[order.length - 1] !== MUSHROOM_LAYER) map.moveLayer(MUSHROOM_LAYER);
+  mushroom?.show({ at: current.at, shape: frame.cloud, timeS: frame.timeS, finalRadiusM: line.cloudFinal.radiusM, theme: settings.value.theme });
 }
 
 function applyTerrain(map: MapLibreMap): void {
@@ -503,6 +525,7 @@ export function MapView() {
       applyWater(map);
     });
     buildingDamage = createBuildingDamage(map);
+    mushroom = createMushroomLayer(platform() === 'android' ? 40 : 72);
     ensureSites();
     ensureDams();
     map.on('idle', finishLoading);
@@ -645,7 +668,10 @@ export function MapView() {
       // Playback: the picture follows the clock.
       effect(() => {
         const frame = blastFrame.value;
+        void mode.value;
+        void settings.value.theme;
         if (!styleReady) return;
+        untracked(() => applyMushroom(map));
         applyDetonation(map, true);
         if (!frame) applyReach();
       }),
