@@ -4,6 +4,7 @@
 import { ASSUMPTIONS, OTA_ZONES } from '@physics/casualties/model';
 import { SOURCES, type Explanation, type SourceId } from '@physics/sources';
 import { explainDamBreak } from '@physics/water/dambreak';
+import { explainDefence } from '@physics/defence/layers';
 import { explainWaves } from '@physics/water/waves';
 import { t } from '../i18n';
 import { formatPercent, formatQuantity } from '../lib/format';
@@ -13,6 +14,7 @@ import { accidentRun } from '../state/accident';
 import { timeline } from '../state/blastPlayback';
 import { flights } from '../state/missiles';
 import { damFlood, nearbyDams } from '../state/dams';
+import { defence } from '../state/war';
 import { detonation, explaining } from '../state/simulation';
 import { water } from '../state/water';
 import { Dialog, Icon } from './controls';
@@ -198,6 +200,26 @@ export function HowDialog() {
       <Dialog title={`${t('how.title')}: ${t('how.plume.title')}`} onClose={close} wide testId="how-dialog">
         <ExplanationView explanation={run.result.explanation} />
         <SourceList ids={[run.accident.source]} />
+      </Dialog>
+    );
+  }
+  if (id === 'defence') {
+    return (
+      <Dialog title={`${t('how.title')}: ${t('how.defence.title')}`} onClose={close} wide testId="how-dialog">
+        <ExplanationView explanation={explainDefence(defence.value)} />
+      </Dialog>
+    );
+  }
+  if (id === 'winter') {
+    return (
+      <Dialog title={`${t('how.title')}: ${t('war.winter')}`} onClose={close} wide testId="how-dialog">
+        <p class="how-body">{t('how.winter.body')}</p>
+        <h3>{t('how.where')}</h3>
+        <p>Xia et al. (2022), Table 1 and Results</p>
+        <h3>{t('how.uncertainty')}</h3>
+        <p>{t('how.winter.uncertainty')}</p>
+        <h3>{t('how.sources')}</h3>
+        <SourceList ids={['xia2022']} />
       </Dialog>
     );
   }

@@ -2,7 +2,7 @@
   "name": "atomic-atlas",
   "productName": "Atomic Atlas",
   "desktopName": "atomic-atlas.desktop",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Educational simulator of the effects of nuclear weapons, missiles and nuclear accidents on a real map and globe.",
   "author": {
     "name": "The Mechanic",

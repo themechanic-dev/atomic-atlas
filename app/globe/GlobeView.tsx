@@ -56,6 +56,7 @@ import {
 } from '../state/missiles';
 import { settings } from '../state/settings';
 import { beginBusy } from '../state/simulation';
+import { salvos, warClock, warFlights } from '../state/war';
 import { launcherKind } from './director';
 import { createLaunchScene } from './launchScene';
 
@@ -70,6 +71,8 @@ const AMBER = Color.fromCssColorString('#f5a524');
 const RED = Color.fromCssColorString('#ff4d3d');
 const WHITE = Color.fromCssColorString('#f4efe6');
 const HALO = Color.fromCssColorString('#101214');
+/** One colour per launch of a war scenario. */
+const SALVO_COLORS = ['#f5a524', '#4dd0e1', '#c77dff', '#7cd67c', '#ff8a65', '#f06292', '#90caf9', '#e6ee9c'].map((c) => Color.fromCssColorString(c));
 
 /** The range ring is drawn a little above the ground so it does not sink into the surface. */
 const MIN_DRAW_HEIGHT = 3000;
@@ -372,6 +375,81 @@ export default function GlobeView({ active }: { active: boolean }) {
       scene.requestRender();
     };
 
+    // The war scenario: every launch added to it, on its own clock.
+    const warEntities: Entity[] = [];
+    let framedSalvos: unknown = null;
+    const drawWar = (): void => {
+      warEntities.splice(0).forEach((entity) => entities.remove(entity));
+      const flightsNow = warFlights.value;
+      const launched = new Set<number>();
+      const points: Cartesian3[] = [];
+      for (const f of flightsNow) {
+        const color = SALVO_COLORS[f.salvoIndex % SALVO_COLORS.length]!;
+        const from = f.salvo.from;
+        if (!launched.has(f.salvoIndex)) {
+          launched.add(f.salvoIndex);
+          warEntities.push(
+            entities.add({
+              position: cartesian(from),
+              point: { pixelSize: 10, color, outlineColor: HALO, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+              label: { ...labelStyle(`${f.salvoIndex + 1}`, color), horizontalOrigin: HorizontalOrigin.CENTER, verticalOrigin: VerticalOrigin.BOTTOM, pixelOffset: new Cartesian2(0, -12) },
+            }),
+          );
+          points.push(cartesian(from));
+        }
+        const plan = f.plan;
+        const path = flightPositions(from, f.target, plan);
+        points.push(cartesian(f.target));
+        warEntities.push(
+          entities.add({
+            polyline: { positions: path, width: 4, arcType: ArcType.NONE, material: new PolylineGlowMaterialProperty({ color: color.withAlpha(0.85), glowPower: 0.18 }) },
+          }),
+          entities.add({
+            position: cartesian(f.target),
+            point: { pixelSize: 8, color: RED, outlineColor: HALO, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+          }),
+          // The warhead: at the launch point during the powered climb, then along its path.
+          entities.add({
+            position: new CallbackPositionProperty(() => {
+              const t = warClock.value - f.freeFlightStartS;
+              if (t <= 0) return cartesian(from, MIN_DRAW_HEIGHT);
+              const p = positionAt(plan, t);
+              return cartesian(alongGreatCircle(from, f.target, p.downrangeM / plan.rangeM), Math.max(p.altitudeM, PATH_MIN_HEIGHT));
+            }, false),
+            point: {
+              show: new CallbackProperty(() => warClock.value >= f.salvo.launchAtS && warClock.value < f.impactS, false),
+              pixelSize: 8,
+              color: Color.WHITE,
+              outlineColor: color,
+              outlineWidth: 3,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            },
+          }),
+          // Where it comes down, from the moment it arrives; fainter the less likely it gets through.
+          entities.add({
+            position: cartesian(f.target),
+            point: {
+              show: new CallbackProperty(() => warClock.value > 0 && warClock.value >= f.impactS, false),
+              pixelSize: 22,
+              color: AMBER.withAlpha(0.2 + 0.5 * f.leak),
+              outlineColor: Color.WHITE.withAlpha(0.4 + 0.5 * f.leak),
+              outlineWidth: 2,
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            },
+          }),
+        );
+      }
+      // The camera moves only when launches are added or removed, not when the defence changes.
+      const changed = framedSalvos !== salvos.value;
+      framedSalvos = salvos.value;
+      if (changed && points.length > 1 && !untracked(() => playing.value)) {
+        const sphere = BoundingSphere.fromPoints(points);
+        sphere.radius = Math.max(sphere.radius, 6e5);
+        camera.flyToBoundingSphere(sphere, { duration: settings.value.reduceMotion ? 0 : 1.2, offset: new HeadingPitchRange(0, CesiumMath.toRadians(-60), sphere.radius * 3.2) });
+      }
+      scene.requestRender();
+    };
+
     // Looks at everything placed from the side and from well back: the arcs show their
     // height, and nothing ends up behind the panel.
     let framed: Cartesian3[] = [];
@@ -445,6 +523,16 @@ export default function GlobeView({ active }: { active: boolean }) {
         void leadIndex.value;
         void timeline.value;
         drawLaunch();
+      }),
+      effect(() => {
+        void salvos.value;
+        void warFlights.value;
+        void settings.value.language;
+        drawWar();
+      }),
+      effect(() => {
+        void warClock.value;
+        scene.requestRender();
       }),
       effect(() => {
         void clock.value;

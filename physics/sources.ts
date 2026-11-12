@@ -135,6 +135,20 @@ export const SOURCES = {
       'Lehner et al., The Global Dam Watch database of river barrier and reservoir information for large-scale applications. Scientific Data 11, 2024. Data: figshare, doi:10.6084/m9.figshare.25988293 (CC BY 4.0).',
     url: 'https://doi.org/10.6084/m9.figshare.25988293.v1',
   },
+  aps2003: {
+    id: 'aps2003',
+    short: 'APS 2003',
+    citation:
+      'D. K. Barton et al., Report of the American Physical Society Study Group on Boost-Phase Intercept Systems for National Missile Defense. Reviews of Modern Physics 76, S1, 2004 (released July 2003).',
+    url: 'https://doi.org/10.1103/RevModPhys.76.S1',
+  },
+  xia2022: {
+    id: 'xia2022',
+    short: 'Xia et al. 2022',
+    citation:
+      'L. Xia, A. Robock, K. Scherrer et al., Global food insecurity and famine from reduced crop, marine fishery and livestock production due to climate disruption from nuclear war soot injection. Nature Food 3, 586–596, 2022, Table 1.',
+    url: 'https://doi.org/10.1038/s43016-022-00573-0',
+  },
   glasstoneLib: {
     id: 'glasstoneLib',
     short: 'glasstone library',

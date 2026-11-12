@@ -38,6 +38,7 @@ import {
 import { settings } from '../state/settings';
 import { explaining } from '../state/simulation';
 import { Button, Field, HowButton, Icon, Segmented } from './controls';
+import { WarCard } from './WarCard';
 
 /** Minutes and seconds, or hours and minutes for long flights. */
 export function formatClock(seconds: number): string {
@@ -285,6 +286,8 @@ export function MissilePanel() {
           ) : null}
         </div>
       ) : null}
+
+      <WarCard />
 
       <div class="actions">
         <Button kind="ghost" disabled={!from && targets.value.length === 0} onClick={clearMissiles} testId="missile-clear">

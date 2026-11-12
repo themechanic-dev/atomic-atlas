@@ -10,9 +10,10 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 0.5 adds water: the waves from a burst in the sea or a lake, the low
-> coasts they could flood, ships in the harbour, and what would follow downstream
-> if a dam failed. A war timeline and an offline assistant follow in later versions.
+> Version 0.6 adds war scenarios: several launches you place by hand on one
+> clock, a missile defence in general terms, and the published studies of what
+> such a war would do to the climate and to food. An offline assistant follows in
+> a later version.
 
 ## What it does
 
@@ -54,6 +55,17 @@ Free and open source (MIT).
 - **Dams.** Dams near a detonation, from the Global Dam Watch database. For any
   of them, "What if it fails?" shows the peak flow out of the breach and the way
   the water would take down the valley, with the peak falling as it goes.
+- **War scenario.** Add launches from the missile simulator, each at its own
+  time, and play them together on the globe with a timeline of every launch,
+  re-entry and arrival. A missile defence can be switched on per phase of flight
+  (boost, midcourse, terminal) with the number of shots and the chance per shot
+  as parameters: the arithmetic of layered defence, not a model of any real
+  system. Expected warheads and yield that get through, and the people killed and
+  injured at the targets.
+- **Climate and food.** The six war scenarios of Xia et al. (2022, *Nature Food*)
+  with their soot, direct deaths and people without food after two years, and the
+  case closest to your scenario. Nuclear winter is shown as published, not
+  calculated.
 - **"How was this calculated?"** Next to every number: the formula, the inputs,
   the source (section, figure or table) and how uncertain it is.
 - **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
@@ -92,11 +104,13 @@ buildings, weather and people do not behave like a formula.
 | Flooding by waves | Land lower than the run-up height and connected to the sea | the above, on AWS Terrain Tiles |
 | Ships | Severe and moderate damage to merchant ships from air blast | Glasstone & Dolan (1977), Fig. 5.146 (digitised), Table 5.147b |
 | Dam failure | Peak outflow from the volume and depth of water; fall of the peak down the valley | D. C. Froehlich (1995), as quoted by J. C. Ackers, R. Pether and O. Tarrant, *Reservoir hazard analysis and flood mapping for contingency planning* (British Dam Society, 2006) |
+| Missile defence | Phases of flight; chance of getting through layers of independent shots, (1 − p)^n per layer; length of the powered climb | elementary probability; boost times of the model ICBMs in the APS Study Group on Boost-Phase Intercept (2003) |
+| Climate and food | Published results only | L. Xia, A. Robock et al., *Nature Food* 3, 586–596 (2022), Table 1 |
 | Population | GHS-POP R2023A, epoch 2025, about 1 km cells | European Commission, Joint Research Centre |
 
 ### Accuracy tests
 
-`npm test` runs 280+ checks. The physics is tested against values printed in the
+`npm test` runs 290+ checks. The physics is tested against values printed in the
 sources: the worked examples next to Glasstone & Dolan's charts (for example
 1,000 psi at 110 ft for 1 kt at 200 ft; 4 psi out to 2,600 ft), their tables of
 wind speed against overpressure, thermal partition and fallout contours, the
