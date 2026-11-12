@@ -129,6 +129,8 @@ export async function ask(text: string): Promise<void> {
     void refreshAssistant();
   } finally {
     thinking.value = false;
+    // The server starts with the first question: show where it runs.
+    void refreshAssistant();
     // A long conversation is cut from the start, so the model's memory does not overflow.
     // It starts again at a question, never in the middle of a tool call.
     if (history.length > 40) {
