@@ -56,6 +56,8 @@ declare global {
       isNativePlatform?: () => boolean;
       /** Calls a method of a native plugin; part of Capacitor's bridge. */
       nativePromise?: (plugin: string, method: string, options?: unknown) => Promise<unknown>;
+      /** Registered native plugins, for listeners. */
+      Plugins?: Record<string, { addListener?: (event: string, listener: () => void) => Promise<{ remove: () => void }> | { remove: () => void } }>;
     };
   }
   const __APP_VERSION__: string;

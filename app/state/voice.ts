@@ -17,14 +17,28 @@ export const lastSpeech = signal<string | null>(null);
 export const speaking = signal(false);
 
 const shellVoice = () => (platform() === 'desktop' ? window.atomicAtlasShell?.voice : undefined);
+const onAndroid = (): boolean => platform() === 'android' && typeof window.Capacitor?.nativePromise === 'function';
+
+/** On Android the phone's own voice speaks: nothing to download. */
+export const usesPhoneVoice = onAndroid;
 
 export function voiceSupported(): boolean {
-  return Boolean(shellVoice());
+  return Boolean(shellVoice()) || onAndroid();
 }
 
 export async function refreshVoice(): Promise<void> {
   const voice = shellVoice();
-  if (voice) voiceStatus.value = await voice.status();
+  if (voice) {
+    voiceStatus.value = await voice.status();
+    return;
+  }
+  if (onAndroid()) {
+    const result = (await window.Capacitor!.nativePromise!('Speech', 'available', { language: settings.value.language }).catch(() => null)) as { state?: string } | null;
+    const state = result?.state ?? 'no';
+    voiceStatus.value = { supported: state !== 'no', installed: state === 'yes', installing: false, error: state === 'missing' ? 'missing' : null };
+    // The engine starts a moment after the app; ask again shortly.
+    if (state === 'starting') setTimeout(() => void refreshVoice(), 1500);
+  }
 }
 
 export async function downloadVoice(): Promise<void> {
@@ -53,6 +67,7 @@ let request = 0;
 export function stopVoice(): void {
   request++;
   void shellVoice()?.stop();
+  if (onAndroid()) void window.Capacitor!.nativePromise!('Speech', 'stop').catch(() => undefined);
   audio?.pause();
   audio = null;
   if (audioUrl) URL.revokeObjectURL(audioUrl);
@@ -60,9 +75,23 @@ export function stopVoice(): void {
   speaking.value = false;
 }
 
+let androidListener = false;
+
 export async function speak(text: string): Promise<void> {
+  if (!voiceStatus.value?.installed || !text) return;
+  if (onAndroid()) {
+    stopVoice();
+    lastSpeech.value = text;
+    speaking.value = true;
+    if (!androidListener) {
+      androidListener = true;
+      void window.Capacitor?.Plugins?.Speech?.addListener?.('done', () => (speaking.value = false));
+    }
+    await window.Capacitor!.nativePromise!('Speech', 'speak', { text, language: settings.value.language, rate: settings.value.voiceRate }).catch(() => (speaking.value = false));
+    return;
+  }
   const voice = shellVoice();
-  if (!voice || !voiceStatus.value?.installed || !text) return;
+  if (!voice) return;
   stopVoice();
   const mine = ++request;
   lastSpeech.value = text;
@@ -88,6 +117,11 @@ export function sayAgain(): void {
 export function initVoice(): void {
   if (!voiceSupported()) return;
   void refreshVoice();
+  // The phone's voice depends on the language: check again when it changes.
+  if (onAndroid()) effect(() => {
+    void settings.value.language;
+    void refreshVoice();
+  });
   let spokenDetonation = -1;
   let spokenAccident = -1;
   effect(() => {
