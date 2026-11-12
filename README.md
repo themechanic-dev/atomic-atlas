@@ -10,10 +10,9 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 0.6 adds war scenarios: several launches you place by hand on one
-> clock, a missile defence in general terms, and the published studies of what
-> such a war would do to the climate and to food. An offline assistant follows in
-> a later version.
+> Version 0.7 adds an offline assistant and a voice: ask in words for a
+> simulation or an explanation, and hear a short summary after each result. Both
+> run on your computer and are downloaded from the app only if you want them.
 
 ## What it does
 
@@ -66,6 +65,16 @@ Free and open source (MIT).
   with their soot, direct deaths and people without food after two years, and the
   case closest to your scenario. Nuclear winter is shown as published, not
   calculated.
+- **Assistant.** Ask in English or Greek: "a 300 kt burst at the surface",
+  "compare 15 kt and 1 Mt", "what does the 5 psi ring mean?". A small language
+  model runs on your computer with llama.cpp (on the graphics card if there is
+  one) and answers with the app's own calculations, catalog and explanations. It
+  does not place ground zero, choose targets or say anything about how weapons are
+  made; a filter in the app stops such questions before they reach the model.
+  Downloaded from the app: small (2.7 GB) or large (5.7 GB).
+- **Voice.** After each simulation a short spoken summary, in English or Greek,
+  with Piper, offline. Downloaded from the settings (about 150 MB). The app never
+  listens.
 - **"How was this calculated?"** Next to every number: the formula, the inputs,
   the source (section, figure or table) and how uncertain it is.
 - **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
@@ -110,7 +119,7 @@ buildings, weather and people do not behave like a formula.
 
 ### Accuracy tests
 
-`npm test` runs 290+ checks. The physics is tested against values printed in the
+`npm test` runs 290+ checks, including the assistant's topic filter. The physics is tested against values printed in the
 sources: the worked examples next to Glasstone & Dolan's charts (for example
 1,000 psi at 110 ft for 1 kt at 200 ft; 4 psi out to 2,600 ft), their tables of
 wind speed against overpressure, thermal partition and fallout contours, the
@@ -146,6 +155,10 @@ the book differ.
   a known height and at least 1 million m³ of water.
 - Weather: [Open-Meteo](https://open-meteo.com), wind at 10 m and at 850, 500 and
   250 hPa. Only the coordinates of the burst are sent.
+- Assistant (optional download): llama.cpp (ggml-org, release b12308) with
+  Qwen3.5-4B or Qwen3.5-9B in GGUF form from HuggingFace. Voice (optional
+  download): Piper with the voices Joy (Greek) and Lessac (English) from
+  HuggingFace `rhasspy/piper-voices`.
 - Nothing needs an account or a key. With the built-in map and a manual wind the
   app makes no network requests at all.
 
