@@ -3,6 +3,7 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { formatNumber } from '../lib/format';
+import { finePopulationSupported } from '../data/population100';
 import { mapHandle } from '../map/MapView';
 import { clearAreas, countTiles, downloadArea, MAX_TILES, offlineAreas } from '../map/offline';
 import { settings } from '../state/settings';
@@ -21,7 +22,8 @@ export function OfflineAreas() {
   const bounds: [number, number, number, number] | null = b ? [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()] : null;
   const count = bounds ? countTiles(bounds) : 0;
   const tooLarge = count > MAX_TILES;
-  const megabytes = areas.reduce((sum, a) => sum + a.bytes, 0) / 1e6;
+  const megabytes = areas.reduce((sum, a) => sum + a.bytes + (a.population?.bytes ?? 0), 0) / 1e6;
+  const allWithPopulation = areas.length > 0 && areas.every((a) => a.population);
 
   const download = async (): Promise<void> => {
     if (!bounds) return;
@@ -40,6 +42,7 @@ export function OfflineAreas() {
   return (
     <div class="offline-areas" data-testid="offline-areas">
       <p class="hint">{t('settings.offline.hint')}</p>
+      {finePopulationSupported() ? <p class="hint">{t('settings.offline.population')}</p> : null}
       {progress !== null ? (
         <p class="hint" data-testid="offline-progress">
           {t('settings.offline.downloading', { percent: Math.round(progress * 100) })}
@@ -54,6 +57,7 @@ export function OfflineAreas() {
       {areas.length > 0 ? (
         <p class="hint" data-testid="offline-stored">
           {t(areas.length === 1 ? 'settings.offline.storedOne' : 'settings.offline.stored', { count: areas.length, mb: formatNumber(megabytes, 3) })}{' '}
+          {allWithPopulation ? `${t('settings.offline.withPopulation')} ` : null}
           <button
             type="button"
             class="link"

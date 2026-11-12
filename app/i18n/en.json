@@ -110,6 +110,7 @@
   "casualties.injured": "Injured",
   "casualties.central": "Blast only, as usually quoted: {killed} killed, {injured} injured.",
   "casualties.population": "{people} people live inside the 1 psi ring (residents, {year}).",
+  "casualties.population.fine": "{people} people live inside the 1 psi ring (residents, {year}; 100 m grid of the downloaded area).",
 
   "effect.fireball": "Fireball",
   "effect.fireball.short": "Fireball",
@@ -402,6 +403,7 @@
   "settings.map.infrastructure": "Infrastructure",
   "settings.map.infrastructure.hint": "Airports, power stations and dams",
   "settings.offline.hint": "Areas without internet: download the detailed map of the area now on screen, down to street level. There the map then works offline.",
+  "settings.offline.population": "With each area the app also downloads its population at 100 m, for closer casualty estimates there: a temporary download of 20–170 MB from the European Commission's JRC, of which a few MB are kept.",
   "settings.offline.download": "Download the area on screen ({tiles} tiles)",
   "settings.offline.downloading": "Downloading the area… {percent} %",
   "settings.offline.tooLarge": "The area on screen is too large to download. Zoom in to a city or a region first.",
@@ -409,6 +411,7 @@
   "settings.offline.stored": "Stored: {count} areas, {mb} MB.",
   "settings.offline.storedOne": "Stored: 1 area, {mb} MB.",
   "settings.offline.clear": "Remove all",
+  "settings.offline.withPopulation": "With the population at 100 m.",
 
   "closeup.title": "From close up",
   "closeup.open": "Look from close up",

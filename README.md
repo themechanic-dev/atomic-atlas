@@ -81,7 +81,9 @@ Free and open source (MIT).
 - **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
   and historical, each with its public source.
 - **Offline areas.** Download the detailed map of the area on screen, down to
-  street level; there the map then works without internet.
+  street level; there the map then works without internet. With it comes the
+  population of the area on a 100 m grid, so casualties there are counted more
+  closely than on the 1 km world grid.
 - **Settings.** English or Greek, kilometres or miles, °C or °F, dark or light,
   the map source and the weather source.
 
@@ -118,7 +120,7 @@ buildings, weather and people do not behave like a formula.
 | Dam failure | Peak outflow from the volume and depth of water; fall of the peak down the valley | D. C. Froehlich (1995), as quoted by J. C. Ackers, R. Pether and O. Tarrant, *Reservoir hazard analysis and flood mapping for contingency planning* (British Dam Society, 2006) |
 | Missile defence | Phases of flight; chance of getting through layers of independent shots, (1 − p)^n per layer; length of the powered climb | elementary probability; boost times of the model ICBMs in the APS Study Group on Boost-Phase Intercept (2003) |
 | Climate and food | Published results only | L. Xia, A. Robock et al., *Nature Food* 3, 586–596 (2022), Table 1 |
-| Population | GHS-POP R2023A, epoch 2025, about 1 km cells | European Commission, Joint Research Centre |
+| Population | GHS-POP R2023A, epoch 2025, about 1 km cells (100 m in downloaded areas) | European Commission, Joint Research Centre |
 
 ### Accuracy tests
 

@@ -163,9 +163,11 @@ export interface CasualtyState {
   /** People within the outermost ring that was searched. */
   populationSearched: number;
   epoch: number | null;
+  /** Cell size of the population grid used: 100 m inside a downloaded area, else 1000 m. */
+  resolutionM: number | null;
 }
 
-const NO_CASUALTIES: CasualtyState = { state: 'idle', estimate: null, populationSearched: 0, epoch: null };
+const NO_CASUALTIES: CasualtyState = { state: 'idle', estimate: null, populationSearched: 0, epoch: null, resolutionM: null };
 export const casualties = signal<CasualtyState>(NO_CASUALTIES);
 
 let nextId = 1;
@@ -211,6 +213,7 @@ export async function runDetonation(): Promise<void> {
         estimate: estimateCasualties(population.samples, result.effects),
         populationSearched: population.total,
         epoch: population.epoch,
+        resolutionM: population.resolutionM,
       };
     }
     const elapsed = performance.now() - started;

@@ -6,24 +6,17 @@
 // addresses are rewritten to this protocol, so that tiles, fonts and icons all pass through it.
 
 import * as maplibregl from 'maplibre-gl';
+import { clearFinePopulation, downloadFinePopulation, finePopulationSupported } from '../data/population100';
+import { offlineAreas, saveAreas, type OfflineArea } from './areas';
 import { countTiles, MAX_ZOOM, tilesFor, type Bounds } from './tiles';
 
-export { countTiles, MAX_ZOOM };
+export { countTiles, MAX_ZOOM, offlineAreas, type OfflineArea };
 
 const PREFIX = 'aaoff://';
 const CACHE = 'atomic-atlas-offline-v1';
-const AREAS_KEY = 'atomic-atlas.offline-areas.v1';
 /** More tiles than this in one area would take too long and too much space. */
 export const MAX_TILES = 6000;
 
-export interface OfflineArea {
-  id: string;
-  /** West, south, east, north. */
-  bounds: Bounds;
-  tiles: number;
-  bytes: number;
-  date: string;
-}
 
 const wrap = (url: string): string => (url.startsWith('https://') ? PREFIX + url : url);
 const unwrap = (url: string): string => (url.startsWith(PREFIX) ? url.slice(PREFIX.length) : url);
@@ -92,22 +85,6 @@ export function offlineStyleUrl(url: string): string {
   return registered ? wrap(url) : url;
 }
 
-export function offlineAreas(): OfflineArea[] {
-  try {
-    const list = JSON.parse(localStorage.getItem(AREAS_KEY) ?? '[]') as OfflineArea[];
-    return Array.isArray(list) ? list : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveAreas(list: OfflineArea[]): void {
-  try {
-    localStorage.setItem(AREAS_KEY, JSON.stringify(list));
-  } catch {
-    // Storage unavailable: the tiles are stored; only the list is lost.
-  }
-}
 
 /** Font ranges the map's labels use: Latin, Greek and common symbols. */
 const GLYPH_RANGES = ['0-255', '256-511', '768-1023', '1024-1279', '7936-8191', '8192-8447', '8448-8703'];
@@ -116,7 +93,10 @@ const GLYPH_RANGES = ['0-255', '256-511', '768-1023', '1024-1279', '7936-8191', 
  * Downloads everything the detailed map needs for an area: the style, the tile index, the
  * icons, the fonts and the tiles. `onProgress` gets the share done.
  */
-export async function downloadArea(styleUrl: string, bounds: Bounds, onProgress: (share: number) => void): Promise<OfflineArea> {
+export async function downloadArea(styleUrl: string, bounds: Bounds, onAllProgress: (share: number) => void): Promise<OfflineArea> {
+  // With the 100 m population, the map takes the first half of the progress and the population the second.
+  const withPopulation = finePopulationSupported();
+  const onProgress = withPopulation ? (share: number): void => onAllProgress(share / 2) : onAllProgress;
   // Counted before anything is fetched or listed: a large area has hundreds of millions of tiles.
   if (countTiles(bounds) > MAX_TILES) throw new Error('too large');
   const cache = await caches.open(CACHE);
@@ -170,12 +150,22 @@ export async function downloadArea(styleUrl: string, bounds: Bounds, onProgress:
   );
   onProgress(1);
   const area: OfflineArea = { id: `${Date.now()}`, bounds, tiles: tiles.length, bytes, date: new Date().toISOString().slice(0, 10) };
+  if (withPopulation) {
+    // Without it the map area still works; casualties there use the 1 km grid.
+    const population = await downloadFinePopulation(area.id, bounds, (share) => onAllProgress(0.5 + share / 2)).catch((error: unknown) => {
+      console.error('population download failed', error);
+      return null;
+    });
+    if (population) area.population = population;
+  }
+  onAllProgress(1);
   saveAreas([...offlineAreas(), area]);
   return area;
 }
 
-/** Removes all stored areas (tiles are shared between areas, so they go together). */
+/** Removes all stored areas and their population grids (tiles are shared between areas, so they go together). */
 export async function clearAreas(): Promise<void> {
+  await clearFinePopulation();
   try {
     await caches.delete(CACHE);
   } catch {

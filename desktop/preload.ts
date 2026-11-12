@@ -26,6 +26,16 @@ const api = {
       return () => ipcRenderer.removeListener('assistant:progress', handler);
     },
   },
+  population: {
+    fetchTile: (name: string): Promise<unknown> => ipcRenderer.invoke('population:fetch-tile', name),
+    readTile: (name: string): Promise<Uint8Array | null> => ipcRenderer.invoke('population:read-tile', name),
+    removeTile: (name: string): Promise<void> => ipcRenderer.invoke('population:remove-tile', name),
+    onProgress: (listener: (share: number) => void): (() => void) => {
+      const handler = (_event: unknown, share: number): void => listener(share);
+      ipcRenderer.on('population:progress', handler);
+      return () => ipcRenderer.removeListener('population:progress', handler);
+    },
+  },
   voice: {
     status: (): Promise<unknown> => ipcRenderer.invoke('voice:status'),
     install: (): Promise<unknown> => ipcRenderer.invoke('voice:install'),

@@ -1,8 +1,10 @@
-// The world population grid that ships with the app (GHS-POP 2025, 30 arc-seconds).
+// The world population grid that ships with the app (GHS-POP 2025, 30 arc-seconds), and the
+// 100 m grid of the areas the user has downloaded (population100.ts) where it covers the circle.
 // Built by scripts/build-population.mjs; the format is described there.
 
 import type { PopulationSample } from '@physics/casualties/model';
 import { distanceM, type LngLat } from '../lib/geo';
+import { finePopulationAround, SOURCE as FINE_SOURCE } from './population100';
 
 interface PopulationIndex {
   format: number;
@@ -61,6 +63,8 @@ export interface PopulationQuery {
   epoch: number;
   /** Citation of the grid. */
   source: string;
+  /** Size of the grid's cells: 100 m inside a downloaded area, 1000 m elsewhere. */
+  resolutionM: number;
 }
 
 /**
@@ -68,6 +72,9 @@ export interface PopulationQuery {
  * Returns null when the population grid is not available.
  */
 export async function populationAround(centre: LngLat, radiusM: number): Promise<PopulationQuery | null> {
+  // The 100 m grid of a downloaded area, when the whole circle is inside it.
+  const fine = await finePopulationAround(centre, radiusM).catch(() => null);
+  if (fine) return { ...fine, epoch: 2025, source: FINE_SOURCE, resolutionM: 100 };
   const index = await loadPopulationIndex();
   if (!index) return null;
 
@@ -122,5 +129,5 @@ export async function populationAround(centre: LngLat, radiusM: number): Promise
       total += people;
     }
   }
-  return { samples, total, epoch: index.epoch, source: index.source };
+  return { samples, total, epoch: index.epoch, source: index.source, resolutionM: 1000 };
 }

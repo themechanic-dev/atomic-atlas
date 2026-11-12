@@ -7,6 +7,7 @@ import { extname, join, normalize, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { assistantStatus, chat, installAssistant, removeAssistant, startAssistant, stopAssistant } from './assistant';
 import { installVoice, removeVoice, stopSpeaking, synthesize, voiceStatus } from './voice';
+import { fetchPopulationTile, readPopulationTile, removePopulationTile } from './population';
 
 const APP_SCHEME = 'app';
 const APP_HOST = 'atomic-atlas';
@@ -320,6 +321,9 @@ if (!app.requestSingleInstanceLock()) {
       return assistantStatus();
     });
     ipcMain.handle('assistant:chat', (event, body: unknown) => chat(body, event.sender));
+    ipcMain.handle('population:fetch-tile', (event, name: unknown) => fetchPopulationTile(name, event.sender));
+    ipcMain.handle('population:read-tile', (_event, name: unknown) => readPopulationTile(name));
+    ipcMain.handle('population:remove-tile', (_event, name: unknown) => removePopulationTile(name));
     app.on('will-quit', () => void stopAssistant());
 
     createWindow();

@@ -17,6 +17,7 @@ public class MainActivity extends BridgeActivity {
         // The app's own plugins are registered before the bridge starts.
         registerPlugin(SpeechPlugin.class);
         registerPlugin(AssistantPlugin.class);
+        registerPlugin(PopulationPlugin.class);
         super.onCreate(savedInstanceState);
         // If the system stops the page's renderer (for example to free memory while the
         // assistant runs), the page is started again instead of the whole app closing.

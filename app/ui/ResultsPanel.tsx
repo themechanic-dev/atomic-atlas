@@ -131,7 +131,7 @@ export function ResultsPanel() {
               })}
             </p>
             <p class="hint">
-              {t('casualties.population', { people: formatPeople(c.estimate.peopleInside1Psi), year: c.epoch ?? '' })}
+              {t(c.resolutionM === 100 ? 'casualties.population.fine' : 'casualties.population', { people: formatPeople(c.estimate.peopleInside1Psi), year: c.epoch ?? '' })}
             </p>
           </>
         ) : null}

@@ -22,6 +22,20 @@ export interface AssistantStatus {
   error: string | null;
 }
 
+export interface PopulationTileResult {
+  ok: boolean;
+  /** The tile does not exist: open sea. */
+  missing?: boolean;
+  error?: string;
+}
+
+export interface PopulationShell {
+  fetchTile(name: string): Promise<PopulationTileResult>;
+  readTile(name: string): Promise<Uint8Array | null>;
+  removeTile(name: string): Promise<void>;
+  onProgress(listener: (share: number) => void): () => void;
+}
+
 interface DesktopShell {
   kind: 'desktop';
   info(): Promise<unknown>;
@@ -39,6 +53,8 @@ interface DesktopShell {
     onDelta?(listener: (text: string) => void): () => void;
     onProgress(listener: (share: number) => void): () => void;
   };
+  /** Present from version 1.1: tiles of the 100 m population grid, fetched for the page (the server allows no CORS). */
+  population?: PopulationShell;
   /** Present from version 0.7: the offline voice (Piper). */
   voice?: {
     status(): Promise<VoiceStatus>;
@@ -58,6 +74,8 @@ declare global {
       isNativePlatform?: () => boolean;
       /** Calls a method of a native plugin; part of Capacitor's bridge. */
       nativePromise?: (plugin: string, method: string, options?: unknown) => Promise<unknown>;
+      /** A web address the WebView can load for a file of the app's own storage. */
+      convertFileSrc?: (path: string) => string;
       /** Registered native plugins, for listeners. */
       Plugins?: Record<string, { addListener?: (event: string, listener: () => void) => Promise<{ remove: () => void }> | { remove: () => void } }>;
     };

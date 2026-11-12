@@ -110,6 +110,7 @@
   "casualties.injured": "Τραυματίες",
   "casualties.central": "Μόνο από το ωστικό, όπως αναφέρεται συνήθως: {killed} νεκροί, {injured} τραυματίες.",
   "casualties.population": "{people} άνθρωποι ζουν μέσα στον δακτύλιο του 1 psi (κάτοικοι, {year}).",
+  "casualties.population.fine": "{people} άνθρωποι ζουν μέσα στον δακτύλιο του 1 psi (κάτοικοι, {year}· πλέγμα 100 m της κατεβασμένης περιοχής).",
 
   "effect.fireball": "Πύρινη σφαίρα",
   "effect.fireball.short": "Πύρινη σφαίρα",
@@ -402,6 +403,7 @@
   "settings.map.infrastructure": "Υποδομές",
   "settings.map.infrastructure.hint": "Αεροδρόμια, σταθμοί ηλεκτροπαραγωγής και φράγματα",
   "settings.offline.hint": "Περιοχές χωρίς internet: κατέβασε τον λεπτομερή χάρτη της περιοχής που φαίνεται τώρα, ως το επίπεδο του δρόμου. Εκεί ο χάρτης δουλεύει μετά χωρίς internet.",
+  "settings.offline.population": "Με κάθε περιοχή η εφαρμογή κατεβάζει και τον πληθυσμό της σε πλέγμα 100 m, για πιο κοντινές εκτιμήσεις απωλειών εκεί: προσωρινή λήψη 20–170 MB από το JRC της Ευρωπαϊκής Επιτροπής, από την οποία κρατιούνται λίγα MB.",
   "settings.offline.download": "Κατέβασμα της περιοχής στην οθόνη ({tiles} πλακίδια)",
   "settings.offline.downloading": "Κατεβαίνει η περιοχή… {percent} %",
   "settings.offline.tooLarge": "Η περιοχή στην οθόνη είναι πολύ μεγάλη για κατέβασμα. Πλησίασε πρώτα σε μια πόλη ή περιοχή.",
@@ -409,6 +411,7 @@
   "settings.offline.stored": "Αποθηκευμένες: {count} περιοχές, {mb} MB.",
   "settings.offline.storedOne": "Αποθηκευμένη: 1 περιοχή, {mb} MB.",
   "settings.offline.clear": "Αφαίρεση όλων",
+  "settings.offline.withPopulation": "Με τον πληθυσμό σε 100 m.",
 
   "closeup.title": "Από κοντά",
   "closeup.open": "Δες από κοντά",
