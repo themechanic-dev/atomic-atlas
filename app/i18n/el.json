@@ -408,6 +408,7 @@
   "settings.offline.downloading": "Κατεβαίνει η περιοχή… {percent} %",
   "settings.offline.tooLarge": "Η περιοχή στην οθόνη είναι πολύ μεγάλη για κατέβασμα. Πλησίασε πρώτα σε μια πόλη ή περιοχή.",
   "settings.offline.error": "Το κατέβασμα δεν ολοκληρώθηκε. Έλεγξε τη σύνδεση και δοκίμασε ξανά.",
+  "settings.offline.missing": "{tiles} πλακίδια του χάρτη δεν κατέβηκαν ολόκληρα· χωρίς internet ο χάρτης έχει κενά εκεί. Κατέβασε ξανά την περιοχή για να συμπληρωθούν.",
   "settings.offline.stored": "Αποθηκευμένες: {count} περιοχές, {mb} MB.",
   "settings.offline.storedOne": "Αποθηκευμένη: 1 περιοχή, {mb} MB.",
   "settings.offline.clear": "Αφαίρεση όλων",

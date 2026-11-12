@@ -408,6 +408,7 @@
   "settings.offline.downloading": "Downloading the area… {percent} %",
   "settings.offline.tooLarge": "The area on screen is too large to download. Zoom in to a city or a region first.",
   "settings.offline.error": "The download did not finish. Check the internet connection and try again.",
+  "settings.offline.missing": "{tiles} map tiles could not be downloaded whole; the map has gaps there without internet. Download the area again to fill them in.",
   "settings.offline.stored": "Stored: {count} areas, {mb} MB.",
   "settings.offline.storedOne": "Stored: 1 area, {mb} MB.",
   "settings.offline.clear": "Remove all",

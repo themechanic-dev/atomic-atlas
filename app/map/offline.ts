@@ -8,7 +8,7 @@
 import * as maplibregl from 'maplibre-gl';
 import { clearFinePopulation, downloadFinePopulation, finePopulationSupported } from '../data/population100';
 import { offlineAreas, saveAreas, type OfflineArea } from './areas';
-import { countTiles, MAX_ZOOM, tilesFor, type Bounds } from './tiles';
+import { completeVectorTile, countTiles, MAX_ZOOM, tilesFor, type Bounds } from './tiles';
 
 export { countTiles, MAX_ZOOM, offlineAreas, type OfflineArea };
 
@@ -104,10 +104,14 @@ export async function downloadArea(styleUrl: string, bounds: Bounds, onAllProgre
   const store = async (url: string): Promise<Response | null> => {
     const response = await fetch(url);
     if (!response.ok) return null;
-    const copy = response.clone();
-    bytes += (await copy.arrayBuffer()).byteLength;
-    await cache.put(url, response.clone());
-    return response;
+    const body = await response.arrayBuffer();
+    // A vector tile is kept only whole: a body cut short (seen with a status of 200) would
+    // leave a hole in the map offline for good.
+    if (/\.pbf(\?|$)/.test(url) && !completeVectorTile(body)) return null;
+    bytes += body.byteLength;
+    const headers = { 'Content-Type': response.headers.get('Content-Type') ?? 'application/octet-stream' };
+    await cache.put(url, new Response(body, { headers }));
+    return new Response(body, { headers });
   };
   const styleResponse = await store(styleUrl);
   if (!styleResponse) throw new Error('style');
@@ -149,14 +153,23 @@ export async function downloadArea(styleUrl: string, bounds: Bounds, onAllProgre
       }
     }),
   );
-  // A tile the server did not give at once (busy, or a short network drop) is asked for once
-  // more, one at a time; a tile that does not exist simply stays missing.
+  // A tile the server did not give whole at once (busy, or a short network drop) is asked for
+  // up to twice more, one at a time, after a pause; what still fails is counted and shown.
+  let missing = 0;
   for (const url of failed) {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    await store(url).catch(() => null);
+    let kept = false;
+    for (const pause of [500, 1500]) {
+      await new Promise((resolve) => setTimeout(resolve, pause));
+      if (await store(url).catch(() => null)) {
+        kept = true;
+        break;
+      }
+    }
+    if (!kept) missing++;
   }
   onProgress(1);
   const area: OfflineArea = { id: `${Date.now()}`, bounds, tiles: tiles.length, bytes, date: new Date().toISOString().slice(0, 10) };
+  if (missing > 0) area.missing = missing;
   if (withPopulation) {
     // Without it the map area still works; casualties there use the 1 km grid.
     const population = await downloadFinePopulation(area.id, bounds, (share) => onAllProgress(0.5 + share / 2)).catch((error: unknown) => {

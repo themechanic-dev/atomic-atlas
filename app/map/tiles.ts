@@ -43,3 +43,40 @@ export function tilesFor(bounds: Bounds): Array<[number, number, number]> {
   }
   return out;
 }
+
+/**
+ * Is a vector tile (protobuf) whole? A tile is a run of fields; each length-delimited field
+ * says how long it is, so a body cut short overruns its last length, and a body that is still
+ * compressed does not read as fields at all. Used before a tile is kept for offline use.
+ */
+export function completeVectorTile(buffer: ArrayBuffer): boolean {
+  const bytes = new Uint8Array(buffer);
+  let i = 0;
+  const varint = (): number => {
+    let value = 0;
+    let scale = 1;
+    for (let n = 0; n < 10; n++) {
+      if (i >= bytes.length) return -1;
+      const b = bytes[i++]!;
+      value += (b & 0x7f) * scale;
+      if (b < 0x80) return value;
+      scale *= 128;
+    }
+    return -1;
+  };
+  while (i < bytes.length) {
+    const tag = varint();
+    if (tag <= 0) return false;
+    const wire = tag % 8;
+    if (wire === 2) {
+      const length = varint();
+      if (length < 0 || i + length > bytes.length) return false;
+      i += length;
+    } else if (wire === 0) {
+      if (varint() < 0) return false;
+    } else if (wire === 5) i += 4;
+    else if (wire === 1) i += 8;
+    else return false;
+  }
+  return i === bytes.length;
+}

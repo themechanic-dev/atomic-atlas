@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countTiles, MAX_ZOOM, tilesFor } from './tiles';
+import { completeVectorTile, countTiles, MAX_ZOOM, tilesFor } from './tiles';
 
 describe('tiles of an area', () => {
   it('counts the whole world without listing it', () => {
@@ -23,5 +23,23 @@ describe('tiles of an area', () => {
       expect(y).toBeGreaterThanOrEqual(0);
       expect(y).toBeLessThan(2 ** z);
     }
+  });
+});
+
+describe('completeVectorTile', () => {
+  // A tiny tile: layer (field 3) of 5 bytes holding the name "a" (field 1) and version 2 (field 15).
+  const tile = new Uint8Array([0x1a, 0x05, 0x0a, 0x01, 0x61, 0x78, 0x02]);
+
+  it('accepts a whole tile and an empty one', () => {
+    expect(completeVectorTile(tile.buffer)).toBe(true);
+    expect(completeVectorTile(new ArrayBuffer(0))).toBe(true);
+  });
+
+  it('rejects a tile cut short', () => {
+    expect(completeVectorTile(tile.slice(0, 5).buffer)).toBe(false);
+  });
+
+  it('rejects a tile still compressed with gzip', () => {
+    expect(completeVectorTile(new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00]).buffer)).toBe(false);
   });
 });

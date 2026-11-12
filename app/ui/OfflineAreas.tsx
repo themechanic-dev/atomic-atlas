@@ -24,6 +24,7 @@ export function OfflineAreas() {
   const tooLarge = count > MAX_TILES;
   const megabytes = areas.reduce((sum, a) => sum + a.bytes + (a.population?.bytes ?? 0), 0) / 1e6;
   const allWithPopulation = areas.length > 0 && areas.every((a) => a.population);
+  const missing = areas.reduce((sum, a) => sum + (a.missing ?? 0), 0);
 
   const download = async (): Promise<void> => {
     if (!bounds) return;
@@ -54,6 +55,7 @@ export function OfflineAreas() {
       )}
       {tooLarge ? <p class="hint warn">{t('settings.offline.tooLarge')}</p> : null}
       {error ? <p class="hint warn">{error}</p> : null}
+      {missing > 0 ? <p class="hint warn" data-testid="offline-missing">{t('settings.offline.missing', { tiles: formatNumber(missing, 3) })}</p> : null}
       {areas.length > 0 ? (
         <p class="hint" data-testid="offline-stored">
           {t(areas.length === 1 ? 'settings.offline.storedOne' : 'settings.offline.stored', { count: areas.length, mb: formatNumber(megabytes, 3) })}{' '}

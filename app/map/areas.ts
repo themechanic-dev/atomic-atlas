@@ -12,6 +12,8 @@ export interface OfflineArea {
   tiles: number;
   bytes: number;
   date: string;
+  /** Map tiles the server did not give whole, even when asked again; the area has holes there. */
+  missing?: number;
   /** The 100 m population grid kept for the area, when it could be downloaded. */
   population?: { people: number; bytes: number };
 }
