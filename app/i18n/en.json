@@ -401,6 +401,13 @@
   "how.infrastructure.data": "Airports: OurAirports (public domain). Power stations: Global Power Plant Database 1.3, World Resources Institute (CC BY 4.0), stations of 100 MW and more.",
   "settings.map.infrastructure": "Infrastructure",
   "settings.map.infrastructure.hint": "Airports, power stations and dams",
+  "settings.offline.hint": "Areas without internet: download the detailed map of the area now on screen, down to street level. There the map then works offline.",
+  "settings.offline.download": "Download the area on screen ({tiles} tiles)",
+  "settings.offline.downloading": "Downloading the area… {percent} %",
+  "settings.offline.tooLarge": "The area on screen is too large to download. Zoom in to a city or a region first.",
+  "settings.offline.error": "The download did not finish. Check the internet connection and try again.",
+  "settings.offline.stored": "Stored: {count} areas, {mb} MB.",
+  "settings.offline.clear": "Remove all",
 
   "closeup.title": "From close up",
   "closeup.open": "Look from close up",

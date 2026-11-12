@@ -6,6 +6,7 @@
 
 import type { StyleSpecification } from 'maplibre-gl';
 import type { Language, MapSourceId, Theme } from '../state/settings';
+import { offlineStyleUrl } from './offline';
 
 export const OPENFREEMAP_STYLES: Record<Theme, string> = {
   dark: 'https://tiles.openfreemap.org/styles/dark',
@@ -251,6 +252,6 @@ export function styleFor(source: MapSourceId, theme: Theme, language: Language, 
     case 'satellite':
       return satelliteStyle(theme, language);
     case 'openfreemap':
-      return /^https:\/\//i.test(customUrl.trim()) ? customUrl.trim() : OPENFREEMAP_STYLES[theme];
+      return /^https:\/\//i.test(customUrl.trim()) ? customUrl.trim() : offlineStyleUrl(OPENFREEMAP_STYLES[theme]);
   }
 }

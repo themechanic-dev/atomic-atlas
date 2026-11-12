@@ -26,6 +26,7 @@ import { ensureSites, sites } from '../state/infrastructure';
 import { damFlood, dams, ensureDams } from '../state/dams';
 import { water } from '../state/water';
 import { addWaterLayers, applyWater } from './waterLayers';
+import { registerOfflineProtocol } from './offline';
 import { settings } from '../state/settings';
 import { accidentRun, accidentSite } from '../state/accident';
 import { blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, flashCount } from '../state/blastPlayback';
@@ -406,6 +407,7 @@ function probeHtml(point: LngLat): string {
 
 /** Creates the MapLibre map. Throws when the device has no WebGL 2. */
 function createMap(element: HTMLElement): MapLibreMap {
+  registerOfflineProtocol();
   return new maplibregl.Map({
     container: element,
     center: [18, 34],

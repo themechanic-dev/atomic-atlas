@@ -15,6 +15,7 @@ import {
   type WeatherSourceId,
 } from '../state/settings';
 import { Button, Dialog, Field, Icon, Segmented, Switch } from './controls';
+import { OfflineAreas } from './OfflineAreas';
 import { VoiceSettings } from './VoiceSettings';
 import { Logo } from './Logo';
 
@@ -142,6 +143,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             testId="setting-infrastructure"
           />
         </Field>
+        <OfflineAreas />
       </section>
 
       <section class="settings-group">

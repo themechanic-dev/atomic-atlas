@@ -401,6 +401,13 @@
   "how.infrastructure.data": "Αεροδρόμια: OurAirports (κοινό κτήμα). Σταθμοί ηλεκτροπαραγωγής: Global Power Plant Database 1.3, World Resources Institute (CC BY 4.0), σταθμοί από 100 MW και πάνω.",
   "settings.map.infrastructure": "Υποδομές",
   "settings.map.infrastructure.hint": "Αεροδρόμια, σταθμοί ηλεκτροπαραγωγής και φράγματα",
+  "settings.offline.hint": "Περιοχές χωρίς internet: κατέβασε τον λεπτομερή χάρτη της περιοχής που φαίνεται τώρα, ως το επίπεδο του δρόμου. Εκεί ο χάρτης δουλεύει μετά χωρίς internet.",
+  "settings.offline.download": "Κατέβασμα της περιοχής στην οθόνη ({tiles} πλακίδια)",
+  "settings.offline.downloading": "Κατεβαίνει η περιοχή… {percent} %",
+  "settings.offline.tooLarge": "Η περιοχή στην οθόνη είναι πολύ μεγάλη για κατέβασμα. Πλησίασε πρώτα σε μια πόλη ή περιοχή.",
+  "settings.offline.error": "Το κατέβασμα δεν ολοκληρώθηκε. Έλεγξε τη σύνδεση και δοκίμασε ξανά.",
+  "settings.offline.stored": "Αποθηκευμένες: {count} περιοχές, {mb} MB.",
+  "settings.offline.clear": "Αφαίρεση όλων",
 
   "closeup.title": "Από κοντά",
   "closeup.open": "Δες από κοντά",
