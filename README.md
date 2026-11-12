@@ -10,7 +10,7 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 1.2: one detonation, missiles on the globe, accidents, water and dams,
+> Version 1.3: one detonation, missiles on the globe, accidents, water and dams,
 > war scenarios with a general missile defence, an offline assistant and a voice,
 > offline map areas with the population at 100 m, and the mushroom cloud in 3D,
 > on Linux, Windows and Android.
@@ -40,9 +40,11 @@ Free and open source (MIT).
   The fireball rises into a 3D mushroom cloud over the city that grows to the
   height and width the source gives for the yield, glowing at first, then
   red-brown, then white, until it is stabilised at about ten minutes.
-- **From close up.** A small 3D scene (street, airfield, power station, fuel
-  tanks, harbour) shows what the effects at any distance do to buildings,
-  vehicles and aircraft, with the numbers of that point.
+- **From close up.** A small 3D scene (street, airfield, power station, nuclear
+  plant, dam, fuel tanks, harbour) shows what the effects at any distance do to
+  buildings, vehicles, aircraft and power lines, with the numbers of that point.
+  The reactor building and the dam itself are drawn in outline only: no public
+  general model gives blast damage to them, so none is shown.
 - **Infrastructure.** Airports and power stations on the map; for those inside
   the blast rings, what the source reports for that kind of installation.
 - **Accidents.** A release as large as Chernobyl, Fukushima, Kyshtym, Windscale

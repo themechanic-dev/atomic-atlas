@@ -554,6 +554,14 @@ p {
   white-space: nowrap;
 }
 
+.segmented.is-wrapping {
+  flex-wrap: wrap;
+}
+
+.segmented.is-wrapping button {
+  flex: 1 1 auto;
+}
+
 .segmented button.is-selected {
   background: var(--accent);
   color: var(--accent-ink);
@@ -823,6 +831,20 @@ p {
 .closeup-arrow {
   left: 8px;
   color: var(--text-dim);
+}
+
+/* Which structure is drawn only in outline, at the foot of the picture. */
+.closeup-legend {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  max-width: calc(100% - 16px);
+  padding: 2px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  color: var(--text-dim);
+  font-size: 12px;
 }
 
 .closeup-failed {

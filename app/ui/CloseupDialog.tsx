@@ -15,7 +15,9 @@ import { water } from '../state/water';
 import { Button, Dialog, Segmented } from './controls';
 import { formatSeconds } from './PlaybackCard';
 
-const KINDS: readonly SceneKind[] = ['street', 'airport', 'power', 'refinery', 'harbour'];
+const KINDS: readonly SceneKind[] = ['street', 'airport', 'power', 'nuclear', 'dam', 'refinery', 'harbour'];
+/** Scenes with a structure drawn in outline: its damage is not modelled. */
+const OUTLINED: readonly SceneKind[] = ['nuclear', 'dam'];
 /** Seconds shown before the burst and after the blast wave has passed. */
 const LEAD_S = 1;
 const TAIL_S = 7;
@@ -138,7 +140,9 @@ export function CloseupDialog() {
     const w = water.value;
     if (w?.state === 'ready' && w.inWater && w.conditions) findings.push(t('closeup.waves', { height: formatHeight(waveHeightM(w.conditions, range)) }));
   }
-  if (kind === 'power') findings.push(t(`infra.power.${psi >= 5.5 ? 'beyond' : psi >= 5 ? 'moderate' : psi >= 1.7 ? 'light' : 'none'}`));
+  if (kind === 'power' || kind === 'nuclear' || kind === 'dam') findings.push(t(`infra.power.${psi >= 5.5 ? 'beyond' : psi >= 5 ? 'moderate' : psi >= 1.7 ? 'light' : 'none'}`));
+  if (kind === 'nuclear') findings.push(t('closeup.reactor.notModelled'));
+  if (kind === 'dam') findings.push(t('closeup.dam.notModelled'));
 
   return (
     <Dialog title={t('closeup.title')} onClose={() => (closeupRange.value = null)} wide testId="closeup-dialog">
@@ -150,6 +154,11 @@ export function CloseupDialog() {
             {time < 0 ? t('closeup.before') : `T+ ${formatSeconds(time)}`}
           </span>
           <span class="closeup-arrow">← {t('closeup.towardsBurst')}</span>
+          {OUTLINED.includes(kind) ? (
+            <span class="closeup-legend" data-testid="closeup-legend">
+              {t('closeup.outlined')}
+            </span>
+          ) : null}
         </div>
         <Segmented<SceneKind>
           label={t('closeup.scene')}
@@ -157,6 +166,7 @@ export function CloseupDialog() {
           onChange={setKind}
           options={KINDS.map((value) => ({ value, label: t(`closeup.scene.${value}`) }))}
           testId="closeup-kind"
+          wrap
         />
         <label class="closeup-range">
           <span>

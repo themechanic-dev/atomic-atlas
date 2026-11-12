@@ -76,11 +76,13 @@ interface SegmentedProps<T extends string> {
   onChange: (value: T) => void;
   label: string;
   testId?: string;
+  /** Lets the options run onto a second line when they do not fit. */
+  wrap?: boolean;
 }
 
-export function Segmented<T extends string>({ value, options, onChange, label, testId }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ value, options, onChange, label, testId, wrap }: SegmentedProps<T>) {
   return (
-    <div class="segmented" role="radiogroup" aria-label={label} data-testid={testId}>
+    <div class={wrap ? 'segmented is-wrapping' : 'segmented'} role="radiogroup" aria-label={label} data-testid={testId}>
       {options.map((option) => (
         <button
           key={option.value}

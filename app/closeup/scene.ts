@@ -3,12 +3,17 @@
 // from simple shapes in code, in one style; they stand for kinds of things, not for real
 // places. The scene is told a state (what gets damaged, from the physics) and a moment
 // (how far the flash, the heat, the blast and the fires have got) and draws that.
+//
+// The reactor building of the nuclear plant and the dam itself are drawn in outline only:
+// no public general model gives blast damage to them, so none is shown (ΣΧΕΔΙΟ §1: no
+// weak points of installations). Everything around them follows the same criteria as
+// in the other scenes.
 
 import * as THREE from 'three';
 import type { CloseupState } from '@physics/damage/closeup';
 
-export type SceneKind = 'street' | 'airport' | 'power' | 'refinery' | 'harbour';
-export const SCENE_KINDS: readonly SceneKind[] = ['street', 'airport', 'power', 'refinery', 'harbour'];
+export type SceneKind = 'street' | 'airport' | 'power' | 'nuclear' | 'dam' | 'refinery' | 'harbour';
+export const SCENE_KINDS: readonly SceneKind[] = ['street', 'airport', 'power', 'nuclear', 'dam', 'refinery', 'harbour'];
 
 export interface Moment {
   /** Brightness of the flash, 0 to 1. */
@@ -29,7 +34,7 @@ export interface SceneHandle {
   dispose(): void;
 }
 
-type Role = 'building' | 'vehicle' | 'aircraft' | 'tree' | 'window' | 'tank' | 'pylon' | 'ship' | 'flame' | 'light-structure';
+type Role = 'building' | 'vehicle' | 'aircraft' | 'tree' | 'window' | 'tank' | 'pylon' | 'ship' | 'flame' | 'light-structure' | 'not-modelled';
 
 interface Part {
   object: THREE.Object3D;
@@ -41,9 +46,22 @@ interface Part {
 }
 
 const PALETTE = {
-  dark: { sky: 0x232a32, ground: 0x4a4f55, road: 0x26292e, grass: 0x3d5644, water: 0x24506b },
-  light: { sky: 0xdfe7ee, ground: 0xb9b3a6, road: 0x6f7378, grass: 0x8fae7a, water: 0x6fa3c7 },
+  dark: { sky: 0x232a32, ground: 0x4a4f55, road: 0x26292e, grass: 0x3d5644, water: 0x24506b, yard: 0x40454b },
+  light: { sky: 0xdfe7ee, ground: 0xb9b3a6, road: 0x6f7378, grass: 0x8fae7a, water: 0x6fa3c7, yard: 0x9d988e },
 };
+/** Where the camera stands and looks for each scene; the dam needs a higher view to show the lake. */
+interface View {
+  from: [number, number, number];
+  at: [number, number, number];
+  /** Where the haze begins and where it hides everything, metres from the camera. */
+  fog: [number, number];
+}
+const VIEWS: Partial<Record<string, View>> = {
+  nuclear: { from: [36, 22, 48], at: [0, 7, 0], fog: [95, 230] },
+  dam: { from: [40, 44, 74], at: [0, 9, -8], fog: [130, 320] },
+};
+const DEFAULT_VIEW: View = { from: [34, 19, 44], at: [0, 5, 2], fog: [90, 220] };
+
 const STONE = 0xb8a98f;
 const CONCRETE = 0x9ea3a8;
 const METAL = 0x7d8a96;
@@ -61,6 +79,24 @@ function cylinder(radiusTop: number, radiusBottom: number, h: number, color: num
   const geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, h, sides);
   geometry.translate(0, h / 2, 0);
   return new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color, flatShading: true }));
+}
+
+/** Joins non-indexed copies of geometries (position and normal only) into one. */
+function mergeBodies(...parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  const flat = parts.map((g) => (g.index ? g.toNonIndexed() : g));
+  const count = flat.reduce((n, g) => n + g.getAttribute('position').count, 0);
+  const position = new Float32Array(count * 3);
+  const normal = new Float32Array(count * 3);
+  let offset = 0;
+  for (const g of flat) {
+    position.set(g.getAttribute('position').array as Float32Array, offset * 3);
+    normal.set(g.getAttribute('normal').array as Float32Array, offset * 3);
+    offset += g.getAttribute('position').count;
+  }
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute('position', new THREE.BufferAttribute(position, 3));
+  merged.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  return merged;
 }
 
 export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'): SceneHandle | null {
@@ -90,6 +126,7 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
   const world = new THREE.Group();
   scene.add(world);
   let parts: Part[] = [];
+  let view = DEFAULT_VIEW;
   let state: CloseupState | null = null;
   let moment: Moment = { flash: 0, heat: 0, blast: 0, fire: 0 };
   let seedCounter = 1;
@@ -154,6 +191,73 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     add(group, 'tree', x, z);
   };
 
+  /**
+   * A structure whose damage is not modelled: a see-through body drawn as a sketch of lines.
+   * `lines` are pairs of points; without them the sharp edges of the body are drawn.
+   */
+  const outline = (geometry: THREE.BufferGeometry, x: number, z: number, lines?: THREE.Vector3[]): void => {
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(
+      geometry,
+      new THREE.MeshLambertMaterial({ color: CONCRETE, transparent: true, opacity: theme === 'dark' ? 0.2 : 0.28, depthWrite: false }),
+    );
+    const sketch = lines ? new THREE.BufferGeometry().setFromPoints(lines) : new THREE.EdgesGeometry(geometry, 20);
+    const edges = new THREE.LineSegments(sketch, new THREE.LineBasicMaterial({ color: theme === 'dark' ? 0xe9e4da : 0x343a41 }));
+    group.add(body, edges);
+    add(group, 'not-modelled', x, z);
+  };
+
+  /** Lines of a cylinder with a dome: rims, a few uprights, meridians and rings of the dome. */
+  const domeSketch = (radius: number, height: number): THREE.Vector3[] => {
+    const points: THREE.Vector3[] = [];
+    const ring = (y: number, r: number, steps = 40): void => {
+      for (let i = 0; i < steps; i++) {
+        const a = (i / steps) * Math.PI * 2;
+        const b = ((i + 1) / steps) * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r), new THREE.Vector3(Math.cos(b) * r, y, Math.sin(b) * r));
+      }
+    };
+    ring(0, radius);
+    ring(height, radius);
+    for (const latitude of [0.35, 0.7]) ring(height + Math.sin(latitude * (Math.PI / 2)) * radius, Math.cos(latitude * (Math.PI / 2)) * radius, 32);
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      const c = Math.cos(a);
+      const d = Math.sin(a);
+      points.push(new THREE.Vector3(c * radius, 0, d * radius), new THREE.Vector3(c * radius, height, d * radius));
+      for (let i = 0; i < 8; i++) {
+        const p = (i / 8) * (Math.PI / 2);
+        const q = ((i + 1) / 8) * (Math.PI / 2);
+        points.push(
+          new THREE.Vector3(c * radius * Math.cos(p), height + radius * Math.sin(p), d * radius * Math.cos(p)),
+          new THREE.Vector3(c * radius * Math.cos(q), height + radius * Math.sin(q), d * radius * Math.cos(q)),
+        );
+      }
+    }
+    return points;
+  };
+
+  const pylon = (x: number, z: number): void => {
+    const group = new THREE.Group();
+    const mast = cylinder(0.25, 0.9, 20, 0x8f9aa3, 4);
+    const arm = block(9, 0.4, 0.4, 0x8f9aa3);
+    arm.position.y = 16;
+    const arm2 = block(6, 0.4, 0.4, 0x8f9aa3);
+    arm2.position.y = 19;
+    group.add(mast, arm, arm2);
+    add(group, 'pylon', x, z);
+  };
+
+  /** A low hill of the valley side, for the dam. */
+  const hill = (x: number, z: number, w: number, h: number, d: number): void => {
+    const geometry = new THREE.CylinderGeometry(w * 0.35, w * 0.5, h, 7, 1);
+    geometry.translate(0, h / 2, 0);
+    geometry.scale(1, 1, d / w);
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: colors.grass, flatShading: true }));
+    mesh.position.set(x, 0, z);
+    world.add(mesh);
+  };
+
   const ground = (color: number, w = 400, d = 400): THREE.Mesh => {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshLambertMaterial({ color }));
     mesh.rotation.x = -Math.PI / 2;
@@ -179,6 +283,9 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     }
     parts = [];
     seedCounter = 7;
+    view = VIEWS[kind] ?? DEFAULT_VIEW;
+    const fog = scene.fog as THREE.Fog;
+    [fog.near, fog.far] = view.fog;
     world.add(ground(colors.ground));
 
     if (kind === 'street') {
@@ -198,7 +305,7 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     } else if (kind === 'airport') {
       strip(0, 14, 400, 16, colors.road);
       strip(0, 14, 400, 0.5, 0xe8e8e8, 0.03);
-      strip(-4, -4, 70, 16, 0x4a4f55, 0.02);
+      strip(-4, -4, 70, 16, colors.yard, 0.02);
       building(-24, -16, 22, 9, 12, METAL);
       building(8, -18, 14, 7, 9, CONCRETE);
       const tower = cylinder(1.6, 2, 16, CONCRETE, 8);
@@ -233,17 +340,76 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
         const transformer = block(3, 3.2, 2.4, 0x5f6b76);
         add(transformer, 'tank', 10 + i * 5, -2);
       }
-      for (let i = 0; i < 3; i++) {
-        const pylon = new THREE.Group();
-        const mast = cylinder(0.25, 0.9, 20, 0x8f9aa3, 4);
-        const arm = block(9, 0.4, 0.4, 0x8f9aa3);
-        arm.position.y = 16;
-        const arm2 = block(6, 0.4, 0.4, 0x8f9aa3);
-        arm2.position.y = 19;
-        pylon.add(mast, arm, arm2);
-        add(pylon, 'pylon', -30 + i * 30, 8);
-      }
+      for (let i = 0; i < 3; i++) pylon(-30 + i * 30, 8);
       car(4, 14.5, 0x2e86c1);
+    } else if (kind === 'nuclear') {
+      strip(0, 19, 400, 8, colors.road);
+      strip(-2, 0, 80, 22, colors.yard, 0.02);
+      // The reactor building in front: a cylinder with a dome, in outline only.
+      const reactor = new THREE.CylinderGeometry(8.5, 8.5, 14, 32, 1);
+      reactor.translate(0, 7, 0);
+      const dome = new THREE.SphereGeometry(8.5, 32, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+      dome.translate(0, 14, 0);
+      outline(mergeBodies(reactor, dome), -2, -4, domeSketch(8.5, 14));
+      // Turbine hall and offices: ordinary steel and concrete buildings.
+      building(-26, -12, 22, 13, 13, METAL);
+      building(-30, 9, 9, 9, 8, CONCRETE);
+      // A cooling tower: a thin concrete shell, drawn like the other tall light structures.
+      // Narrowest at three quarters of its height, a little wider again at the top.
+      const profile = [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1].map((t) => new THREE.Vector2(5 + 4.5 * ((t - 0.75) / 0.75) ** 2, t * 30));
+      const tower = new THREE.Mesh(
+        new THREE.LatheGeometry(profile, 20),
+        new THREE.MeshLambertMaterial({ color: 0xc9ccd0, flatShading: true, side: THREE.DoubleSide }),
+      );
+      add(tower, 'light-structure', -18, -54);
+      // Switchyard and the lines that leave it.
+      for (let i = 0; i < 3; i++) add(block(3, 3.2, 2.4, 0x5f6b76), 'tank', 14 + i * 5, -6);
+      pylon(20, 8);
+      pylon(30, -18);
+      car(-6, 17.5, 0x2e86c1);
+      car(8, 20.5, 0xc0392b);
+      for (const x of [-30, 34]) tree(x, 15);
+    } else if (kind === 'dam') {
+      // A concrete gravity dam across a valley, the lake behind it, a power house at its foot.
+      const length = 74;
+      // Steep face towards the lake, sloping face downstream (negative x of the shape).
+      const section = new THREE.Shape([new THREE.Vector2(-14, 0), new THREE.Vector2(2, 0), new THREE.Vector2(1.5, 22), new THREE.Vector2(-2.5, 22)]);
+      const dam = new THREE.ExtrudeGeometry(section, { depth: length, bevelEnabled: false });
+      // The section is drawn across the river, then turned: the shape's x becomes -z (downstream towards the camera).
+      dam.rotateY(Math.PI / 2);
+      dam.translate(-length / 2, 0, 0);
+      // Its outline, with the joints between the concrete blocks across both faces and the crest.
+      const edges = new THREE.EdgesGeometry(dam, 20).getAttribute('position');
+      const sketch: THREE.Vector3[] = [];
+      for (let i = 0; i < edges.count; i++) sketch.push(new THREE.Vector3(edges.getX(i), edges.getY(i), edges.getZ(i)));
+      for (let k = 1; k < 6; k++) {
+        const x = -length / 2 + (k * length) / 6;
+        const toe = new THREE.Vector3(x, 0, 14);
+        const crestDown = new THREE.Vector3(x, 22, 2.5);
+        const crestUp = new THREE.Vector3(x, 22, -1.5);
+        const heel = new THREE.Vector3(x, 0, -2);
+        sketch.push(toe, crestDown, crestDown.clone(), crestUp, crestUp.clone(), heel);
+      }
+      outline(dam, 0, -10, sketch);
+      strip(0, -72, length + 10, 120, colors.water, 20);
+      strip(0, 40, 12, 70, colors.water, 0.03);
+      hill(-66, -34, 60, 30, 96);
+      hill(66, -34, 60, 30, 96);
+      building(-14, 9, 18, 9, 9, CONCRETE);
+      for (let i = 0; i < 2; i++) add(block(3, 3.2, 2.4, 0x5f6b76), 'tank', 2 + i * 5, 6);
+      pylon(12, 18);
+      pylon(-2, 32);
+      // Two cars on the road along the crest.
+      car(-14, -9.5, 0xd4ac0d, 4.2);
+      car(8, -9.5, 0x7f8c8d, 4.2);
+      parts[parts.length - 1]!.home.y = 22;
+      parts[parts.length - 2]!.home.y = 22;
+      for (const [x, z] of [
+        [-26, 18],
+        [22, 26],
+        [-24, 30],
+      ] as const)
+        tree(x, z);
     } else if (kind === 'refinery') {
       strip(0, 18, 400, 8, colors.road);
       for (const [x, z, r, h] of [
@@ -382,8 +548,9 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     camera.aspect = width / height;
     // A tall, narrow picture needs the camera further back to hold the same scene.
     const back = camera.aspect < 1 ? 1 / camera.aspect : 1;
-    camera.position.set(34 * back, 19 * back, 44 * back);
-    camera.lookAt(0, 5, 2);
+    const [x, y, z] = view.from;
+    camera.position.set(x * back, y * back, z * back);
+    camera.lookAt(...view.at);
     camera.updateProjectionMatrix();
     apply();
   }
@@ -392,7 +559,10 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
   resize();
 
   return {
-    setKind: build,
+    setKind(kind) {
+      build(kind);
+      resize();
+    },
     setState(next) {
       state = next;
       apply();
