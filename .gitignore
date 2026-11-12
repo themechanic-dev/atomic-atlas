@@ -38,6 +38,7 @@ Thumbs.db
 /mobile/android/app/src/main/assets
 /mobile/android/capacitor-cordova-android-plugins
 /mobile/android/app/src/main/res/xml/config.xml
+/mobile/android/app/src/main/jniLibs
 *.keystore
 *.jks
 

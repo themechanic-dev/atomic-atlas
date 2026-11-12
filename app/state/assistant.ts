@@ -27,7 +27,32 @@ export const thinking = signal(false);
 
 let history: ModelMessage[] = [];
 
-const shell = () => (platform() === 'desktop' ? window.atomicAtlasShell?.assistant : undefined);
+type AssistantShell = NonNullable<NonNullable<Window['atomicAtlasShell']>['assistant']>;
+
+/** On Android the same calls go to the native Assistant plugin (mobile/android, AssistantPlugin.java). */
+function androidShell(): AssistantShell | undefined {
+  const native = window.Capacitor?.nativePromise;
+  if (platform() !== 'android' || typeof native !== 'function' || !window.Capacitor?.Plugins?.Assistant) return undefined;
+  const call = (method: string, options?: unknown) => native('Assistant', method, options);
+  return {
+    status: () => call('status') as Promise<AssistantStatus>,
+    install: (size) => call('install', { size }) as Promise<AssistantStatus>,
+    remove: () => call('remove') as Promise<AssistantStatus>,
+    start: () => call('start') as Promise<AssistantStatus>,
+    chat: (body) => call('chat', body),
+    onProgress: (listener) => {
+      let handle: { remove: () => void } | null = null;
+      const added = window.Capacitor?.Plugins?.Assistant?.addListener?.('progress', ((event: { share?: number }) => listener(event?.share ?? 0)) as () => void);
+      void Promise.resolve(added).then((h) => (handle = h ?? null));
+      return () => handle?.remove();
+    },
+  };
+}
+
+const shell = (): AssistantShell | undefined => (platform() === 'desktop' ? window.atomicAtlasShell?.assistant : androidShell());
+
+/** True on a phone: smaller models are offered. */
+export const onPhone = (): boolean => platform() === 'android';
 
 export function assistantSupported(): boolean {
   return Boolean(shell());

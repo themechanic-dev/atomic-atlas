@@ -6,6 +6,13 @@ def versionParts = appVersion.tokenize('.-').take(3).collect { it.isInteger() ? 
 while (versionParts.size() < 3) { versionParts << 0 }
 
 android {
+    // The assistant's server is shipped as a native library and run as a program:
+    // it must be unpacked on install.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
     namespace = "store.themechanic.atomicatlas"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
