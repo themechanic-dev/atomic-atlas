@@ -106,9 +106,20 @@ export function Switch({ checked, onChange, label, testId }: { checked: boolean;
 }
 
 /** A labelled row: label on the left (or above on narrow screens), control on the right. */
-export function Field({ label, hint, children }: { label: string; hint?: string; children: ComponentChildren }) {
+export function Field({
+  label,
+  hint,
+  stacked,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  /** Label above and the control across the whole width, for wide controls. */
+  stacked?: boolean;
+  children: ComponentChildren;
+}) {
   return (
-    <div class="field">
+    <div class={stacked ? 'field field-stacked' : 'field'}>
       <div class="field-label">
         <span>{label}</span>
         {hint ? <small>{hint}</small> : null}

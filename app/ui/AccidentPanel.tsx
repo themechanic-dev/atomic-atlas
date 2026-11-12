@@ -118,7 +118,7 @@ export function AccidentPanel() {
               ))}
             </select>
           </Field>
-          <Field label={t('accident.stability')}>
+          <Field label={t('accident.stability')} stacked>
             <Segmented<StabilityClass>
               label={t('accident.stability')}
               value={form.stability}

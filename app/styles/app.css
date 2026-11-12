@@ -388,6 +388,21 @@ p {
   gap: 8px;
 }
 
+.field-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.field-stacked .field-control,
+.field-stacked .segmented {
+  width: 100%;
+}
+
+.field-stacked .segmented button {
+  padding: 4px 0;
+}
+
 .hint {
   color: var(--text-dim);
   font-size: 12.5px;
