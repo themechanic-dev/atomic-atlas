@@ -348,8 +348,19 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
         if (falls) object.rotation.z = -blast * (Math.PI / 2 - 0.08);
         else object.rotation.z = -blast * 0.04 * level;
       } else if (role === 'ship') {
-        object.rotation.x = blast * 0.12 * Math.min(1, push) * (level >= 3 ? 2.2 : 1);
-        object.position.z += blast * push * 2;
+        // Glasstone Table 5.147b: severe = sunk or capsized, moderate = immobilised (shown listing).
+        const damage = s?.ship ?? 'none';
+        if (damage === 'severe') {
+          object.rotation.x = blast * (Math.PI / 2 - 0.15);
+          object.position.y -= blast * 3.5;
+          object.position.z += blast * 4;
+        } else if (damage === 'moderate') {
+          object.rotation.x = blast * 0.28;
+          object.position.z += blast * 2.5;
+        } else {
+          object.rotation.x = blast * 0.12 * Math.min(1, push) * (level >= 3 ? 2.2 : 1);
+          object.position.z += blast * push * 2;
+        }
       } else if (role === 'flame') {
         const burning = Boolean(s?.firesStart) && moment.fire > 0.02;
         object.visible = burning;

@@ -3,13 +3,15 @@
 
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { closeupState, tinderIgnitionCal, type CloseupState } from '@physics/damage/closeup';
+import { waveHeightM } from '@physics/water/waves';
 import type { Moment, SceneHandle, SceneKind } from '../closeup/scene';
 import { t } from '../i18n';
-import { formatDistance, formatExposure, formatPressure, formatSpeed } from '../lib/format';
+import { formatDistance, formatExposure, formatHeight, formatPressure, formatSpeed } from '../lib/format';
 import { timeline } from '../state/blastPlayback';
 import { settings } from '../state/settings';
 import { detonation } from '../state/simulation';
 import { closeupRange } from '../state/ui';
+import { water } from '../state/water';
 import { Button, Dialog, Segmented } from './controls';
 import { formatSeconds } from './PlaybackCard';
 
@@ -47,6 +49,7 @@ export function CloseupDialog() {
   const state: CloseupState | null = open
     ? closeupState({
         yieldKt: current.result.scenario.yieldKt,
+        rangeM: range,
         overpressurePsi: current.result.effects.overpressurePsi(range),
         exposureCal: current.result.effects.radiantExposure(range),
         arrivalS,
@@ -130,6 +133,11 @@ export function CloseupDialog() {
     t(state.firesStart ? 'closeup.fires.start' : 'closeup.fires.none', { exposure: formatExposure(tinderIgnitionCal(current.result.scenario.yieldKt)) }),
   ];
   if (kind === 'airport') findings.push(t(`infra.airport.${state.aircraft}`));
+  if (kind === 'harbour') {
+    findings.push(t(`closeup.ship.${state.ship}`));
+    const w = water.value;
+    if (w?.state === 'ready' && w.inWater && w.conditions) findings.push(t('closeup.waves', { height: formatHeight(waveHeightM(w.conditions, range)) }));
+  }
   if (kind === 'power') findings.push(t(`infra.power.${psi >= 5.5 ? 'beyond' : psi >= 5 ? 'moderate' : psi >= 1.7 ? 'light' : 'none'}`));
 
   return (

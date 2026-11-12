@@ -426,6 +426,10 @@
   "closeup.vehicles.standing": "Vehicles: stay on their wheels; glass and bodywork may be damaged.",
   "closeup.fires.start": "Fires: paper, curtains and dry leaves catch fire (from about {exposure} for this yield).",
   "closeup.fires.none": "Fires: the heat here is below what sets paper alight (about {exposure} for this yield).",
+  "closeup.ship.severe": "Ships: sunk, capsized or damaged beyond repair (merchant ships, Glasstone & Dolan Fig. 5.146).",
+  "closeup.ship.moderate": "Ships: immobilised; engines, boilers and equipment need extensive repairs.",
+  "closeup.ship.none": "Ships: no serious damage from the blast; equipment may be damaged.",
+  "closeup.waves": "Waves here: about {height} crest to trough.",
 
   "app.mode.accident": "Accidents",
   "accident.map.hint": "Click the map to place the release · right-click a point for the dose there",
