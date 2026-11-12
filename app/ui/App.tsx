@@ -15,6 +15,7 @@ import { CloseupDialog } from './CloseupDialog';
 import { IconButton, Segmented } from './controls';
 import { HowDialog } from './HowDialog';
 import { assistantSupported } from '../state/assistant';
+import { assistantQuestion } from '../state/ui';
 import { AssistantDialog } from './AssistantDialog';
 import { Logo } from './Logo';
 import { MissilePanel } from './MissilePanel';
@@ -29,6 +30,8 @@ const GlobeView = lazy(() => import('../globe/GlobeView'));
 
 export function App() {
   const [dialog, setDialog] = useState<DialogName>(null);
+  // A question asked from a result opens the assistant.
+  if (assistantQuestion.value && dialog !== 'assistant') queueMicrotask(() => setDialog('assistant'));
   const open = panelOpen.value;
   const current = mode.value;
   // Once opened, the globe stays loaded; it is only hidden while the map is in front.

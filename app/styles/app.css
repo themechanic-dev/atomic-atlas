@@ -1799,3 +1799,9 @@ p {
   gap: 8px;
   margin: 8px 0;
 }
+
+.how-ask {
+  display: inline-block;
+  margin: 2px 0 8px;
+  font-size: 13px;
+}

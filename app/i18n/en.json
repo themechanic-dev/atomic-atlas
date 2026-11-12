@@ -635,6 +635,8 @@
   "speech.accident.urgentNone": "Nowhere does the dose reach the level for sheltering or evacuation.",
   "speech.accident.relocation": "Temporary relocation out to {r}.",
   "assistant.title": "Assistant",
+  "assistant.ask": "Ask the assistant about this",
+  "assistant.askAbout": "Explain the result “{topic}” on screen: what it means and how it was calculated.",
   "assistant.checking": "Checking the assistant…",
   "assistant.unsupported": "The assistant is not available on this system yet.",
   "assistant.download.hint": "The assistant explains results and sets up simulations when you ask in words. It runs on this computer only, without internet once downloaded. Choose a size:",

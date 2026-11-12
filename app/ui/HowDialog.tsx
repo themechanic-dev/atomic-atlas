@@ -6,7 +6,9 @@ import { SOURCES, type Explanation, type SourceId } from '@physics/sources';
 import { explainDamBreak } from '@physics/water/dambreak';
 import { explainDefence } from '@physics/defence/layers';
 import { explainWaves } from '@physics/water/waves';
-import { t } from '../i18n';
+import { hasKey, t } from '../i18n';
+import { assistantStatus } from '../state/assistant';
+import { assistantQuestion } from '../state/ui';
 import { formatPercent, formatQuantity } from '../lib/format';
 import { openExternal } from '../lib/platform';
 import { settings } from '../state/settings';
@@ -40,10 +42,32 @@ function SourceList({ ids }: { ids: readonly SourceId[] }) {
   );
 }
 
+/** “Ask the assistant” about the result being explained, when the assistant is installed. */
+function AskAssistant({ id }: { id: string }) {
+  if (!assistantStatus.value?.installed) return null;
+  const shown = explaining.value ?? '';
+  const key = [`how.${id}.title`, `effect.${shown}`, `${shown}.title`].find((k) => hasKey(k));
+  const topic = key ? t(key) : id;
+  return (
+    <button
+      type="button"
+      class="link how-ask"
+      onClick={() => {
+        assistantQuestion.value = t('assistant.askAbout', { topic });
+        explaining.value = null;
+      }}
+      data-testid="how-ask-assistant"
+    >
+      {t('assistant.ask')}
+    </button>
+  );
+}
+
 function ExplanationView({ explanation }: { explanation: Explanation }) {
   return (
     <>
       <p class="how-body">{t(`how.${explanation.id}.body`)}</p>
+      <AskAssistant id={explanation.id} />
       <h3>{t('how.formula')}</h3>
       <pre class="formula" data-testid="how-formula">
         {explanation.formula}

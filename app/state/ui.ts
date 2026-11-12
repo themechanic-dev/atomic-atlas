@@ -14,3 +14,6 @@ export const mode = signal<Mode>('detonation');
 
 /** Ground range of the point shown in the close view, metres; null while it is closed. */
 export const closeupRange = signal<number | null>(null);
+
+/** A question for the assistant, asked from elsewhere in the app (“Ask the assistant” next to a result). */
+export const assistantQuestion = signal<string | null>(null);

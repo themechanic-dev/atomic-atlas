@@ -15,6 +15,7 @@ import {
   removeAssistant,
   thinking,
 } from '../state/assistant';
+import { assistantQuestion } from '../state/ui';
 import { speak, voiceStatus } from '../state/voice';
 import { Button, Dialog } from './controls';
 
@@ -28,6 +29,13 @@ export function AssistantDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     void refreshAssistant();
   }, []);
+  // A question asked from a result is sent as soon as the assistant is ready.
+  const pending = assistantQuestion.value;
+  useEffect(() => {
+    if (!pending || !status?.installed) return;
+    assistantQuestion.value = null;
+    void ask(pending);
+  }, [pending, status?.installed]);
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight });
   }, [messages.length, thinking.value]);
