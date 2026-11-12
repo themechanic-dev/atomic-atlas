@@ -9,6 +9,18 @@ const api = {
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:open-external', url),
   setTheme: (theme: 'dark' | 'light' | 'system'): Promise<void> => ipcRenderer.invoke('app:set-theme', theme),
   quit: (): Promise<void> => ipcRenderer.invoke('app:quit'),
+  assistant: {
+    status: (): Promise<unknown> => ipcRenderer.invoke('assistant:status'),
+    install: (size: 'small' | 'large'): Promise<unknown> => ipcRenderer.invoke('assistant:install', size),
+    remove: (): Promise<unknown> => ipcRenderer.invoke('assistant:remove'),
+    start: (): Promise<unknown> => ipcRenderer.invoke('assistant:start'),
+    chat: (body: unknown): Promise<unknown> => ipcRenderer.invoke('assistant:chat', body),
+    onProgress: (listener: (share: number) => void): (() => void) => {
+      const handler = (_event: unknown, share: number): void => listener(share);
+      ipcRenderer.on('assistant:progress', handler);
+      return () => ipcRenderer.removeListener('assistant:progress', handler);
+    },
+  },
   voice: {
     status: (): Promise<unknown> => ipcRenderer.invoke('voice:status'),
     install: (): Promise<unknown> => ipcRenderer.invoke('voice:install'),

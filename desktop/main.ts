@@ -5,6 +5,7 @@ import { app, BrowserWindow, ipcMain, Menu, nativeTheme, protocol, screen, shell
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
+import { assistantStatus, chat, installAssistant, removeAssistant, startAssistant, stopAssistant } from './assistant';
 import { installVoice, removeVoice, stopSpeaking, synthesize, voiceStatus } from './voice';
 
 const APP_SCHEME = 'app';
@@ -311,6 +312,15 @@ if (!app.requestSingleInstanceLock()) {
       typeof text === 'string' && (language === 'el' || language === 'en') ? synthesize(text.slice(0, 4000), language, typeof rate === 'number' ? rate : 1) : null,
     );
     ipcMain.handle('voice:stop', () => stopSpeaking());
+    ipcMain.handle('assistant:status', () => assistantStatus());
+    ipcMain.handle('assistant:install', (event, size: unknown) => installAssistant(event.sender, size === 'large' ? 'large' : 'small'));
+    ipcMain.handle('assistant:remove', () => removeAssistant());
+    ipcMain.handle('assistant:start', async () => {
+      await startAssistant();
+      return assistantStatus();
+    });
+    ipcMain.handle('assistant:chat', (_event, body: unknown) => chat(body));
+    app.on('will-quit', () => void stopAssistant());
 
     createWindow();
     app.on('activate', () => {

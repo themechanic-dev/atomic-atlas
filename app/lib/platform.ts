@@ -11,12 +11,31 @@ export interface VoiceStatus {
   error: string | null;
 }
 
+export interface AssistantStatus {
+  supported: boolean;
+  installed: boolean;
+  size: 'small' | 'large' | null;
+  installing: boolean;
+  running: boolean;
+  device: 'gpu' | 'cpu' | null;
+  error: string | null;
+}
+
 interface DesktopShell {
   kind: 'desktop';
   info(): Promise<unknown>;
   openExternal(url: string): Promise<void>;
   setTheme(theme: 'dark' | 'light' | 'system'): Promise<void>;
   quit(): Promise<void>;
+  /** Present from version 0.7: the local assistant (llama.cpp). */
+  assistant?: {
+    status(): Promise<AssistantStatus>;
+    install(size: 'small' | 'large'): Promise<AssistantStatus>;
+    remove(): Promise<AssistantStatus>;
+    start(): Promise<AssistantStatus>;
+    chat(body: unknown): Promise<unknown>;
+    onProgress(listener: (share: number) => void): () => void;
+  };
   /** Present from version 0.7: the offline voice (Piper). */
   voice?: {
     status(): Promise<VoiceStatus>;
