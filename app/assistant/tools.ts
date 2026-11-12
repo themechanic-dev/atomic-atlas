@@ -196,7 +196,12 @@ export function stateNote(): string {
   // user's language: a small model then answers about the result without choosing a tool.
   const distances = shown?.rings
     .filter((r) => r.radiusM > 0)
-    .map((r) => `${t(`effect.${r.id}`)}: ${formatDistance(r.radiusM)}`)
+    .map((r) => {
+      // The long name says what happens, the short one the threshold (5 psi): the user asks by either.
+      const name = t(`effect.${r.id}`);
+      const short = t(`effect.${r.id}.short`);
+      return `${name}${short && short !== name && !short.startsWith('effect.') ? ` (${short})` : ''}: ${formatDistance(r.radiusM)}`;
+    })
     .join('; ');
   const onScreen = shown
     ? `a result is on screen (${shown.scenario.yieldKt} kt, ${shown.heightM > 0 ? `burst at ${Math.round(shown.heightM)} m above the ground` : 'burst at the surface'}). Distances from ground zero on screen, as the app names them: ${distances}. Answer questions about these distances from this list; for casualties, fallout or water waves, call get_results`
