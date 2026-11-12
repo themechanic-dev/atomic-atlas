@@ -10,9 +10,9 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 0.7 adds an offline assistant and a voice: ask in words for a
-> simulation or an explanation, and hear a short summary after each result. Both
-> run on your computer and are downloaded from the app only if you want them.
+> Version 1.0: one detonation, missiles on the globe, accidents, water and dams,
+> war scenarios with a general missile defence, an offline assistant and a voice,
+> and offline map areas, on Linux, Windows and Android.
 
 ## What it does
 
@@ -71,14 +71,17 @@ Free and open source (MIT).
   one) and answers with the app's own calculations, catalog and explanations. It
   does not place ground zero, choose targets or say anything about how weapons are
   made; a filter in the app stops such questions before they reach the model.
-  Downloaded from the app: small (2.7 GB) or large (5.7 GB).
-- **Voice.** After each simulation a short spoken summary, in English or Greek,
-  with Piper, offline. Downloaded from the settings (about 150 MB). The app never
-  listens.
+  Downloaded from the app: small (2.7 GB) or large (5.7 GB) on a computer,
+  1.3 GB or 2.7 GB on a phone. On a computer the answer appears as it is written.
+- **Voice.** After each simulation a short spoken summary, in English or Greek.
+  On a computer with Piper, offline, downloaded from the settings (about
+  150 MB); on a phone with the phone's own voice. The app never listens.
 - **"How was this calculated?"** Next to every number: the formula, the inputs,
   the source (section, figure or table) and how uncertain it is.
 - **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
   and historical, each with its public source.
+- **Offline areas.** Download the detailed map of the area on screen, down to
+  street level; there the map then works without internet.
 - **Settings.** English or Greek, kilometres or miles, °C or °F, dark or light,
   the map source and the weather source.
 
