@@ -1,7 +1,8 @@
 // The assistant: a conversation with a local model that explains results and sets up
-// simulations with the app's own tools. Offline once downloaded; desktop only for now.
+// simulations with the app's own tools. Offline once downloaded, on the desktop and on Android.
 
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { cleanPartial } from '../assistant/clean';
 import { t } from '../i18n';
 import {
   ask,
@@ -91,7 +92,7 @@ export function AssistantDialog({ onClose }: { onClose: () => void }) {
               ) : null}
             </div>
           ))}
-          {thinking.value && partialAnswer.value ? <div class="assistant-message is-assistant">{partialAnswer.value.replace(/<think>[\s\S]*?(<\/think>|$)/g, '')}</div> : null}
+          {thinking.value && partialAnswer.value ? <div class="assistant-message is-assistant">{cleanPartial(partialAnswer.value)}</div> : null}
           {thinking.value && !partialAnswer.value ? <div class="assistant-message is-thinking">{t('assistant.thinking')}</div> : null}
         </div>
         <form

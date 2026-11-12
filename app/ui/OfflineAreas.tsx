@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { formatNumber } from '../lib/format';
 import { mapHandle } from '../map/MapView';
-import { clearAreas, downloadArea, MAX_TILES, offlineAreas, tilesFor } from '../map/offline';
+import { clearAreas, countTiles, downloadArea, MAX_TILES, offlineAreas } from '../map/offline';
 import { settings } from '../state/settings';
 import { Button } from './controls';
 
@@ -19,7 +19,7 @@ export function OfflineAreas() {
   const map = mapHandle.map;
   const b = map?.getBounds();
   const bounds: [number, number, number, number] | null = b ? [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()] : null;
-  const count = bounds ? tilesFor(bounds).length : 0;
+  const count = bounds ? countTiles(bounds) : 0;
   const tooLarge = count > MAX_TILES;
   const megabytes = areas.reduce((sum, a) => sum + a.bytes, 0) / 1e6;
 
@@ -53,7 +53,7 @@ export function OfflineAreas() {
       {error ? <p class="hint warn">{error}</p> : null}
       {areas.length > 0 ? (
         <p class="hint" data-testid="offline-stored">
-          {t('settings.offline.stored', { count: areas.length, mb: formatNumber(megabytes, 3) })}{' '}
+          {t(areas.length === 1 ? 'settings.offline.storedOne' : 'settings.offline.stored', { count: areas.length, mb: formatNumber(megabytes, 3) })}{' '}
           <button
             type="button"
             class="link"

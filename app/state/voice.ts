@@ -1,5 +1,6 @@
-// The voice: a short spoken summary after each simulation, on the desktop with Piper.
-// Nothing is listened to; the app only speaks.
+// The voice: a short spoken summary after each simulation, and the assistant's answers;
+// on the desktop with Piper, on Android with the phone's own voice. Nothing is listened to;
+// the app only speaks.
 
 import { effect, signal } from '@preact/signals';
 import { t } from '../i18n';
@@ -13,8 +14,14 @@ import { water } from './water';
 export const voiceStatus = signal<VoiceStatus | null>(null);
 /** Share of the download done, 0 to 1, while the voice is being downloaded. */
 export const voiceProgress = signal<number | null>(null);
+/** The last simulation summary, for "say it again". */
 export const lastSpeech = signal<string | null>(null);
 export const speaking = signal(false);
+/**
+ * True while the assistant works on a question. A simulation it runs then is not summarised
+ * aloud: the assistant's answer is spoken instead, once it is written.
+ */
+export const assistantAnswering = signal(false);
 
 const shellVoice = () => (platform() === 'desktop' ? window.atomicAtlasShell?.voice : undefined);
 const onAndroid = (): boolean => platform() === 'android' && typeof window.Capacitor?.nativePromise === 'function';
@@ -81,7 +88,6 @@ export async function speak(text: string): Promise<void> {
   if (!voiceStatus.value?.installed || !text) return;
   if (onAndroid()) {
     stopVoice();
-    lastSpeech.value = text;
     speaking.value = true;
     if (!androidListener) {
       androidListener = true;
@@ -94,7 +100,6 @@ export async function speak(text: string): Promise<void> {
   if (!voice) return;
   stopVoice();
   const mine = ++request;
-  lastSpeech.value = text;
   speaking.value = true;
   const bytes = await voice.speak(text, settings.value.language, settings.value.voiceRate);
   if (mine !== request || !bytes) {
@@ -107,6 +112,12 @@ export async function speak(text: string): Promise<void> {
     if (mine === request) speaking.value = false;
   };
   await audio.play().catch(() => (speaking.value = false));
+}
+
+/** A simulation's summary: spoken, and kept for "say it again" (the assistant's answers are not). */
+function speakSummary(text: string): void {
+  lastSpeech.value = text;
+  void speak(text);
 }
 
 export function sayAgain(): void {
@@ -128,15 +139,19 @@ export function initVoice(): void {
     const current = detonation.value;
     const w = water.value;
     if (!current || current.id === spokenDetonation) return;
+    if (assistantAnswering.peek()) {
+      spokenDetonation = current.id;
+      return;
+    }
     // Wait for the depth of the water, so the waves can be said in the same breath.
     if (w && w.id === current.id && w.state === 'loading') return;
     spokenDetonation = current.id;
-    if (settings.peek().voice) void speak(detonationSpeech(current.result, w && w.id === current.id ? w : null));
+    if (settings.peek().voice) speakSummary(detonationSpeech(current.result, w && w.id === current.id ? w : null));
   });
   effect(() => {
     const run = accidentRun.value;
     if (!run || run.id === spokenAccident) return;
     spokenAccident = run.id;
-    if (settings.peek().voice) void speak(accidentSpeech(t(`accident.name.${run.accident.id}`), run.result));
+    if (settings.peek().voice) speakSummary(accidentSpeech(t(`accident.name.${run.accident.id}`), run.result));
   });
 }

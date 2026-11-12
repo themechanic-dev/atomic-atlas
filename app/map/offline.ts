@@ -6,19 +6,20 @@
 // addresses are rewritten to this protocol, so that tiles, fonts and icons all pass through it.
 
 import * as maplibregl from 'maplibre-gl';
+import { countTiles, MAX_ZOOM, tilesFor, type Bounds } from './tiles';
+
+export { countTiles, MAX_ZOOM };
 
 const PREFIX = 'aaoff://';
 const CACHE = 'atomic-atlas-offline-v1';
 const AREAS_KEY = 'atomic-atlas.offline-areas.v1';
-/** Tiles are stored down to street level. */
-export const MAX_ZOOM = 14;
 /** More tiles than this in one area would take too long and too much space. */
 export const MAX_TILES = 6000;
 
 export interface OfflineArea {
   id: string;
   /** West, south, east, north. */
-  bounds: [number, number, number, number];
+  bounds: Bounds;
   tiles: number;
   bytes: number;
   date: string;
@@ -108,26 +109,6 @@ function saveAreas(list: OfflineArea[]): void {
   }
 }
 
-const lngToX = (lng: number, z: number): number => Math.floor(((lng + 180) / 360) * 2 ** z);
-const latToY = (lat: number, z: number): number => {
-  const r = (Math.max(-85.05, Math.min(85.05, lat)) * Math.PI) / 180;
-  return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * 2 ** z);
-};
-
-/** The tiles of an area at every zoom up to MAX_ZOOM, as [z, x, y]. */
-export function tilesFor(bounds: [number, number, number, number]): Array<[number, number, number]> {
-  const [w, s, e, n] = bounds;
-  const out: Array<[number, number, number]> = [];
-  for (let z = 0; z <= MAX_ZOOM; z++) {
-    const x0 = lngToX(w, z);
-    const x1 = lngToX(e, z);
-    const y0 = latToY(n, z);
-    const y1 = latToY(s, z);
-    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) out.push([z, x, y]);
-  }
-  return out;
-}
-
 /** Font ranges the map's labels use: Latin, Greek and common symbols. */
 const GLYPH_RANGES = ['0-255', '256-511', '768-1023', '1024-1279', '7936-8191', '8192-8447', '8448-8703'];
 
@@ -135,7 +116,9 @@ const GLYPH_RANGES = ['0-255', '256-511', '768-1023', '1024-1279', '7936-8191', 
  * Downloads everything the detailed map needs for an area: the style, the tile index, the
  * icons, the fonts and the tiles. `onProgress` gets the share done.
  */
-export async function downloadArea(styleUrl: string, bounds: [number, number, number, number], onProgress: (share: number) => void): Promise<OfflineArea> {
+export async function downloadArea(styleUrl: string, bounds: Bounds, onProgress: (share: number) => void): Promise<OfflineArea> {
+  // Counted before anything is fetched or listed: a large area has hundreds of millions of tiles.
+  if (countTiles(bounds) > MAX_TILES) throw new Error('too large');
   const cache = await caches.open(CACHE);
   let bytes = 0;
   const store = async (url: string): Promise<Response | null> => {
@@ -170,7 +153,6 @@ export async function downloadArea(styleUrl: string, bounds: [number, number, nu
     for (const template of source.tiles ?? []) templates.push({ template, maxzoom: source.maxzoom ?? MAX_ZOOM });
   }
   const tiles = tilesFor(bounds);
-  if (tiles.length > MAX_TILES) throw new Error('too large');
   const jobs = templates.flatMap(({ template, maxzoom }) =>
     tiles.filter(([z]) => z <= maxzoom).map(([z, x, y]) => template.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y))),
   );

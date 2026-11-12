@@ -7,10 +7,11 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.ServerSocket;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -236,6 +238,7 @@ public class AssistantPlugin extends Plugin {
                 if (tools != null) request.put("tools", tools);
                 request.put("temperature", 0.3);
                 request.put("max_tokens", 700);
+                request.put("stream", true);
                 HttpURLConnection connection = (HttpURLConnection) new URL("http://127.0.0.1:" + port + "/v1/chat/completions").openConnection();
                 connection.setRequestMethod("POST");
                 connection.setDoOutput(true);
@@ -246,24 +249,88 @@ public class AssistantPlugin extends Plugin {
                     out.write(request.toString().getBytes(StandardCharsets.UTF_8));
                 }
                 int code = connection.getResponseCode();
-                InputStream in = code < 400 ? connection.getInputStream() : connection.getErrorStream();
-                ByteArrayOutputStream body = new ByteArrayOutputStream();
-                byte[] buffer = new byte[8192];
-                int n;
-                while (in != null && (n = in.read(buffer)) > 0) body.write(buffer, 0, n);
                 if (code >= 400) {
+                    connection.disconnect();
                     JSObject error = new JSObject();
                     error.put("error", String.valueOf(code));
                     call.resolve(error);
-                } else {
-                    call.resolve(new JSObject(body.toString("UTF-8")));
+                    return;
                 }
+                call.resolve(readStream(connection));
             } catch (Exception e) {
                 JSObject error = new JSObject();
                 error.put("error", e.getMessage());
                 call.resolve(error);
             }
         }).start();
+    }
+
+    /**
+     * Reads the server's answer as it is written (server-sent events): each piece of text goes
+     * to the web UI at once as a "delta" event, and the whole answer, with any tool calls put
+     * together from their pieces, is returned in the usual chat-completion form.
+     */
+    private JSObject readStream(HttpURLConnection connection) throws Exception {
+        StringBuilder content = new StringBuilder();
+        List<JSONObject> calls = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (!line.startsWith("data:")) continue;
+                String data = line.substring(5).trim();
+                if (data.equals("[DONE]")) continue;
+                JSONObject delta;
+                try {
+                    JSONArray choices = new JSONObject(data).optJSONArray("choices");
+                    delta = choices == null || choices.length() == 0 ? null : choices.getJSONObject(0).optJSONObject("delta");
+                } catch (Exception e) {
+                    continue;
+                }
+                if (delta == null) continue;
+                String text = delta.isNull("content") ? "" : delta.optString("content", "");
+                if (!text.isEmpty()) {
+                    content.append(text);
+                    JSObject piece = new JSObject();
+                    piece.put("text", text);
+                    notifyListeners("delta", piece);
+                }
+                JSONArray parts = delta.optJSONArray("tool_calls");
+                for (int i = 0; parts != null && i < parts.length(); i++) {
+                    JSONObject part = parts.getJSONObject(i);
+                    int index = part.optInt("index", calls.size());
+                    while (calls.size() <= index) {
+                        JSONObject fresh = new JSONObject();
+                        fresh.put("id", "call_" + calls.size());
+                        fresh.put("type", "function");
+                        JSONObject function = new JSONObject();
+                        function.put("name", "");
+                        function.put("arguments", "");
+                        fresh.put("function", function);
+                        calls.add(fresh);
+                    }
+                    JSONObject target = calls.get(index);
+                    if (part.has("id") && !part.isNull("id")) target.put("id", part.getString("id"));
+                    JSONObject function = part.optJSONObject("function");
+                    if (function != null) {
+                        JSONObject into = target.getJSONObject("function");
+                        if (function.has("name") && !function.isNull("name")) into.put("name", into.getString("name") + function.getString("name"));
+                        if (function.has("arguments") && !function.isNull("arguments")) into.put("arguments", into.getString("arguments") + function.getString("arguments"));
+                    }
+                }
+            }
+        } finally {
+            connection.disconnect();
+        }
+        JSONObject message = new JSONObject();
+        message.put("role", "assistant");
+        message.put("content", content.toString());
+        if (!calls.isEmpty()) message.put("tool_calls", new JSONArray(calls));
+        JSONObject choice = new JSONObject();
+        choice.put("message", message);
+        JSObject result = new JSObject();
+        result.put("choices", new JSONArray().put(choice));
+        return result;
     }
 
     @Override

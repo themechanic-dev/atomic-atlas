@@ -5,7 +5,8 @@
 
 import { detonate, DEFAULT_SCENARIO, type DetonationResult } from '@physics/detonation';
 import { WEAPONS } from '../data/catalog';
-import { dictionaryFor } from '../i18n';
+import { dictionaryFor, t } from '../i18n';
+import { formatDistance } from '../lib/format';
 import { casualties, detonation, form, groundZero, runDetonation, updateForm } from '../state/simulation';
 import { mode } from '../state/ui';
 import { water } from '../state/water';
@@ -35,17 +36,17 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     type: 'function',
-    function: { name: 'run_simulation', description: 'Run the simulation with the current settings and return the main results.', parameters: { type: 'object', properties: {} } },
+    function: { name: 'run_simulation', description: 'Run the simulation again with the current settings, after set_detonation changed them, and return the main results. Not needed to read the result already on screen.', parameters: { type: 'object', properties: {} } },
   },
   {
     type: 'function',
-    function: { name: 'get_results', description: 'Return the results of the simulation now on screen.', parameters: { type: 'object', properties: {} } },
+    function: { name: 'get_results', description: 'Return the results of the simulation now on screen. Use it for every question about the result the user sees.', parameters: { type: 'object', properties: {} } },
   },
   {
     type: 'function',
     function: {
       name: 'compare_yields',
-      description: 'Compare the radius of the main effects for up to five yields, without changing the map.',
+      description: 'Only when the user asks to compare different yields: the radius of the main effects for up to five yields, without changing the map. Not for the result on screen.',
       parameters: {
         type: 'object',
         properties: { yields_kt: { type: 'array', items: { type: 'number' } }, burst: { type: 'string', enum: ['air', 'surface'] } },
@@ -190,5 +191,15 @@ export async function runTool(name: string, args: Record<string, unknown>): Prom
 /** A line about the app's state for the model: what is set and what is on screen. */
 export function stateNote(): string {
   const f = form.value;
-  return `App state: yield ${f.yieldKt} kt, ${f.burstMode === 'surface' ? 'surface burst' : f.burstMode === 'custom' ? `burst at ${f.heightM} m` : 'air burst'}; ground zero ${groundZero.value ? 'placed' : 'not placed'}; ${detonation.value ? 'a result is on screen' : 'no result yet'}.`;
+  const shown = detonation.value?.result;
+  // The distances on screen go into the note itself, named as the app names them in the
+  // user's language: a small model then answers about the result without choosing a tool.
+  const distances = shown?.rings
+    .filter((r) => r.radiusM > 0)
+    .map((r) => `${t(`effect.${r.id}`)}: ${formatDistance(r.radiusM)}`)
+    .join('; ');
+  const onScreen = shown
+    ? `a result is on screen (${shown.scenario.yieldKt} kt, ${shown.heightM > 0 ? `burst at ${Math.round(shown.heightM)} m above the ground` : 'burst at the surface'}). Distances from ground zero on screen, as the app names them: ${distances}. Answer questions about these distances from this list; for casualties, fallout or water waves, call get_results`
+    : 'no result yet';
+  return `App state: yield ${f.yieldKt} kt, ${f.burstMode === 'surface' ? 'surface burst' : f.burstMode === 'custom' ? `burst at ${f.heightM} m` : 'air burst'}; ground zero ${groundZero.value ? 'placed' : 'not placed'}; ${onScreen}.`;
 }

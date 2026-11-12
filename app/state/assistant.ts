@@ -2,11 +2,14 @@
 // model, and the tools it calls. The limits of the app are kept here, not left to the model.
 
 import { signal } from '@preact/signals';
+import { distinctCalls } from '../assistant/calls';
+import { cleanAnswer } from '../assistant/clean';
 import { isOutOfBounds } from '../assistant/guard';
 import { runTool, stateNote, TOOLS } from '../assistant/tools';
 import { t } from '../i18n';
 import { platform, type AssistantStatus } from '../lib/platform';
 import { settings } from './settings';
+import { assistantAnswering, speak, stopVoice } from './voice';
 
 export interface ShownMessage {
   role: 'user' | 'assistant' | 'tool' | 'refusal' | 'error';
@@ -36,18 +39,29 @@ function androidShell(): AssistantShell | undefined {
   const native = window.Capacitor?.nativePromise;
   if (platform() !== 'android' || typeof native !== 'function' || !window.Capacitor?.Plugins?.Assistant) return undefined;
   const call = (method: string, options?: unknown) => native('Assistant', method, options);
+  // The plugin may hand back its listener handle later than the caller removes it: a removal
+  // that comes first is remembered and done when the handle arrives.
+  const listen = <E>(event: string, listener: (data: E) => void): (() => void) => {
+    let removed = false;
+    let handle: { remove: () => void } | null = null;
+    const added = window.Capacitor?.Plugins?.Assistant?.addListener?.(event, listener as () => void);
+    void Promise.resolve(added).then((h) => {
+      if (removed) h?.remove();
+      else handle = h ?? null;
+    });
+    return () => {
+      removed = true;
+      handle?.remove();
+    };
+  };
   return {
     status: () => call('status') as Promise<AssistantStatus>,
     install: (size) => call('install', { size }) as Promise<AssistantStatus>,
     remove: () => call('remove') as Promise<AssistantStatus>,
     start: () => call('start') as Promise<AssistantStatus>,
     chat: (body) => call('chat', body),
-    onProgress: (listener) => {
-      let handle: { remove: () => void } | null = null;
-      const added = window.Capacitor?.Plugins?.Assistant?.addListener?.('progress', ((event: { share?: number }) => listener(event?.share ?? 0)) as () => void);
-      void Promise.resolve(added).then((h) => (handle = h ?? null));
-      return () => handle?.remove();
-    },
+    onProgress: (listener) => listen<{ share?: number }>('progress', (event) => listener(event?.share ?? 0)),
+    onDelta: (listener) => listen<{ text?: string }>('delta', (event) => listener(event?.text ?? '')),
   };
 }
 
@@ -97,7 +111,8 @@ function systemPrompt(): string {
     'You may: explain results and the physics behind them, set up and run simulations with the tools, compare yields, look up weapons in the public catalog. Use the tools for every number about effects; do not guess numbers.',
     'You must not: give any information on how to build, obtain or use nuclear weapons or materials; choose, rank or suggest targets or places to attack; suggest how to cause more harm; describe how to defeat a missile defence. If asked, say briefly that this is outside what the app does, and offer something within it.',
     'You cannot place ground zero: the user clicks the map. If it is not placed, ask the user to click the map.',
-    'Write units as the app does: kt, Mt, km, m, psi. Terms in Greek: blast wave = ωστικό κύμα, overpressure = υπερπίεση, fireball = πύρινη σφαίρα, fallout = ραδιενεργός σκόνη, ground zero = σημείο της έκρηξης, air burst = έκρηξη στον αέρα, surface burst = έκρηξη στην επιφάνεια, burns = εγκαύματα, water waves = κύματα στο νερό. psi stays psi.',
+    'Write units as the app does: kt, Mt, km, m, psi. Terms in Greek: blast wave = ωστικό κύμα, overpressure = υπερπίεση, fireball = πύρινη σφαίρα, fallout = ραδιενεργός σκόνη, ground zero = σημείο της έκρηξης, air burst = έκρηξη στον αέρα, surface burst = έκρηξη στην επιφάνεια, burns = εγκαύματα, water waves = κύματα στο νερό, yield = ισχύς. psi stays psi.',
+    'Name each effect in words, as a person would; never write the field names of the tool results (such as burns_third_degree). Write plain text, without markdown. In Greek, decimals take a comma: 2,17 km.',
     'After a tool gives numbers, answer with those numbers and say which effect each one is; do not invent explanations the tools did not give.',
     stateNote(),
   ].join('\n');
@@ -105,10 +120,6 @@ function systemPrompt(): string {
 
 const MAX_TOOL_ROUNDS = 5;
 
-/** Strips the reasoning some models write before the answer. */
-function cleanAnswer(text: string): string {
-  return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-}
 
 export async function ask(text: string): Promise<void> {
   const s = shell();
@@ -120,18 +131,29 @@ export async function ask(text: string): Promise<void> {
     return;
   }
   history.push({ role: 'user', content: question });
+  // The question has the user's attention: what the voice was saying stops, and a simulation
+  // the assistant runs is not summarised aloud; its answer is spoken instead.
+  stopVoice();
+  assistantAnswering.value = true;
   thinking.value = true;
   partialAnswer.value = '';
   const offDelta = s.onDelta?.((text) => (partialAnswer.value += text));
   try {
+    // The same calls two turns in a row mean the model is going round in circles: the next
+    // turn is asked without tools, so it has to answer with what it already has.
+    let lastCalls = '';
+    let answerNow = false;
     for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-      const response = (await s.chat({ messages: [{ role: 'system', content: systemPrompt() }, ...history], tools: round < MAX_TOOL_ROUNDS ? TOOLS : undefined })) as {
+      const response = (await s.chat({ messages: [{ role: 'system', content: systemPrompt() }, ...history], tools: round < MAX_TOOL_ROUNDS && !answerNow ? TOOLS : undefined })) as {
         error?: string;
         choices?: Array<{ message?: ModelMessage }>;
       };
       if (response.error || !response.choices?.[0]?.message) throw new Error(response.error ?? 'no answer');
       const message = response.choices[0].message;
-      const calls = message.tool_calls ?? [];
+      const calls = distinctCalls(message.tool_calls ?? []);
+      const callsKey = calls.map((c) => `${c.function.name}(${c.function.arguments})`).join(';');
+      if (calls.length > 0 && callsKey === lastCalls) answerNow = true;
+      lastCalls = callsKey;
       partialAnswer.value = '';
       if (calls.length > 0) {
         history.push({ role: 'assistant', content: message.content ?? null, tool_calls: calls });
@@ -151,6 +173,7 @@ export async function ask(text: string): Promise<void> {
       const answer = cleanAnswer(message.content ?? '');
       history.push({ role: 'assistant', content: answer });
       conversation.value = [...conversation.value, { role: 'assistant', text: answer || t('assistant.empty') }];
+      if (answer && settings.value.voice) void speak(answer);
       break;
     }
   } catch (error) {
@@ -161,6 +184,7 @@ export async function ask(text: string): Promise<void> {
     offDelta?.();
     partialAnswer.value = '';
     thinking.value = false;
+    assistantAnswering.value = false;
     // The server starts with the first question: show where it runs.
     void refreshAssistant();
     // A long conversation is cut from the start, so the model's memory does not overflow.

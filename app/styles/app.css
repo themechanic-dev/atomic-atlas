@@ -1565,10 +1565,33 @@ p {
   }
 }
 
-/* On a phone the logo alone stands for the name: the room goes to the simulator switch. */
+/* On a phone the logo alone stands for the name, and the simulator switch gets a row of
+   its own under the logo and the buttons, across the whole width: three names and four
+   buttons do not fit side by side on a phone. */
 @media (max-width: 599px) {
   .brand-text {
     display: none;
+  }
+
+  .topbar {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 0;
+    padding-bottom: 8px;
+  }
+
+  .topbar-actions {
+    min-height: 52px;
+    align-items: center;
+  }
+
+  .topbar-modes {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .topbar-modes .segmented {
+    flex: 1;
   }
 }
 
