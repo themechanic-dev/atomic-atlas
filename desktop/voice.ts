@@ -6,20 +6,19 @@
 // el_GR-joy-medium and en_US-lessac-medium on HuggingFace (rhasspy/piper-voices).
 
 import { spawn } from 'node:child_process';
-import { createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, renameSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
 import { app, type WebContents } from 'electron';
+import { download } from './download';
 
 const RELEASE = 'https://github.com/rhasspy/piper/releases/download/2023.11.14-2';
 const VOICES_BASE = 'https://huggingface.co/rhasspy/piper-voices/resolve/main';
 
 export type VoiceLanguage = 'el' | 'en';
 
-const VOICES: Record<VoiceLanguage, { path: string; name: string }> = {
-  el: { path: 'el/el_GR/joy/medium', name: 'el_GR-joy-medium' },
-  en: { path: 'en/en_US/lessac/medium', name: 'en_US-lessac-medium' },
+const VOICES: Record<VoiceLanguage, { path: string; name: string; sha256: string }> = {
+  el: { path: 'el/el_GR/joy/medium', name: 'el_GR-joy-medium', sha256: '31b1d51dc72dd43a5429b67798e27599f8cdcfce8a80265bc6f50d932bf144bc' },
+  en: { path: 'en/en_US/lessac/medium', name: 'en_US-lessac-medium', sha256: '5efe09e69902187827af646e1a6e9d269dee769f9877d17b16b1b46eeaaf019f' },
 };
 
 function engineArchive(): { url: string; file: string } | null {
@@ -50,16 +49,6 @@ export function voiceStatus(): VoiceStatus {
   return { supported: engineArchive() !== null, installed, installing, error: lastError };
 }
 
-/** Downloads a file to a path through a temporary name, reporting bytes as they come. */
-async function download(url: string, target: string, onBytes: (n: number) => void): Promise<void> {
-  const response = await fetch(url, { redirect: 'follow' });
-  if (!response.ok || !response.body) throw new Error(`${response.status} ${url}`);
-  const partial = `${target}.part`;
-  const body = Readable.fromWeb(response.body as never);
-  body.on('data', (chunk: Buffer) => onBytes(chunk.length));
-  await pipeline(body, createWriteStream(partial));
-  renameSync(partial, target);
-}
 
 function run(command: string, args: string[], cwd: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -100,7 +89,7 @@ export async function installVoice(sender: WebContents): Promise<VoiceStatus> {
       const voice = VOICES[language];
       for (const suffix of ['.onnx.json', '.onnx']) {
         const target = join(voicesDir(), `${voice.name}${suffix}`);
-        if (!existsSync(target)) await download(`${VOICES_BASE}/${voice.path}/${voice.name}${suffix}`, target, progress);
+        if (!existsSync(target)) await download(`${VOICES_BASE}/${voice.path}/${voice.name}${suffix}`, target, progress, suffix === '.onnx' ? { sha256: voice.sha256 } : {});
       }
     }
   } catch (error) {

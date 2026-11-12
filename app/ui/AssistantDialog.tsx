@@ -62,6 +62,7 @@ export function AssistantDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
         <p class="hint">{t('assistant.download.sizes')}</p>
+        {status.needsRuntime ? <p class="hint">{t('assistant.download.runtime')}</p> : null}
         {status.error ? <p class="hint warn">{t('assistant.download.error')}</p> : null}
       </div>
     );

@@ -18,6 +18,7 @@ export interface AssistantStatus {
   installing: boolean;
   running: boolean;
   device: 'gpu' | 'cpu' | null;
+  needsRuntime: boolean;
   error: string | null;
 }
 

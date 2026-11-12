@@ -639,6 +639,7 @@
   "assistant.download.small": "Download the small assistant (2.8 GB)",
   "assistant.download.large": "Download the large assistant (5.7 GB)",
   "assistant.download.sizes": "The small one runs on most computers; the large one answers better and needs about 8 GB of memory. A graphics card makes both much faster.",
+  "assistant.download.runtime": "Windows will also install the Microsoft Visual C++ runtime, which the assistant needs, and will ask for your permission once.",
   "assistant.downloading": "Downloading… {percent} %",
   "assistant.download.error": "The download did not finish. Check the internet connection and try again.",
   "assistant.welcome": "Ask about the results, or ask for a simulation in words, for example “A 300 kt burst at the surface” or “Compare 15 kt and 1 Mt”. Place ground zero on the map first.",
