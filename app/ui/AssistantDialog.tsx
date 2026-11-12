@@ -11,6 +11,7 @@ import {
   conversation,
   downloadAssistant,
   onPhone,
+  partialAnswer,
   refreshAssistant,
   removeAssistant,
   thinking,
@@ -38,7 +39,7 @@ export function AssistantDialog({ onClose }: { onClose: () => void }) {
   }, [pending, status?.installed]);
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight });
-  }, [messages.length, thinking.value]);
+  }, [messages.length, thinking.value, partialAnswer.value]);
 
   const send = (): void => {
     const question = text.trim();
@@ -90,7 +91,8 @@ export function AssistantDialog({ onClose }: { onClose: () => void }) {
               ) : null}
             </div>
           ))}
-          {thinking.value ? <div class="assistant-message is-thinking">{t('assistant.thinking')}</div> : null}
+          {thinking.value && partialAnswer.value ? <div class="assistant-message is-assistant">{partialAnswer.value.replace(/<think>[\s\S]*?(<\/think>|$)/g, '')}</div> : null}
+          {thinking.value && !partialAnswer.value ? <div class="assistant-message is-thinking">{t('assistant.thinking')}</div> : null}
         </div>
         <form
           class="assistant-input"

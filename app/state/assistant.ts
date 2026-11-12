@@ -24,6 +24,8 @@ export const assistantStatus = signal<AssistantStatus | null>(null);
 export const assistantProgress = signal<number | null>(null);
 export const conversation = signal<ShownMessage[]>([]);
 export const thinking = signal(false);
+/** The answer as it is being written, before it is complete. */
+export const partialAnswer = signal('');
 
 let history: ModelMessage[] = [];
 
@@ -119,6 +121,8 @@ export async function ask(text: string): Promise<void> {
   }
   history.push({ role: 'user', content: question });
   thinking.value = true;
+  partialAnswer.value = '';
+  const offDelta = s.onDelta?.((text) => (partialAnswer.value += text));
   try {
     for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
       const response = (await s.chat({ messages: [{ role: 'system', content: systemPrompt() }, ...history], tools: round < MAX_TOOL_ROUNDS ? TOOLS : undefined })) as {
@@ -128,6 +132,7 @@ export async function ask(text: string): Promise<void> {
       if (response.error || !response.choices?.[0]?.message) throw new Error(response.error ?? 'no answer');
       const message = response.choices[0].message;
       const calls = message.tool_calls ?? [];
+      partialAnswer.value = '';
       if (calls.length > 0) {
         history.push({ role: 'assistant', content: message.content ?? null, tool_calls: calls });
         for (const call of calls) {
@@ -153,6 +158,8 @@ export async function ask(text: string): Promise<void> {
     conversation.value = [...conversation.value, { role: 'error', text: t('assistant.error') }];
     void refreshAssistant();
   } finally {
+    offDelta?.();
+    partialAnswer.value = '';
     thinking.value = false;
     // The server starts with the first question: show where it runs.
     void refreshAssistant();

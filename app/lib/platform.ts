@@ -35,6 +35,8 @@ interface DesktopShell {
     remove(): Promise<AssistantStatus>;
     start(): Promise<AssistantStatus>;
     chat(body: unknown): Promise<unknown>;
+    /** Pieces of the answer as they are written (desktop only). */
+    onDelta?(listener: (text: string) => void): () => void;
     onProgress(listener: (share: number) => void): () => void;
   };
   /** Present from version 0.7: the offline voice (Piper). */

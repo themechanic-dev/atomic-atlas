@@ -298,14 +298,55 @@ export async function stopAssistant(): Promise<void> {
 }
 
 /** One turn of the conversation: messages and tools in the OpenAI form, the answer back. */
-export async function chat(body: unknown): Promise<unknown> {
+/**
+ * One turn of the conversation: messages and tools in the OpenAI form, the answer back.
+ * The answer is streamed: each piece of text is sent to the window as it comes
+ * ('assistant:delta'), and the whole message is returned at the end, tool calls included.
+ */
+export async function chat(body: unknown, sender?: WebContents): Promise<unknown> {
   if (!(await startAssistant())) return { error: lastError ?? 'not running' };
   const request = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {};
   const response = await fetch(`http://127.0.0.1:${serverPort}/v1/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: request.messages, tools: request.tools, temperature: 0.3, max_tokens: 700 }),
+    body: JSON.stringify({ messages: request.messages, tools: request.tools, temperature: 0.3, max_tokens: 700, stream: true }),
   });
-  if (!response.ok) return { error: `${response.status}` };
-  return response.json();
+  if (!response.ok || !response.body) return { error: `${response.status}` };
+  let content = '';
+  const calls: Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }> = [];
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const reader = response.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let newline: number;
+    while ((newline = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (!line.startsWith('data:')) continue;
+      const data = line.slice(5).trim();
+      if (data === '[DONE]') continue;
+      let chunk: { choices?: Array<{ delta?: { content?: string; tool_calls?: Array<{ index: number; id?: string; function?: { name?: string; arguments?: string } }> } }> };
+      try {
+        chunk = JSON.parse(data);
+      } catch {
+        continue;
+      }
+      const delta = chunk.choices?.[0]?.delta;
+      if (!delta) continue;
+      if (delta.content) {
+        content += delta.content;
+        if (sender && !sender.isDestroyed()) sender.send('assistant:delta', delta.content);
+      }
+      for (const part of delta.tool_calls ?? []) {
+        const call = (calls[part.index] ??= { id: part.id ?? `call_${part.index}`, type: 'function', function: { name: '', arguments: '' } });
+        if (part.id) call.id = part.id;
+        if (part.function?.name) call.function.name += part.function.name;
+        if (part.function?.arguments) call.function.arguments += part.function.arguments;
+      }
+    }
+  }
+  return { choices: [{ message: { role: 'assistant', content, tool_calls: calls.length > 0 ? calls.filter(Boolean) : undefined } }] };
 }

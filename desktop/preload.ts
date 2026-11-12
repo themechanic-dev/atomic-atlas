@@ -15,6 +15,11 @@ const api = {
     remove: (): Promise<unknown> => ipcRenderer.invoke('assistant:remove'),
     start: (): Promise<unknown> => ipcRenderer.invoke('assistant:start'),
     chat: (body: unknown): Promise<unknown> => ipcRenderer.invoke('assistant:chat', body),
+    onDelta: (listener: (text: string) => void): (() => void) => {
+      const handler = (_event: unknown, text: string): void => listener(text);
+      ipcRenderer.on('assistant:delta', handler);
+      return () => ipcRenderer.removeListener('assistant:delta', handler);
+    },
     onProgress: (listener: (share: number) => void): (() => void) => {
       const handler = (_event: unknown, share: number): void => listener(share);
       ipcRenderer.on('assistant:progress', handler);

@@ -319,7 +319,7 @@ if (!app.requestSingleInstanceLock()) {
       await startAssistant();
       return assistantStatus();
     });
-    ipcMain.handle('assistant:chat', (_event, body: unknown) => chat(body));
+    ipcMain.handle('assistant:chat', (event, body: unknown) => chat(body, event.sender));
     app.on('will-quit', () => void stopAssistant());
 
     createWindow();
