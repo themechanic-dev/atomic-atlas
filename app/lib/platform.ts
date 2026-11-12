@@ -4,12 +4,28 @@
 
 import type { Theme } from '../state/settings';
 
+export interface VoiceStatus {
+  supported: boolean;
+  installed: boolean;
+  installing: boolean;
+  error: string | null;
+}
+
 interface DesktopShell {
   kind: 'desktop';
   info(): Promise<unknown>;
   openExternal(url: string): Promise<void>;
   setTheme(theme: 'dark' | 'light' | 'system'): Promise<void>;
   quit(): Promise<void>;
+  /** Present from version 0.7: the offline voice (Piper). */
+  voice?: {
+    status(): Promise<VoiceStatus>;
+    install(): Promise<VoiceStatus>;
+    remove(): Promise<VoiceStatus>;
+    speak(text: string, language: 'el' | 'en', rate: number): Promise<Uint8Array | null>;
+    stop(): Promise<void>;
+    onProgress(listener: (share: number) => void): () => void;
+  };
 }
 
 declare global {

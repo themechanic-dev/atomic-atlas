@@ -23,6 +23,10 @@ export interface Settings {
   terrain3d: boolean;
   /** Airports and power stations on the map and in the results. */
   infrastructure: boolean;
+  /** Speak a summary after each simulation (needs the voice to be downloaded). */
+  voice: boolean;
+  /** Speed of the voice: 0.85, 1 or 1.2. */
+  voiceRate: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +41,8 @@ export const DEFAULT_SETTINGS: Settings = {
   buildings3d: true,
   terrain3d: false,
   infrastructure: true,
+  voice: true,
+  voiceRate: 1,
 };
 
 const STORAGE_KEY = 'atomic-atlas.settings.v1';
@@ -67,6 +73,8 @@ export function parseSettings(raw: string | null): Settings {
   if (typeof data.buildings3d === 'boolean') out.buildings3d = data.buildings3d;
   if (typeof data.terrain3d === 'boolean') out.terrain3d = data.terrain3d;
   if (typeof data.infrastructure === 'boolean') out.infrastructure = data.infrastructure;
+  if (typeof data.voice === 'boolean') out.voice = data.voice;
+  if (typeof data.voiceRate === 'number' && [0.85, 1, 1.2].includes(data.voiceRate)) out.voiceRate = data.voiceRate;
   if (typeof data.mapStyleUrl === 'string' && data.mapStyleUrl.length < 2000) out.mapStyleUrl = data.mapStyleUrl;
   return out;
 }

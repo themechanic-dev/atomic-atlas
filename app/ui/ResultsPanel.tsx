@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { MILE } from '@physics/units';
 import type { EffectRing } from '@physics/detonation';
 import { t } from '../i18n';
+import { SayAgain } from './SayAgain';
 import {
   formatAngle,
   formatArea,
@@ -76,7 +77,10 @@ export function ResultsPanel() {
 
   return (
     <section class="panel-section results" data-testid="results-panel" ref={section}>
-      <h2 class="panel-title">{t('results.title')}</h2>
+      <h2 class="panel-title panel-title-row">
+        {t('results.title')}
+        <SayAgain />
+      </h2>
       <p class="summary" data-testid="results-summary">
         {t('results.summary', {
           yield: formatYield(result.scenario.yieldKt),

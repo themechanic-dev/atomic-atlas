@@ -1693,3 +1693,31 @@ p {
   background: var(--surface-2);
   font-weight: 650;
 }
+
+/* The results heading with the "say it again" button of the voice. */
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.say-again {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.say-again:hover {
+  border-color: var(--accent);
+}

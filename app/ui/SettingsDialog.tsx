@@ -15,6 +15,7 @@ import {
   type WeatherSourceId,
 } from '../state/settings';
 import { Button, Dialog, Field, Icon, Segmented, Switch } from './controls';
+import { VoiceSettings } from './VoiceSettings';
 import { Logo } from './Logo';
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
@@ -159,6 +160,8 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         </Field>
         <p class="hint">{t(`settings.weather.${s.weatherSource}.hint`)}</p>
       </section>
+
+      <VoiceSettings />
 
       <section class="settings-group about" data-testid="about">
         <h3>{t('settings.about')}</h3>

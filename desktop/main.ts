@@ -5,6 +5,7 @@ import { app, BrowserWindow, ipcMain, Menu, nativeTheme, protocol, screen, shell
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
+import { installVoice, removeVoice, stopSpeaking, synthesize, voiceStatus } from './voice';
 
 const APP_SCHEME = 'app';
 const APP_HOST = 'atomic-atlas';
@@ -303,6 +304,13 @@ if (!app.requestSingleInstanceLock()) {
       if (theme === 'dark' || theme === 'light' || theme === 'system') nativeTheme.themeSource = theme;
     });
     ipcMain.handle('app:quit', () => app.quit());
+    ipcMain.handle('voice:status', () => voiceStatus());
+    ipcMain.handle('voice:install', (event) => installVoice(event.sender));
+    ipcMain.handle('voice:remove', () => removeVoice());
+    ipcMain.handle('voice:speak', (_event, text: unknown, language: unknown, rate: unknown) =>
+      typeof text === 'string' && (language === 'el' || language === 'en') ? synthesize(text.slice(0, 4000), language, typeof rate === 'number' ? rate : 1) : null,
+    );
+    ipcMain.handle('voice:stop', () => stopSpeaking());
 
     createWindow();
     app.on('activate', () => {

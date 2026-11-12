@@ -5,6 +5,7 @@ import { SOURCES } from '@physics/sources';
 import { STABILITY_CLASSES, type StabilityClass } from '@physics/dispersion/plume';
 import { IAEA_CRITERIA, MAX_RANGE_M } from '@physics/dispersion/release';
 import { t } from '../i18n';
+import { SayAgain } from './SayAgain';
 import { formatActivity, formatDistance, formatEffectiveDose, formatHeight, formatLatLon, formatSpeed } from '../lib/format';
 import {
   ACCIDENTS,
@@ -149,7 +150,10 @@ export function AccidentPanel() {
 
       {run ? (
         <section class="panel-section results" data-testid="accident-results">
-          <h2 class="panel-title">{t('results.title')}</h2>
+          <h2 class="panel-title panel-title-row">
+        {t('results.title')}
+        <SayAgain />
+      </h2>
           <div class="card">
             <div class="card-head">
               <h3>{t('accident.criteria')}</h3>

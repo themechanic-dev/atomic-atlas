@@ -195,9 +195,9 @@ export async function runDetonation(): Promise<void> {
     batch(() => {
       detonation.value = { id, at, result, liveWind, weatherTime };
       casualties.value = { ...NO_CASUALTIES, state: 'loading' };
+      // Waves, if surface zero is on water; they follow when the depth has been read.
+      void computeWater(id, at, result.scenario.yieldKt, result.heightM <= 0);
     });
-    // Waves, if surface zero is on water; they follow when the depth has been read.
-    void computeWater(id, at, result.scenario.yieldKt, result.heightM <= 0);
 
     // Casualties need the population grid; they follow when it has loaded.
     const reach = Math.max(result.rings.find((r) => r.id === 'blast1')?.radiusM ?? 0, result.maxRadiusM) * 1.1;
