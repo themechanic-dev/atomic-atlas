@@ -139,15 +139,22 @@ export async function downloadArea(styleUrl: string, bounds: Bounds, onAllProgre
   let done = 0;
   // A few at a time, to be quick without flooding the server.
   const queue = [...jobs];
+  const failed: string[] = [];
   await Promise.all(
     Array.from({ length: 6 }, async () => {
       for (let url = queue.shift(); url; url = queue.shift()) {
-        await store(url).catch(() => null);
+        if (!(await store(url).catch(() => null))) failed.push(url);
         done++;
         if (done % 20 === 0) onProgress(done / jobs.length);
       }
     }),
   );
+  // A tile the server did not give at once (busy, or a short network drop) is asked for once
+  // more, one at a time; a tile that does not exist simply stays missing.
+  for (const url of failed) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await store(url).catch(() => null);
+  }
   onProgress(1);
   const area: OfflineArea = { id: `${Date.now()}`, bounds, tiles: tiles.length, bytes, date: new Date().toISOString().slice(0, 10) };
   if (withPopulation) {
