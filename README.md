@@ -10,9 +10,9 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 0.4 adds accidents: a release of radioactive material into the air,
-> as large as a historical accident or a share of it, with the dose downwind.
-> Water effects, a war timeline and an offline assistant follow in later versions.
+> Version 0.5 adds water: the waves from a burst in the sea or a lake, the low
+> coasts they could flood, ships in the harbour, and what would follow downstream
+> if a dam failed. A war timeline and an offline assistant follow in later versions.
 
 ## What it does
 
@@ -46,6 +46,14 @@ Free and open source (MIT).
   choose: the dose in the first week and the first year, the caesium left on
   the ground, and how far the international criteria for sheltering,
   evacuation and relocation would be reached.
+- **Water.** For a burst in the sea, a lake or a lagoon: the depth of the water
+  from the terrain tiles (or as you give it), how far the waves stay 10, 3 and
+  1 m high, when they arrive, and the low land connected to the sea that they
+  could flood. Ships in the close view are damaged by the blast as the source
+  reports for merchant ships.
+- **Dams.** Dams near a detonation, from the Global Dam Watch database. For any
+  of them, "What if it fails?" shows the peak flow out of the breach and the way
+  the water would take down the valley, with the peak falling as it goes.
 - **"How was this calculated?"** Next to every number: the formula, the inputs,
   the source (section, figure or table) and how uncertain it is.
 - **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
@@ -80,11 +88,15 @@ buildings, weather and people do not behave like a formula.
 | Damage to things | Houses, vehicles, parked aircraft, electricity networks, ignition of tinder | Glasstone & Dolan (1977), §5.52–5.68, §5.87–5.89, Tables 5.145, 5.153 and 7.40, §5.99–5.105 |
 | Release into the air | Gaussian plume of the HotSpot codes with depletion; dose from breathing, cloud and ground; generic criteria for protective actions | HotSpot Health Physics Codes 3.0 User's Guide (LLNL, 2013), ch. 7; ICRP Publication 119, Table G.1; Federal Guidance Report 12, Tables III.1 and III.3; IAEA GSR Part 7, Table II.2 |
 | Historical releases | Activity released per radionuclide | UNSCEAR 2008 Annexes C and D; UNSCEAR 2013 Annex A; NRPA Bulletin 8/2007 |
+| Water waves | Wave height against distance in deep and shallow water; period and length of the peak wave; speed from linear wave theory; growth towards the shore and breaking | Glasstone & Dolan (1977), §6.119–6.121, Table 6.57; U.S. Army Corps of Engineers, *Coastal Engineering Manual*, Part II, chapters 1 and 4 |
+| Flooding by waves | Land lower than the run-up height and connected to the sea | the above, on AWS Terrain Tiles |
+| Ships | Severe and moderate damage to merchant ships from air blast | Glasstone & Dolan (1977), Fig. 5.146 (digitised), Table 5.147b |
+| Dam failure | Peak outflow from the volume and depth of water; fall of the peak down the valley | D. C. Froehlich (1995), as quoted by J. C. Ackers, R. Pether and O. Tarrant, *Reservoir hazard analysis and flood mapping for contingency planning* (British Dam Society, 2006) |
 | Population | GHS-POP R2023A, epoch 2025, about 1 km cells | European Commission, Joint Research Centre |
 
 ### Accuracy tests
 
-`npm test` runs 260+ checks. The physics is tested against values printed in the
+`npm test` runs 280+ checks. The physics is tested against values printed in the
 sources: the worked examples next to Glasstone & Dolan's charts (for example
 1,000 psi at 110 ft for 1 kt at 200 ft; 4 psi out to 2,600 ft), their tables of
 wind speed against overpressure, thermal partition and fallout contours, the
@@ -94,6 +106,10 @@ Assessment. A change that breaks one of them fails the build.
 The missile flights are checked against the closed-form results of the source and
 against an independent step-by-step simulation of the same flight (10,000 km:
 about 7.2 km/s, 1,300 km high, 32 minutes).
+
+The water waves are checked against the waves measured at the Crossroads Baker
+test (Glasstone & Dolan Table 6.57): heights within a factor of 2, first arrival
+within 15 %.
 
 The plume model reproduces the worked example of the HotSpot guide (krypton-85
 from 10 m in unstable air) at every distance from 30 m to 80 km within the
@@ -112,6 +128,8 @@ the book differ.
   drawn with CesiumJS and carries its own small world image.
 - Infrastructure: airports from OurAirports (public domain), power stations from
   the Global Power Plant Database 1.3 of the World Resources Institute (CC BY 4.0).
+- Dams: Global Dam Watch database 1.0 (Lehner et al. 2024, CC BY 4.0); dams with
+  a known height and at least 1 million m³ of water.
 - Weather: [Open-Meteo](https://open-meteo.com), wind at 10 m and at 850, 500 and
   250 hPa. Only the coordinates of the burst are sent.
 - Nothing needs an account or a key. With the built-in map and a manual wind the
