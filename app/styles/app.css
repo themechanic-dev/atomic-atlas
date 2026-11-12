@@ -1612,3 +1612,24 @@ p {
     flex-wrap: wrap;
   }
 }
+
+/* "How was this calculated?" with several parts (water waves, dam failure). */
+.how-part + .how-part {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.how-part > h2 {
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+
+/* What follows downstream if a dam fails. */
+.dam-flood {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-left: 3px solid #2f80ed;
+  background: var(--surface-2);
+  border-radius: 0 var(--radius-small) var(--radius-small) 0;
+}

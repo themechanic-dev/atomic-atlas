@@ -158,6 +158,20 @@ export function formatEffectiveDose(sv: number): string {
   return `< 0.1 µSv`;
 }
 
+/** A flow of water in m3/s, shown in m³/s or ft³/s. */
+export function formatFlow(m3s: number): string {
+  if (!Number.isFinite(m3s)) return '–';
+  if (settings.value.distance === 'mi') return `${formatNumber(m3s / (FOOT * FOOT * FOOT), 2)} ft³/s`;
+  return `${formatNumber(m3s, 2)} m³/s`;
+}
+
+/** A volume of water in m3, shown in million m³ or acre-feet. */
+export function formatVolume(m3: number): string {
+  if (!Number.isFinite(m3)) return '–';
+  if (settings.value.distance === 'mi') return `${formatNumber(m3 / 1233.48184, 3)} acre-ft`;
+  return m3 >= 1e6 ? `${formatNumber(m3 / 1e6, 3)} × 10⁶ m³` : `${formatNumber(m3, 3)} m³`;
+}
+
 export function formatQuantity(value: number, quantity: Quantity): string {
   switch (quantity) {
     case 'length':
@@ -192,5 +206,9 @@ export function formatQuantity(value: number, quantity: Quantity): string {
       return formatActivity(value);
     case 'effectiveDose':
       return formatEffectiveDose(value);
+    case 'flow':
+      return formatFlow(value);
+    case 'volume':
+      return formatVolume(value);
   }
 }

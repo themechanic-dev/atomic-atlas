@@ -24,7 +24,9 @@ import { cameFromFlight, returnToFlight } from '../state/missiles';
 import { casualties, detonation, explaining } from '../state/simulation';
 import { closeupRange } from '../state/ui';
 import { Button, HowButton } from './controls';
+import { DamsCard } from './DamsCard';
 import { InfrastructureCard } from './InfrastructureCard';
+import { WaterCard } from './WaterCard';
 import { PlaybackCard } from './PlaybackCard';
 
 function ringValue(ring: EffectRing): string {
@@ -155,7 +157,9 @@ export function ResultsPanel() {
         </ul>
         <p class="hint">{t('results.effects.hint', { speed: formatSpeed(result.windAt5PsiMs) })}</p>
       </div>
+      <WaterCard />
       <InfrastructureCard />
+      <DamsCard />
 
       <div class="card" data-testid="fallout-card">
         <div class="card-head">

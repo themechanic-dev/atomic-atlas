@@ -8,6 +8,7 @@ import { t } from '../i18n';
 import { formatAngle, formatDistance, formatHeight, formatLatLon, formatSpeed, formatTemperature, formatYield } from '../lib/format';
 import { mapHandle } from '../map/MapView';
 import { settings } from '../state/settings';
+import { waterDepthGiven } from '../state/water';
 import {
   buildScenario,
   clearDetonation,
@@ -62,6 +63,7 @@ export function ScenarioPanel({ onOpenCatalog }: { onOpenCatalog: () => void }) 
       fissionAuto: true,
     });
     groundZero.value = { lat: preset.lat, lng: preset.lng };
+    waterDepthGiven.value = preset.waterDepthM ? { at: groundZero.value, depthM: preset.waterDepthM } : null;
     mapHandle.map?.flyTo({ center: [preset.lng, preset.lat], zoom: 11, duration: s.reduceMotion ? 0 : 2200 });
   };
 

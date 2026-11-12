@@ -3,6 +3,8 @@
 
 import { ASSUMPTIONS, OTA_ZONES } from '@physics/casualties/model';
 import { SOURCES, type Explanation, type SourceId } from '@physics/sources';
+import { explainDamBreak } from '@physics/water/dambreak';
+import { explainWaves } from '@physics/water/waves';
 import { t } from '../i18n';
 import { formatPercent, formatQuantity } from '../lib/format';
 import { openExternal } from '../lib/platform';
@@ -10,7 +12,9 @@ import { settings } from '../state/settings';
 import { accidentRun } from '../state/accident';
 import { timeline } from '../state/blastPlayback';
 import { flights } from '../state/missiles';
+import { damFlood, nearbyDams } from '../state/dams';
 import { detonation, explaining } from '../state/simulation';
+import { water } from '../state/water';
 import { Dialog, Icon } from './controls';
 
 function SourceList({ ids }: { ids: readonly SourceId[] }) {
@@ -194,6 +198,36 @@ export function HowDialog() {
       <Dialog title={`${t('how.title')}: ${t('how.plume.title')}`} onClose={close} wide testId="how-dialog">
         <ExplanationView explanation={run.result.explanation} />
         <SourceList ids={[run.accident.source]} />
+      </Dialog>
+    );
+  }
+  if (id === 'water') {
+    const w = water.value;
+    if (!w?.conditions || !w.summary) return null;
+    // The worked example: the distance where the waves are 3 m high.
+    return (
+      <Dialog title={`${t('how.title')}: ${t('how.water.title')}`} onClose={close} wide testId="how-dialog">
+        {explainWaves(w.conditions, w.summary.rangeTo3mM).map((e) => (
+          <section key={e.id} class="how-part">
+            <h2>{t(`how.${e.id}.title`)}</h2>
+            <ExplanationView explanation={e} />
+          </section>
+        ))}
+      </Dialog>
+    );
+  }
+  if (id === 'dam') {
+    const dam = damFlood.value?.dam ?? nearbyDams.value[0]?.dam;
+    if (!dam) return null;
+    return (
+      <Dialog title={`${t('how.title')}: ${t('how.dam.title')}`} onClose={close} wide testId="how-dialog">
+        {explainDamBreak({ volumeM3: dam.volumeM3, headM: dam.heightM }).map((e) => (
+          <section key={e.id} class="how-part">
+            <h2>{t(`how.${e.id}.title`)}</h2>
+            <ExplanationView explanation={e} />
+          </section>
+        ))}
+        <p class="hint">{SOURCES.gdw2024.citation}</p>
       </Dialog>
     );
   }

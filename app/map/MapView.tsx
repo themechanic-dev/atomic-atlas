@@ -23,6 +23,9 @@ import {
 import { formatSeconds } from '../ui/PlaybackCard';
 import { destination, distanceM, type LngLat } from '../lib/geo';
 import { ensureSites, sites } from '../state/infrastructure';
+import { damFlood, dams, ensureDams } from '../state/dams';
+import { water } from '../state/water';
+import { addWaterLayers, applyWater } from './waterLayers';
 import { settings } from '../state/settings';
 import { accidentRun, accidentSite } from '../state/accident';
 import { blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, flashCount } from '../state/blastPlayback';
@@ -231,6 +234,7 @@ function addOverlays(map: MapLibreMap): void {
       'text-halo-width': 1.6,
     },
   });
+  addWaterLayers(map, theme, below);
 }
 
 function applyTerrain(map: MapLibreMap): void {
@@ -494,9 +498,11 @@ export function MapView() {
       applyTerrain(map);
       applyDetonation(map);
       applyAccident(map);
+      applyWater(map);
     });
     buildingDamage = createBuildingDamage(map);
     ensureSites();
+    ensureDams();
     map.on('idle', finishLoading);
     // Buildings that came in with new tiles are taken over when the map comes to rest.
     map.on('idle', () => {
@@ -542,6 +548,31 @@ export function MapView() {
     });
 
     const disposers = [
+      // Water: wave rings, flooded land, the way of the water from a failed dam.
+      effect(() => {
+        void water.value;
+        void damFlood.value;
+        void mode.value;
+        void settings.value.language;
+        void settings.value.distance;
+        if (styleReady) untracked(() => applyWater(map));
+      }),
+      // When the way of the water from a dam is known, show all of it.
+      effect(() => {
+        const f = damFlood.value;
+        if (!f || f.state !== 'ready' || f.path.length < 2) return;
+        const lngs = f.path.map((p) => p.lng);
+        const lats = f.path.map((p) => p.lat);
+        untracked(() =>
+          map.fitBounds(
+            [
+              [Math.min(...lngs), Math.min(...lats)],
+              [Math.max(...lngs), Math.max(...lats)],
+            ],
+            { padding: 80, duration: settings.value.reduceMotion ? 0 : 900, maxZoom: 13 },
+          ),
+        );
+      }),
       // Ground zero marker follows the state.
       effect(() => {
         // One marker: ground zero, or the place of the release in the accident simulator.
@@ -600,7 +631,10 @@ export function MapView() {
       }),
       // Infrastructure: the data arrives a moment after the map; the setting shows or hides it.
       effect(() => {
-        const list = sites.value;
+        const list = [
+          ...sites.value,
+          ...dams.value.map((dam) => ({ kind: 'dam', detail: 'dam', name: dam.name, lng: dam.lng, lat: dam.lat, major: dam.volumeM3 >= 1e9 })),
+        ];
         const visibility = settings.value.infrastructure ? 'visible' : 'none';
         if (!styleReady) return;
         (map.getSource('aa-sites') as GeoJSONSource | undefined)?.setData(siteFeatures(list));

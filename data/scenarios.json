@@ -51,6 +51,24 @@
     }
   },
   {
+    "id": "crossroads-baker-1946",
+    "name": "Crossroads Baker test, Bikini Atoll, 25 July 1946",
+    "lat": 11.6167,
+    "lng": 165.4833,
+    "yieldKt": 23,
+    "burstMode": "surface",
+    "heightM": 0,
+    "fissionFraction": 1,
+    "weaponId": "fat-man",
+    "waterDepthM": 55,
+    "source": {
+      "title": "Operation Crossroads 1946 (DNA 6032F)",
+      "publisher": "Defense Nuclear Agency",
+      "date": "1984",
+      "url": "https://www.dtra.mil/Portals/125/Documents/NTPR/newDocs/ANTHReport/1946%20-%20DNA%206032F.pdf"
+    }
+  },
+  {
     "id": "tsar-bomba-1961",
     "name": "Tsar Bomba test, Novaya Zemlya, 30 October 1961",
     "lat": 73.8072,

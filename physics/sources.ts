@@ -109,6 +109,32 @@ export const SOURCES = {
     citation: 'Norwegian Radiation Protection Authority, The Kyshtym accident, 29th September 1957. NRPA Bulletin 8, 2007, Table 1.',
     url: 'https://dsa.no/publikasjoner/straleverninfo-8-2007-the-kyshtym-accident-29th-september-1957/StralevernInfo_8_2007.pdf',
   },
+  cem2002: {
+    id: 'cem2002',
+    short: 'Coastal Engineering Manual',
+    citation:
+      'U.S. Army Corps of Engineers, Coastal Engineering Manual, EM 1110-2-1100, Part II (Coastal Hydrodynamics), Chapters 1 and 4, 2002 (with later changes).',
+    url: 'https://www.publications.usace.army.mil/USACE-Publications/Engineer-Manuals/',
+  },
+  froehlich1995: {
+    id: 'froehlich1995',
+    short: 'Froehlich 1995',
+    citation: 'D. C. Froehlich, Peak outflow from breached embankment dam. Journal of Water Resources Planning and Management 121(1), 90–97, 1995.',
+  },
+  ackers2006: {
+    id: 'ackers2006',
+    short: 'Ackers, Pether & Tarrant 2006',
+    citation:
+      'J. C. Ackers, R. Pether and O. Tarrant, Reservoir hazard analysis and flood mapping for contingency planning. Improvements in Reservoirs, British Dam Society conference, 2006 (Paper 44).',
+    url: 'https://britishdams.org/assets/documents/conferences/2006/papers/Paper%2044%20Ackers.PDF',
+  },
+  gdw2024: {
+    id: 'gdw2024',
+    short: 'Global Dam Watch 1.0',
+    citation:
+      'Lehner et al., The Global Dam Watch database of river barrier and reservoir information for large-scale applications. Scientific Data 11, 2024. Data: figshare, doi:10.6084/m9.figshare.25988293 (CC BY 4.0).',
+    url: 'https://doi.org/10.6084/m9.figshare.25988293.v1',
+  },
   glasstoneLib: {
     id: 'glasstoneLib',
     short: 'glasstone library',
@@ -156,7 +182,9 @@ export type Quantity =
   | 'count'
   | 'number'
   | 'activity'
-  | 'effectiveDose';
+  | 'effectiveDose'
+  | 'flow'
+  | 'volume';
 
 export interface ExplanationValue {
   symbol: string;

@@ -50,6 +50,8 @@ export interface PresetScenario {
   heightM: number;
   fissionFraction: number;
   weaponId: string | null;
+  /** Depth of the water at ground zero, metres, for a burst in water whose depth the map does not hold. */
+  waterDepthM?: number;
   source: SourceRef;
 }
 
