@@ -55,10 +55,12 @@ interface View {
   at: [number, number, number];
   /** Where the haze begins and where it hides everything, metres from the camera. */
   fog: [number, number];
+  /** How much further back the camera goes on a tall, narrow picture (a phone held upright). */
+  narrow?: number;
 }
 const VIEWS: Partial<Record<string, View>> = {
   nuclear: { from: [36, 22, 48], at: [0, 7, 0], fog: [95, 230] },
-  dam: { from: [40, 44, 74], at: [0, 9, -8], fog: [130, 320] },
+  dam: { from: [40, 44, 74], at: [0, 9, -8], fog: [130, 320], narrow: 1.35 },
 };
 const DEFAULT_VIEW: View = { from: [34, 19, 44], at: [0, 5, 2], fog: [90, 220] };
 
@@ -547,10 +549,15 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     // A tall, narrow picture needs the camera further back to hold the same scene.
-    const back = camera.aspect < 1 ? 1 / camera.aspect : 1;
+    const back = camera.aspect < 1 ? (1 / camera.aspect) * (view.narrow ?? 1) : 1;
     const [x, y, z] = view.from;
     camera.position.set(x * back, y * back, z * back);
     camera.lookAt(...view.at);
+    camera.updateProjectionMatrix();
+    const fog = scene.fog as THREE.Fog;
+    fog.near = view.fog[0] * back;
+    fog.far = view.fog[1] * back;
+    camera.far = Math.max(400, view.fog[1] * back * 1.2);
     camera.updateProjectionMatrix();
     apply();
   }
