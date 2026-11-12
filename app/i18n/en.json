@@ -607,7 +607,7 @@
   "settings.voice.unsupported": "The voice is not available on this system.",
   "settings.voice.phone": "The phone's own voice speaks, in the language of the app. Nothing to download.",
   "settings.voice.phone.missing": "The phone has no voice for this language. Install it in the phone's settings: Accessibility (or System) › Text-to-speech output › Install voice data.",
-  "settings.voice.download.hint": "After each simulation the app can say a short summary out loud. The voice works offline; it is downloaded once (about 150 MB: the Piper speech engine with one Greek and one English voice). The app never listens.",
+  "settings.voice.download.hint": "After each simulation the app can say a short summary out loud, and the assistant's answers. The voice works offline; it is downloaded once (about 150 MB: the Piper speech engine with one Greek and one English voice). The app never listens.",
   "settings.voice.download": "Download the voice",
   "settings.voice.downloading": "Downloading… {percent} %",
   "settings.voice.error": "The download did not finish. Check the internet connection and try again.",
