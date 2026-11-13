@@ -1,8 +1,9 @@
-// The close view: a small low-poly scene that shows what the effects at one distance do
-// to ordinary things. Buildings, vehicles, trees and a few kinds of installation are made
-// from simple shapes in code, in one style; they stand for kinds of things, not for real
-// places. The scene is told a state (what gets damaged, from the physics) and a moment
-// (how far the flash, the heat, the blast and the fires have got) and draws that.
+// The close view: a small scene that shows what the effects at one distance do to ordinary
+// things. Buildings, vehicles, trees and a few kinds of installation are built in code
+// (builders.ts); they stand for kinds of things, not for real places. The scene is told a
+// state (what gets damaged, from the physics) and a moment (how far the flash, the heat,
+// the blast and the fires have got) and draws that, with flames, smoke and dust as
+// particles (particles.ts).
 //
 // The reactor building of the nuclear plant and the dam itself are drawn in outline only:
 // no public general model gives blast damage to them, so none is shown (ΣΧΕΔΙΟ §1: no
@@ -10,7 +11,32 @@
 // in the other scenes.
 
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { CloseupState } from '@physics/damage/closeup';
+import { aircraft as aircraftModel } from '../models/launchers';
+import {
+  airliner,
+  block,
+  building,
+  car,
+  cargoShip,
+  chimney,
+  coolingTower,
+  cylinder,
+  groundMaterial,
+  harbourCrane,
+  mesh,
+  pylon,
+  shed,
+  std,
+  streetLight,
+  tank,
+  transformer,
+  tree,
+  type BuildingSkin,
+  type FacadeStyle,
+} from './builders';
+import { drawDust, drawFires, drawPlumes, glowTexture, puffTexture, SpriteBatch, type FireSpot, type Plume } from './particles';
 
 export type SceneKind = 'street' | 'airport' | 'power' | 'nuclear' | 'dam' | 'refinery' | 'harbour';
 export const SCENE_KINDS: readonly SceneKind[] = ['street', 'airport', 'power', 'nuclear', 'dam', 'refinery', 'harbour'];
@@ -34,7 +60,7 @@ export interface SceneHandle {
   dispose(): void;
 }
 
-type Role = 'building' | 'vehicle' | 'aircraft' | 'tree' | 'window' | 'tank' | 'pylon' | 'ship' | 'flame' | 'light-structure' | 'not-modelled';
+type Role = 'building' | 'vehicle' | 'aircraft' | 'tree' | 'tank' | 'pylon' | 'ship' | 'light-structure' | 'not-modelled';
 
 interface Part {
   object: THREE.Object3D;
@@ -42,13 +68,22 @@ interface Part {
   /** A fixed random number per part, so things do not all move alike. */
   seed: number;
   home: THREE.Vector3;
-  color?: THREE.Color;
+  skin?: BuildingSkin;
+}
+
+interface Burn {
+  part: Part;
+  /** Where the fire is, in the part's own frame. */
+  local: THREE.Vector3;
+  size: number;
+  seed: number;
 }
 
 const PALETTE = {
-  dark: { sky: 0x232a32, ground: 0x4a4f55, road: 0x26292e, grass: 0x3d5644, water: 0x24506b, yard: 0x40454b },
-  light: { sky: 0xdfe7ee, ground: 0xb9b3a6, road: 0x6f7378, grass: 0x8fae7a, water: 0x6fa3c7, yard: 0x9d988e },
+  dark: { top: '#1d2633', horizon: '#6d7684', fog: 0x5c6470, water: 0x1f4257, light: 1.5, sun: 0xffd9b0 },
+  light: { top: '#7fb0de', horizon: '#dfe8ee', fog: 0xd2dbe2, water: 0x3f7fa6, light: 2.6, sun: 0xfff2dd },
 };
+
 /** Where the camera stands and looks for each scene; the dam needs a higher view to show the lake. */
 interface View {
   from: [number, number, number];
@@ -59,29 +94,14 @@ interface View {
   narrow?: number;
 }
 const VIEWS: Partial<Record<string, View>> = {
-  nuclear: { from: [36, 22, 48], at: [0, 7, 0], fog: [95, 230] },
-  dam: { from: [40, 44, 74], at: [0, 9, -8], fog: [130, 320], narrow: 1.35 },
+  nuclear: { from: [38, 24, 52], at: [0, 8, -4], fog: [110, 280] },
+  dam: { from: [40, 44, 74], at: [0, 9, -8], fog: [140, 340], narrow: 1.35 },
+  harbour: { from: [44, 26, 56], at: [0, 6, 6], fog: [120, 300] },
 };
-const DEFAULT_VIEW: View = { from: [34, 19, 44], at: [0, 5, 2], fog: [90, 220] };
+const DEFAULT_VIEW: View = { from: [36, 20, 46], at: [0, 6, 0], fog: [100, 260] };
 
-const STONE = 0xb8a98f;
+const SCORCH = new THREE.Color(0x24180f);
 const CONCRETE = 0x9ea3a8;
-const METAL = 0x7d8a96;
-const WOOD = 0xa9794e;
-const SCORCH = new THREE.Color(0x2a1d16);
-
-/** A box that stands on the ground: its origin is the middle of its base, so it can be squashed from the top. */
-function block(w: number, h: number, d: number, color: number): THREE.Mesh {
-  const geometry = new THREE.BoxGeometry(w, h, d);
-  geometry.translate(0, h / 2, 0);
-  return new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color, flatShading: true }));
-}
-
-function cylinder(radiusTop: number, radiusBottom: number, h: number, color: number, sides = 10): THREE.Mesh {
-  const geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, h, sides);
-  geometry.translate(0, h / 2, 0);
-  return new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color, flatShading: true }));
-}
 
 /** Joins non-indexed copies of geometries (position and normal only) into one. */
 function mergeBodies(...parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
@@ -101,6 +121,22 @@ function mergeBodies(...parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   return merged;
 }
 
+function skyTexture(top: string, horizon: string): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 4;
+  c.height = 256;
+  const ctx = c.getContext('2d')!;
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, top);
+  g.addColorStop(0.75, horizon);
+  g.addColorStop(1, horizon);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 4, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'): SceneHandle | null {
   let renderer: THREE.WebGLRenderer;
   try {
@@ -109,25 +145,47 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     return null;
   }
   const colors = PALETTE[theme];
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const phone = Math.min(window.innerWidth, window.innerHeight) < 600;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, phone ? 1.5 : 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const scene = new THREE.Scene();
-  const sky = new THREE.Color(colors.sky);
-  scene.background = sky.clone();
-  scene.fog = new THREE.Fog(colors.sky, 90, 220);
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.5, 400);
-  camera.position.set(34, 19, 44);
-  camera.lookAt(0, 5, 2);
-  const ambient = new THREE.AmbientLight(0xffffff, 1.1);
-  const sun = new THREE.DirectionalLight(0xfff2dd, 1.6);
-  sun.position.set(-40, 60, 30);
+  const sky = skyTexture(colors.top, colors.horizon);
+  scene.background = sky;
+  scene.fog = new THREE.Fog(colors.fog, 100, 260);
+  // Soft light from all round, for the shine of glass, metal and water.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environment = environment;
+  scene.environmentIntensity = theme === 'dark' ? 0.35 : 0.6;
+  pmrem.dispose();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.5, 600);
+  const hemisphere = new THREE.HemisphereLight(0xdfe8f2, 0x4a4338, theme === 'dark' ? 0.55 : 0.9);
+  const sun = new THREE.DirectionalLight(colors.sun, colors.light);
+  sun.position.set(-50, 70, 40);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(phone ? 1024 : 2048, phone ? 1024 : 2048);
+  Object.assign(sun.shadow.camera, { left: -90, right: 90, top: 90, bottom: -90, near: 10, far: 260 });
+  sun.shadow.bias = -0.0005;
+  sun.shadow.normalBias = 0.04;
   // The burst is to the left: its light comes from there.
   const burst = new THREE.DirectionalLight(0xfff6d8, 0);
   burst.position.set(-80, 30, 0);
-  scene.add(ambient, sun, burst);
+  scene.add(hemisphere, sun, burst);
 
   const world = new THREE.Group();
   scene.add(world);
+  const flames = new SpriteBatch(1800, glowTexture(), true);
+  const smoke = new SpriteBatch(2400, puffTexture(), false);
+  scene.add(smoke.points, flames.points);
+
   let parts: Part[] = [];
+  let burns: Burn[] = [];
+  let plumes: Plume[] = [];
+  /** Flames that burn whatever happens (a refinery flare). */
+  let steadyFires: FireSpot[] = [];
   let view = DEFAULT_VIEW;
   let state: CloseupState | null = null;
   let moment: Moment = { flash: 0, heat: 0, blast: 0, fire: 0 };
@@ -138,59 +196,40 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     return seedCounter / 2147483647;
   };
 
-  const add = (object: THREE.Object3D, role: Role, x: number, z: number, y = 0): THREE.Object3D => {
+  const add = (object: THREE.Object3D, role: Role, x: number, z: number, y = 0, skin?: BuildingSkin): Part => {
     object.position.set(x, y, z);
     world.add(object);
-    const mesh = object as THREE.Mesh;
-    const material = mesh.material as THREE.MeshLambertMaterial | undefined;
-    parts.push({ object, role, seed: random(), home: object.position.clone(), color: material?.color?.clone() });
-    return object;
+    const part: Part = { object, role, seed: random(), home: object.position.clone(), skin };
+    parts.push(part);
+    return part;
   };
 
-  const flame = (x: number, z: number, y: number, size: number): void => {
-    const mesh = new THREE.Mesh(
-      new THREE.ConeGeometry(size * 0.5, size * 1.6, 6).translate(0, size * 0.8, 0),
-      new THREE.MeshBasicMaterial({ color: 0xff8a1f, transparent: true, opacity: 0.9 }),
-    );
-    add(mesh, 'flame', x, z, y);
+  /** A fire on a part, at a point in its own frame, that starts when the fires do. */
+  const burnOn = (part: Part, x: number, y: number, z: number, size: number): void => {
+    burns.push({ part, local: new THREE.Vector3(x, y, z), size, seed: random() });
   };
 
-  const building = (x: number, z: number, w: number, h: number, d: number, color: number): void => {
-    const group = new THREE.Group();
-    group.add(block(w, h, d, color));
-    // Windows on the side that faces the camera.
-    const rows = Math.max(1, Math.floor(h / 3.4));
-    const columns = Math.max(1, Math.floor(w / 3));
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < columns; c++) {
-        const pane = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), new THREE.MeshBasicMaterial({ color: 0x9fd0ff }));
-        pane.position.set(-w / 2 + (c + 0.5) * (w / columns), 2 + r * 3.4, d / 2 + 0.03);
-        pane.userData.window = true;
-        group.add(pane);
-      }
-    }
-    add(group, 'building', x, z);
-    (parts[parts.length - 1] as Part).color = new THREE.Color(color);
-    flame(x + w * 0.2, z + d / 2 + 0.6, 0, 2.6);
+  const FACADES: FacadeStyle[] = ['brick', 'concrete', 'plaster', 'glass'];
+  const house = (x: number, z: number, w: number, h: number, d: number, style: FacadeStyle, tint = 0xffffff): Part => {
+    const { group, skin } = building(w, h, d, style, tint);
+    const part = add(group, 'building', x, z, 0, skin);
+    // Fire breaks out in a window on the front and on the roof.
+    burnOn(part, w * 0.18, Math.min(h - 2, 4.5), d / 2 + 0.4, 2.2);
+    burnOn(part, -w * 0.2, h + 0.4, d * 0.1, 2.8);
+    return part;
   };
 
-  const car = (x: number, z: number, color: number, long = 4.2): void => {
-    const group = new THREE.Group();
-    const body = block(long, 1, 1.8, color);
-    body.position.y = 0.35;
-    const cabin = block(long * 0.5, 0.8, 1.6, 0x23272b);
-    cabin.position.y = 1.35;
-    group.add(body, cabin);
-    add(group, 'vehicle', x, z);
+  const vehicle = (x: number, z: number, color: number, long = 4.4, turn = 0): void => {
+    const c = car(color, long);
+    c.rotation.y = turn;
+    add(c, 'vehicle', x, z);
   };
 
-  const tree = (x: number, z: number): void => {
-    const group = new THREE.Group();
-    group.add(cylinder(0.25, 0.35, 3, 0x6b4a2f, 6));
-    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 0), new THREE.MeshLambertMaterial({ color: 0x4f8a4a, flatShading: true }));
-    crown.position.y = 4.4;
-    group.add(crown);
-    add(group, 'tree', x, z);
+  const plant = (x: number, z: number): void => {
+    const t = tree(Math.floor(random() * 9));
+    const s = 0.85 + random() * 0.4;
+    t.scale.setScalar(s);
+    add(t, 'tree', x, z);
   };
 
   /**
@@ -201,8 +240,9 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     const group = new THREE.Group();
     const body = new THREE.Mesh(
       geometry,
-      new THREE.MeshLambertMaterial({ color: CONCRETE, transparent: true, opacity: theme === 'dark' ? 0.2 : 0.28, depthWrite: false }),
+      new THREE.MeshStandardMaterial({ color: CONCRETE, transparent: true, opacity: theme === 'dark' ? 0.2 : 0.28, depthWrite: false, roughness: 1 }),
     );
+    body.userData.noShadow = true;
     const sketch = lines ? new THREE.BufferGeometry().setFromPoints(lines) : new THREE.EdgesGeometry(geometry, 20);
     const edges = new THREE.LineSegments(sketch, new THREE.LineBasicMaterial({ color: theme === 'dark' ? 0xe9e4da : 0x343a41 }));
     group.add(body, edges);
@@ -239,114 +279,120 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     return points;
   };
 
-  const pylon = (x: number, z: number): void => {
-    const group = new THREE.Group();
-    const mast = cylinder(0.25, 0.9, 20, 0x8f9aa3, 4);
-    const arm = block(9, 0.4, 0.4, 0x8f9aa3);
-    arm.position.y = 16;
-    const arm2 = block(6, 0.4, 0.4, 0x8f9aa3);
-    arm2.position.y = 19;
-    group.add(mast, arm, arm2);
-    add(group, 'pylon', x, z);
-  };
-
   /** A low hill of the valley side, for the dam. */
   const hill = (x: number, z: number, w: number, h: number, d: number): void => {
-    const geometry = new THREE.CylinderGeometry(w * 0.35, w * 0.5, h, 7, 1);
+    const geometry = new THREE.CylinderGeometry(w * 0.35, w * 0.5, h, 9, 3);
     geometry.translate(0, h / 2, 0);
     geometry.scale(1, 1, d / w);
-    const mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: colors.grass, flatShading: true }));
-    mesh.position.set(x, 0, z);
-    world.add(mesh);
+    const p = geometry.getAttribute('position') as THREE.BufferAttribute;
+    for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) + Math.sin(p.getX(i) * 0.3 + p.getZ(i) * 0.2) * 1.4 * (p.getY(i) / h));
+    geometry.computeVertexNormals();
+    world.add(mesh(geometry, std(theme === 'dark' ? 0x3d5240 : 0x6f8f5c, 1), x, 0, z));
   };
 
-  const ground = (color: number, w = 400, d = 400): THREE.Mesh => {
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshLambertMaterial({ color }));
-    mesh.rotation.x = -Math.PI / 2;
-    return mesh;
+  /** A flat stretch of ground of a kind. */
+  const strip = (x: number, z: number, w: number, d: number, kind: 'asphalt' | 'grass' | 'paving' | 'gravel', y = 0.02): void => {
+    const m = mesh(new THREE.PlaneGeometry(w, d), groundMaterial(kind, w, d), x, y, z);
+    m.rotation.x = -Math.PI / 2;
+    world.add(m);
   };
 
-  const strip = (x: number, z: number, w: number, d: number, color: number, y = 0.02): void => {
-    const mesh = ground(color, w, d);
-    mesh.position.set(x, y, z);
-    world.add(mesh);
+  /** Painted lines along a road. */
+  const markings = (z: number, length: number): void => {
+    const paint = std(0xe9e5d8, 0.7);
+    for (let x = -length / 2; x < length / 2; x += 6) {
+      const m = mesh(new THREE.PlaneGeometry(3, 0.18), paint, x, 0.035, z);
+      m.rotation.x = -Math.PI / 2;
+      world.add(m);
+    }
   };
 
-  function build(kind: SceneKind): void {
+  const water = (x: number, z: number, w: number, d: number, y = 0.03): void => {
+    const m = mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: colors.water, roughness: 0.12, metalness: 0.3 }), x, y, z);
+    m.rotation.x = -Math.PI / 2;
+    m.userData.noShadowCast = true;
+    world.add(m);
+  };
+
+  function disposeWorld(): void {
     for (const child of [...world.children]) {
       world.remove(child);
       child.traverse((node) => {
-        const mesh = node as THREE.Mesh;
-        mesh.geometry?.dispose();
-        const material = mesh.material as THREE.Material | THREE.Material[] | undefined;
-        if (Array.isArray(material)) material.forEach((m) => m.dispose());
-        else material?.dispose();
+        const m = node as THREE.Mesh;
+        m.geometry?.dispose();
       });
     }
+  }
+
+  function build(kind: SceneKind): void {
+    disposeWorld();
     parts = [];
+    burns = [];
+    plumes = [];
+    steadyFires = [];
     seedCounter = 7;
     view = VIEWS[kind] ?? DEFAULT_VIEW;
     const fog = scene.fog as THREE.Fog;
     [fog.near, fog.far] = view.fog;
-    world.add(ground(colors.ground));
+    strip(0, 0, 600, 600, 'grass', 0);
 
     if (kind === 'street') {
-      strip(0, 8, 400, 9, colors.road);
-      strip(0, -6, 60, 14, colors.grass, 0.01);
-      building(-22, -8, 10, 12, 9, STONE);
-      building(-8, -9, 9, 22, 10, CONCRETE);
-      building(6, -8, 11, 9, 9, WOOD);
-      building(21, -9, 10, 15, 10, METAL);
-      building(-14, 22, 12, 7, 8, WOOD);
-      building(8, 23, 14, 10, 9, STONE);
-      car(-12, 6.5, 0xc0392b);
-      car(-2, 9.5, 0x2e86c1);
-      car(9, 6.5, 0xd4ac0d);
-      car(20, 9.5, 0x7f8c8d, 6.5);
-      for (const x of [-28, -1, 14, 30]) tree(x, 1.5);
+      strip(0, 8, 600, 10, 'asphalt');
+      markings(8, 160);
+      strip(0, 1.8, 600, 2.5, 'paving', 0.06);
+      strip(0, 14.2, 600, 2.5, 'paving', 0.06);
+      house(-24, -6, 11, 13, 10, 'brick');
+      house(-9, -7, 10, 24, 11, 'glass');
+      house(5, -6, 11, 10, 10, 'plaster', 0xf2e6d0);
+      house(19, -7, 10, 16, 11, 'concrete');
+      house(33, -6, 9, 9, 9, 'brick', 0xd9b8a8);
+      house(-14, 24, 12, 8, 9, 'plaster');
+      house(8, 25, 14, 11, 9, FACADES[1]!);
+      house(26, 23, 9, 7, 8, 'brick');
+      vehicle(-12, 6, 0xc0392b);
+      vehicle(-1, 10, 0x2e86c1, 4.4, Math.PI);
+      vehicle(10, 6, 0xd4ac0d);
+      vehicle(22, 10, 0x7f8c8d, 6.4, Math.PI);
+      vehicle(32, 6, 0xecf0f1);
+      for (const x of [-30, -17, 0, 13, 27]) plant(x, 1.6);
+      for (const x of [-22, 4, 30]) add(streetLight(), 'light-structure', x, 14.5);
     } else if (kind === 'airport') {
-      strip(0, 14, 400, 16, colors.road);
-      strip(0, 14, 400, 0.5, 0xe8e8e8, 0.03);
-      strip(-4, -4, 70, 16, colors.yard, 0.02);
-      building(-24, -16, 22, 9, 12, METAL);
-      building(8, -18, 14, 7, 9, CONCRETE);
-      const tower = cylinder(1.6, 2, 16, CONCRETE, 8);
-      const cab = cylinder(3, 2.4, 3, 0x2b3a47, 8);
-      cab.position.y = 16;
-      const towerGroup = new THREE.Group();
-      towerGroup.add(tower, cab);
-      add(towerGroup, 'building', 26, -14);
-      for (const [x, z] of [
-        [-10, -2],
-        [10, -4],
-        [-2, 12],
-      ] as const) {
-        const plane = new THREE.Group();
-        const fuselage = cylinder(1.2, 1.2, 16, 0xe9ecef, 8);
-        fuselage.rotation.z = Math.PI / 2;
-        fuselage.position.set(8, 2.4, 0);
-        const wing = block(3.2, 0.3, 18, 0xcfd6dc);
-        wing.position.y = 2.1;
-        const fin = block(2.2, 3.4, 0.3, 0xf5a524);
-        fin.position.set(-6.5, 2.8, 0);
-        plane.add(fuselage, wing, fin);
+      strip(0, 16, 600, 22, 'asphalt');
+      markings(16, 300);
+      strip(-4, -2, 90, 22, 'paving', 0.03);
+      add(shed(24, 10, 16, 0xb7bec5, 0x8a939b, 0.3), 'building', -26, -18);
+      house(6, -20, 16, 8, 10, 'glass');
+      const tower = new THREE.Group();
+      tower.add(cylinder(1.5, 2.2, 18, std(0xd6d2c8, 0.85), 16));
+      tower.add(cylinder(3.4, 2.6, 3.2, std(0x22303c, 0.15, 0.6), 12, 0, 18));
+      tower.add(cylinder(3.6, 3.6, 0.5, std(0xd6d2c8, 0.85), 12, 0, 21.2));
+      add(tower, 'building', 28, -14);
+      const planes: Array<[number, number, number]> = [
+        [-12, -1, 0.15],
+        [12, -3, -0.25],
+        [-2, 14, Math.PI + 0.1],
+      ];
+      for (const [x, z, turn] of planes) {
+        const plane = airliner(aircraftModel());
+        plane.rotation.y = turn;
         add(plane, 'aircraft', x, z);
       }
-      car(20, 2, 0xd4ac0d, 5);
+      vehicle(22, 3, 0xd4ac0d, 5.5);
+      vehicle(-30, 5, 0xecf0f1, 6.5);
     } else if (kind === 'power') {
-      strip(0, 16, 400, 8, colors.road);
-      building(-18, -12, 26, 14, 14, METAL);
-      const stack = cylinder(1.4, 2.2, 34, CONCRETE, 10);
-      add(stack, 'light-structure', -2, -14);
-      for (let i = 0; i < 4; i++) {
-        const transformer = block(3, 3.2, 2.4, 0x5f6b76);
-        add(transformer, 'tank', 10 + i * 5, -2);
-      }
-      for (let i = 0; i < 3; i++) pylon(-30 + i * 30, 8);
-      car(4, 14.5, 0x2e86c1);
+      strip(0, 18, 600, 9, 'asphalt');
+      strip(4, -4, 90, 30, 'gravel', 0.03);
+      add(shed(28, 16, 16, 0x8a97a3, 0x5d6772, 0.2), 'building', -20, -14);
+      const stack = chimney(40, 1.8);
+      add(stack, 'light-structure', 0, -18);
+      plumes.push({ x: 0, y: 40.5, z: -18, size: 3.2, seed: 0.2, color: [0.55, 0.55, 0.56] });
+      for (let i = 0; i < 4; i++) add(transformer(), 'tank', 12 + i * 5.5, -4);
+      for (let i = 0; i < 3; i++) add(pylon(), 'pylon', -34 + i * 30, 8);
+      vehicle(4, 16.5, 0x2e86c1);
+      for (const x of [-38, 36]) plant(x, 14);
     } else if (kind === 'nuclear') {
-      strip(0, 19, 400, 8, colors.road);
-      strip(-2, 0, 80, 22, colors.yard, 0.02);
+      strip(0, 21, 600, 9, 'asphalt');
+      strip(-2, 0, 90, 26, 'paving', 0.03);
       // The reactor building in front: a cylinder with a dome, in outline only.
       const reactor = new THREE.CylinderGeometry(8.5, 8.5, 14, 32, 1);
       reactor.translate(0, 7, 0);
@@ -354,23 +400,19 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
       dome.translate(0, 14, 0);
       outline(mergeBodies(reactor, dome), -2, -4, domeSketch(8.5, 14));
       // Turbine hall and offices: ordinary steel and concrete buildings.
-      building(-26, -12, 22, 13, 13, METAL);
-      building(-30, 9, 9, 9, 8, CONCRETE);
-      // A cooling tower: a thin concrete shell, drawn like the other tall light structures.
-      // Narrowest at three quarters of its height, a little wider again at the top.
-      const profile = [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1].map((t) => new THREE.Vector2(5 + 4.5 * ((t - 0.75) / 0.75) ** 2, t * 30));
-      const tower = new THREE.Mesh(
-        new THREE.LatheGeometry(profile, 20),
-        new THREE.MeshLambertMaterial({ color: 0xc9ccd0, flatShading: true, side: THREE.DoubleSide }),
-      );
-      add(tower, 'light-structure', -18, -54);
+      add(shed(22, 15, 15, 0x9aa7b2, 0x6c7783, 0.18), 'building', -28, -14);
+      house(-32, 10, 10, 9, 8, 'concrete');
+      // A cooling tower: a thin concrete shell, drawn like the other tall light structures,
+      // with its steam rising.
+      add(coolingTower(32, 10), 'light-structure', -18, -58);
+      plumes.push({ x: -18, y: 32, z: -58, size: 7, seed: 0.5, color: [0.93, 0.94, 0.95] });
       // Switchyard and the lines that leave it.
-      for (let i = 0; i < 3; i++) add(block(3, 3.2, 2.4, 0x5f6b76), 'tank', 14 + i * 5, -6);
-      pylon(20, 8);
-      pylon(30, -18);
-      car(-6, 17.5, 0x2e86c1);
-      car(8, 20.5, 0xc0392b);
-      for (const x of [-30, 34]) tree(x, 15);
+      for (let i = 0; i < 3; i++) add(transformer(), 'tank', 16 + i * 5.5, -6);
+      add(pylon(), 'pylon', 22, 9);
+      add(pylon(), 'pylon', 34, -20);
+      vehicle(-6, 19.5, 0x2e86c1);
+      vehicle(8, 22.5, 0xc0392b, 4.4, Math.PI);
+      for (const x of [-34, 38]) plant(x, 16);
     } else if (kind === 'dam') {
       // A concrete gravity dam across a valley, the lake behind it, a power house at its foot.
       const length = 74;
@@ -393,95 +435,131 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
         sketch.push(toe, crestDown, crestDown.clone(), crestUp, crestUp.clone(), heel);
       }
       outline(dam, 0, -10, sketch);
-      strip(0, -72, length + 10, 120, colors.water, 20);
-      strip(0, 40, 12, 70, colors.water, 0.03);
+      water(0, -72, length + 14, 120, 20);
+      water(0, 40, 12, 70);
       hill(-66, -34, 60, 30, 96);
       hill(66, -34, 60, 30, 96);
-      building(-14, 9, 18, 9, 9, CONCRETE);
-      for (let i = 0; i < 2; i++) add(block(3, 3.2, 2.4, 0x5f6b76), 'tank', 2 + i * 5, 6);
-      pylon(12, 18);
-      pylon(-2, 32);
+      house(-14, 9, 18, 9, 9, 'concrete');
+      for (let i = 0; i < 2; i++) add(transformer(), 'tank', 2 + i * 5.5, 6);
+      add(pylon(), 'pylon', 14, 18);
+      add(pylon(), 'pylon', -2, 34);
       // Two cars on the road along the crest.
-      car(-14, -9.5, 0xd4ac0d, 4.2);
-      car(8, -9.5, 0x7f8c8d, 4.2);
+      vehicle(-14, -9.5, 0xd4ac0d);
+      vehicle(8, -9.5, 0x7f8c8d, 4.4, Math.PI);
       parts[parts.length - 1]!.home.y = 22;
       parts[parts.length - 2]!.home.y = 22;
       for (const [x, z] of [
         [-26, 18],
         [22, 26],
         [-24, 30],
+        [26, 12],
       ] as const)
-        tree(x, z);
+        plant(x, z);
     } else if (kind === 'refinery') {
-      strip(0, 18, 400, 8, colors.road);
+      strip(0, 20, 600, 9, 'asphalt');
+      strip(0, -4, 110, 36, 'gravel', 0.03);
       for (const [x, z, r, h] of [
-        [-24, -10, 7, 8],
-        [-6, -12, 7, 8],
-        [12, -10, 5, 10],
-        [26, -12, 5, 10],
-        [-16, 6, 4, 6],
+        [-26, -12, 7.5, 9],
+        [-7, -14, 7.5, 9],
+        [12, -12, 5.5, 11],
+        [27, -14, 5.5, 11],
+        [-17, 6, 4.5, 7],
       ] as const) {
-        add(cylinder(r, r, h, 0xd9dde1, 14), 'tank', x, z);
-        flame(x, z, h, 4);
+        const part = add(tank(r, h), 'tank', x, z);
+        burnOn(part, 0, h + r * 0.15, 0, r * 0.9);
       }
-      for (const x of [2, 8]) add(cylinder(0.9, 1.1, 26, METAL, 8), 'light-structure', x, 4);
-      const pipes = block(46, 0.6, 0.6, 0x8f9aa3);
-      pipes.position.y = 3;
-      add(pipes, 'light-structure', 2, 10);
-      car(-20, 16.5, 0xc0392b, 7);
+      // Columns, a pipe rack and a flare stack that always burns.
+      const steel = std(0x8d969e, 0.45, 0.6);
+      for (const [x, h] of [
+        [2, 28],
+        [7, 22],
+      ] as const)
+        add(cylinder(1.0, 1.2, h, steel, 14), 'light-structure', x, 4);
+      const rack = new THREE.Group();
+      for (let x = -22; x <= 22; x += 5.5) {
+        rack.add(block(0.4, 5, 0.4, steel, x, -1.2), block(0.4, 5, 0.4, steel, x, 1.2));
+      }
+      for (const [y, z, r] of [
+        [5.2, -0.6, 0.35],
+        [5.2, 0.4, 0.45],
+        [3.4, 0, 0.3],
+      ] as const) {
+        const pipe = mesh(new THREE.CylinderGeometry(r, r, 46, 10), std(0xb7bec4, 0.5, 0.5), 0, y, z);
+        pipe.rotation.z = Math.PI / 2;
+        rack.add(pipe);
+      }
+      add(rack, 'light-structure', 2, 12);
+      add(cylinder(0.6, 0.8, 34, std(0xb04030, 0.6), 10), 'light-structure', 38, -24);
+      steadyFires.push({ x: 38, y: 34.5, z: -24, size: 1.6, seed: 0.7 });
+      vehicle(-22, 18.5, 0xc0392b, 7);
     } else {
-      strip(0, 40, 400, 70, colors.water, 0.03);
-      strip(0, 2, 400, 6, 0x6b6f75, 0.05);
-      building(-22, -14, 20, 9, 12, METAL);
-      building(10, -14, 12, 7, 10, CONCRETE);
-      const ship = new THREE.Group();
-      const hull = block(44, 5, 9, 0x2f3b46);
-      const deck = block(10, 6, 7, 0xe9ecef);
-      deck.position.set(-14, 5, 0);
-      const funnel = cylinder(1.2, 1.4, 4, 0xf5a524, 8);
-      funnel.position.set(-15, 11, 0);
-      ship.add(hull, deck, funnel);
-      for (let i = 0; i < 4; i++) {
-        const box = block(5, 2.4, 2.4, [0xc0392b, 0x2e86c1, 0xd4ac0d, 0x27ae60][i]!);
-        box.position.set(-2 + i * 6, 5, 0);
-        ship.add(box);
+      // A harbour: quay, sheds, a cargo ship alongside and two cranes.
+      water(0, 46, 600, 80);
+      strip(0, -10, 600, 32, 'paving', 0.04);
+      world.add(block(600, 1.2, 1.2, std(0x6b6f75, 0.9), 0, 5.4));
+      add(shed(22, 10, 13, 0xa6aeb5, 0x7b858e, 0.25), 'building', -26, -16);
+      house(8, -17, 13, 8, 10, 'concrete');
+      const ship = cargoShip();
+      add(ship, 'ship', -2, 15);
+      for (const [x, z] of [
+        [-4, 15],
+        [10, 15],
+      ] as const)
+        burnOn(parts[parts.length - 1]!, x, 8, z - 15, 2.6);
+      for (const x of [-18, 16]) add(harbourCrane(), 'pylon', x, 2);
+      // Containers stacked on the quay.
+      const stackColors = [0xc0392b, 0x2e86c1, 0xd4ac0d, 0x27ae60];
+      for (let i = 0; i < 6; i++) {
+        const stack = new THREE.Group();
+        for (let s = 0; s < 2; s++) stack.add(block(6, 2.5, 2.4, std(stackColors[(i + s) % 4]!, 0.7, 0.2), 0, 0, s * 2.55));
+        const part = add(stack, 'tank', 24 + (i % 3) * 6.4, -6 + Math.floor(i / 3) * 2.6);
+        if (i === 1) burnOn(part, 0, 5.2, 0, 2.2);
       }
-      add(ship, 'ship', 0, 14);
-      const crane = new THREE.Group();
-      crane.add(cylinder(0.5, 0.8, 18, 0xf5a524, 4));
-      const jib = block(16, 0.6, 0.6, 0xf5a524);
-      jib.position.set(6, 17, 0);
-      crane.add(jib);
-      add(crane, 'pylon', 24, 0);
-      car(-6, 0.5, 0x7f8c8d, 6);
+      vehicle(-4, -4, 0x7f8c8d, 6.5);
     }
+    // Everything solid casts and takes shadows.
+    world.traverse((node) => {
+      const m = node as THREE.Mesh;
+      if (!m.isMesh || m.userData.noShadow) return;
+      m.castShadow = !m.userData.noShadowCast;
+      m.receiveShadow = true;
+    });
     apply();
   }
 
-  /** Puts every part where the state and the moment say it is, and draws the picture. */
-  function apply(): void {
+  const scratch = new THREE.Vector3();
+
+  /** Puts every part where the state and the moment say it is. */
+  function place(): void {
     const s = state;
     const blast = moment.blast;
     const level = s ? s.building.level : 0;
     const push = s ? Math.min(1, s.dynamicPsi / 0.6) : 0;
+    const fireGlow = s?.firesStart ? moment.fire : 0;
     for (const part of parts) {
       const { object, role, seed, home } = part;
       object.position.copy(home);
-      object.rotation.set(0, role === 'aircraft' ? 0 : 0, 0);
-      object.scale.set(1, 1, 1);
+      object.rotation.set(0, object.rotation.y, 0);
+      object.scale.set(object.scale.x, 1, object.scale.z);
       object.visible = true;
       if (role === 'building') {
         const kept = s ? s.building.heightKept : 1;
         object.scale.y = 1 + (kept - 1) * blast;
         if (level >= 3) object.rotation.z = -blast * 0.08 * (0.5 + seed);
-        object.traverse((node) => {
-          if (node.userData.window) node.visible = !(s?.windowsBroken && blast > 0.15);
-        });
-        const mesh = (object as THREE.Group).children[0] as THREE.Mesh | undefined;
-        const material = mesh?.material as THREE.MeshLambertMaterial | undefined;
-        if (material && part.color) {
-          material.color.copy(part.color).lerp(SCORCH, Math.min(0.75, (level >= 2 ? 0.25 * level : 0) * blast + (s?.firesStart ? 0.35 * moment.fire : 0)));
-          material.emissive.setRGB(moment.heat * 0.5, moment.heat * 0.22, 0);
+        const skin = part.skin;
+        if (skin) {
+          const broken = Boolean(s?.windowsBroken && blast > 0.15);
+          for (const m of skin.walls) {
+            const map = broken ? skin.facade.broken : skin.facade.whole;
+            if (m.map !== map) {
+              m.map = map;
+              m.needsUpdate = true;
+            }
+            m.color.copy(skin.base).lerp(SCORCH, Math.min(0.8, (level >= 2 ? 0.25 * level : 0) * blast + 0.4 * fireGlow));
+            // Windows glow with the heat pulse and with the fire inside.
+            const flicker = 0.75 + 0.25 * Math.sin(performance.now() / 180 + part.seed * 40);
+            m.emissive.setRGB(moment.heat * 0.9 + fireGlow * 0.85 * flicker, moment.heat * 0.4 + fireGlow * 0.26 * flicker, fireGlow * 0.04);
+          }
         }
       } else if (role === 'vehicle') {
         if (s?.vehiclesOverturned) {
@@ -495,10 +573,10 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
         const damage = s?.aircraft ?? 'none';
         if (damage === 'severe') {
           object.rotation.x = blast * (0.5 + seed * 0.6);
-          object.rotation.y = blast * (0.6 + seed);
+          object.rotation.z = blast * (0.3 + seed * 0.4);
           object.position.x += blast * (8 + seed * 8);
         } else if (damage === 'moderate') {
-          object.rotation.y = blast * 0.35 * (seed + 0.3);
+          object.rotation.z = blast * 0.12 * (seed + 0.3);
           object.position.x += blast * 2.5;
         }
       } else if (role === 'tree') {
@@ -529,18 +607,69 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
           object.rotation.x = blast * 0.12 * Math.min(1, push) * (level >= 3 ? 2.2 : 1);
           object.position.z += blast * push * 2;
         }
-      } else if (role === 'flame') {
-        const burning = Boolean(s?.firesStart) && moment.fire > 0.02;
-        object.visible = burning;
-        const flicker = 0.8 + 0.25 * Math.sin(performance.now() / 70 + seed * 20);
-        object.scale.setScalar(Math.max(0.01, moment.fire * flicker));
       }
     }
     // The flash lights everything from the side of the burst and washes the sky out.
-    burst.intensity = moment.flash * 9 + moment.heat * 2.5;
-    ambient.intensity = 1.1 + moment.flash * 3;
-    (scene.background as THREE.Color).copy(sky).lerp(new THREE.Color(0xfff7dc), Math.min(1, moment.flash * 0.9 + moment.heat * 0.25));
+    burst.intensity = moment.flash * 14 + moment.heat * 3.5;
+    hemisphere.intensity = (theme === 'dark' ? 0.55 : 0.9) + moment.flash * 4;
+    renderer.toneMappingExposure = 1.05 + moment.flash * 1.6;
+  }
+
+  let clockStart = performance.now();
+
+  /** Draws flames, smoke and dust for this frame. */
+  function particles(): boolean {
+    const time = (performance.now() - clockStart) / 1000;
+    const s = state;
+    flames.begin();
+    smoke.begin();
+    const burning = Boolean(s?.firesStart) && moment.fire > 0.02;
+    if (burning) {
+      const spots: FireSpot[] = burns.map((b) => {
+        b.part.object.updateMatrixWorld();
+        scratch.copy(b.local).applyMatrix4(b.part.object.matrixWorld);
+        return { x: scratch.x, y: scratch.y, z: scratch.z, size: b.size, seed: b.seed };
+      });
+      drawFires(flames, smoke, spots, moment.fire, time);
+    }
+    drawFires(flames, smoke, steadyFires, 1, time, 0.2);
+    drawPlumes(smoke, plumes, time);
+    const dustStrength = s ? Math.min(1, s.dynamicPsi / 0.3 + (s.building.level >= 2 ? 0.4 : 0)) : 0;
+    drawDust(smoke, moment.blast, dustStrength, 70);
+    flames.end();
+    smoke.end();
+    return burning || plumes.length > 0 || steadyFires.length > 0 || (moment.blast > 0 && moment.blast < 1);
+  }
+
+  function render(): void {
+    place();
+    particles();
     renderer.render(scene, camera);
+  }
+
+  // Flames and smoke move by themselves: while anything burns or rises the scene redraws
+  // itself, about thirty times a second.
+  let frame = 0;
+  let last = 0;
+  const loop = (now: number): void => {
+    frame = requestAnimationFrame(loop);
+    if (now - last < 32) return;
+    last = now;
+    place();
+    const moving = particles();
+    renderer.render(scene, camera);
+    if (!moving) {
+      cancelAnimationFrame(frame);
+      frame = 0;
+    }
+  };
+  const animate = (): void => {
+    if (!frame) frame = requestAnimationFrame(loop);
+  };
+
+  function apply(): void {
+    render();
+    animate();
   }
 
   function resize(): void {
@@ -553,12 +682,15 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     const [x, y, z] = view.from;
     camera.position.set(x * back, y * back, z * back);
     camera.lookAt(...view.at);
-    camera.updateProjectionMatrix();
     const fog = scene.fog as THREE.Fog;
     fog.near = view.fog[0] * back;
     fog.far = view.fog[1] * back;
-    camera.far = Math.max(400, view.fog[1] * back * 1.2);
+    camera.far = Math.max(600, view.fog[1] * back * 1.2);
     camera.updateProjectionMatrix();
+    // Sprite sizes are in metres: pixels per metre at one metre away.
+    const scale = (height * renderer.getPixelRatio()) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+    flames.setScale(scale);
+    smoke.setScale(scale);
     apply();
   }
 
@@ -567,6 +699,7 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
 
   return {
     setKind(kind) {
+      clockStart = performance.now();
       build(kind);
       resize();
     },
@@ -580,7 +713,13 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     },
     resize,
     dispose() {
-      build('street');
+      cancelAnimationFrame(frame);
+      frame = 0;
+      disposeWorld();
+      flames.dispose();
+      smoke.dispose();
+      environment.dispose();
+      sky.dispose();
       renderer.dispose();
     },
   };

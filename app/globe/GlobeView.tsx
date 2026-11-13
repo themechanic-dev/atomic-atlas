@@ -43,6 +43,7 @@ import {
   cinematic,
   clock,
   flights,
+  followsToCity,
   launcherProgress,
   launchPoint,
   liftoffProgress,
@@ -53,11 +54,13 @@ import {
   reach,
   stage,
   timeline,
+  warheadYieldKt,
 } from '../state/missiles';
 import { settings } from '../state/settings';
 import { beginBusy } from '../state/simulation';
 import { salvos, warClock, warFlights } from '../state/war';
 import { launcherKind } from './director';
+import { createImpactScene, type ImpactInput } from './impactScene';
 import { createLaunchScene } from './launchScene';
 
 // Cesium fetches its workers and textures from here (copied by the build, see vite.config.ts).
@@ -294,6 +297,8 @@ export default function GlobeView({ active }: { active: boolean }) {
         launchEntities.push(
           entities.add({
             polyline: {
+              // The missile draws its own trail in the close view of the launch.
+              show: notCloseUp,
               positions: path,
               width: 6,
               arcType: ArcType.NONE,
@@ -315,19 +320,6 @@ export default function GlobeView({ active }: { active: boolean }) {
               color: Color.WHITE,
               outlineColor: RED,
               outlineWidth: 3,
-              disableDepthTestDistance: Number.POSITIVE_INFINITY,
-            },
-          }),
-        );
-        // The impact: a bright mark at the target from the moment the warhead arrives.
-        launchEntities.push(
-          entities.add({
-            position: cartesian(flight.target),
-            point: {
-              show: new CallbackProperty(() => clock.value > 0 && clock.value >= plan.flightTimeS, false),
-              pixelSize: 26,               color: AMBER.withAlpha(0.55),
-              outlineColor: Color.WHITE.withAlpha(0.9),
-              outlineWidth: 2,
               disableDepthTestDistance: Number.POSITIVE_INFINITY,
             },
           }),
@@ -386,7 +378,7 @@ export default function GlobeView({ active }: { active: boolean }) {
       }
       framed = all;
       launch.build(
-        from && weapon && lead?.plan ? { from, target: lead.target, kind: launcherKind(weapon.platform) } : null,
+        from && weapon && lead?.plan ? { from, target: lead.target, kind: launcherKind(weapon.platform), shape: lead.plan.kind === 'cruise' ? 'cruise' : 'ballistic' } : null,
       );
       // While a flight is being played the director holds the camera.
       if (!untracked(() => playing.value)) frameFlights(settings.value.reduceMotion ? 0 : 1.4);
@@ -494,6 +486,31 @@ export default function GlobeView({ active }: { active: boolean }) {
       liftoff: () => liftoffProgress.value,
       stage: () => stage.value,
     });
+    // The flash, blast wave and cloud where warheads come down.
+    const impacts = createImpactScene(widget);
+    const updateImpacts = (): void => {
+      const list: ImpactInput[] = [];
+      const weapon = missile.value;
+      const from = launchPoint.value;
+      const yieldKt = warheadYieldKt.value ?? (weapon ? weapon.yieldsKt[weapon.yieldsKt.length - 1]! : 0);
+      if (weapon && from && yieldKt > 0) {
+        flights.value.forEach((flight, index) => {
+          if (!flight.plan) return;
+          list.push({ key: `m${index}:${flight.target.lng},${flight.target.lat}:${yieldKt}`, at: flight.target, yieldKt, arrived: clock.value > 0 && clock.value >= flight.plan.flightTimeS });
+        });
+      }
+      warFlights.value.forEach((f, index) => {
+        list.push({
+          key: `w${index}:${f.target.lng},${f.target.lat}:${f.salvo.yieldKt}`,
+          at: f.target,
+          yieldKt: f.salvo.yieldKt,
+          arrived: warClock.value > 0 && warClock.value >= f.impactS,
+          light: true,
+          weight: f.leak,
+        });
+      });
+      impacts.set(list);
+    };
     const removeDirector = scene.preUpdate.addEventListener(() => {
       if (cinematic.value && playing.value) launch.directCamera();
     });
@@ -506,7 +523,20 @@ export default function GlobeView({ active }: { active: boolean }) {
       const instant = settings.value.reduceMotion;
       if (!cinematic.value) return;
       if (now === 'midcourse' && playing.value && (before === 'boost' || before === 'launcher')) frameFlights(instant ? 0 : 2.4);
-      else if (now === 'terminal' && playing.value) {
+      else if (now === 'impact' && followsToCity.value) {
+        // One warhead: the view closes in on its cloud while the city map gets ready.
+        const lead = flights.value[leadIndex.value];
+        const weapon = missile.value;
+        const yieldKt = warheadYieldKt.value ?? (weapon ? weapon.yieldsKt[weapon.yieldsKt.length - 1]! : 0);
+        const from = launchPoint.value;
+        if (lead && from && yieldKt > 0) {
+          const top = Math.max(impacts.finalTopM(yieldKt), 3000);
+          camera.flyToBoundingSphere(new BoundingSphere(cartesian(lead.target, top * 0.4), top), {
+            duration: instant ? 0 : 2.2,
+            offset: new HeadingPitchRange(CesiumMath.toRadians(sideViewHeading(initialBearing(from, lead.target))), CesiumMath.toRadians(-6), top * 3.1),
+          });
+        }
+      } else if (now === 'terminal' && playing.value) {
         const from = launchPoint.value;
         const lead = flights.value[leadIndex.value];
         if (from && lead) launch.showArrival(lead.target, from, instant);
@@ -550,6 +580,11 @@ export default function GlobeView({ active }: { active: boolean }) {
       }),
       effect(() => {
         void warClock.value;
+        void clock.value;
+        void flights.value;
+        void warFlights.value;
+        void warheadYieldKt.value;
+        updateImpacts();
         scene.requestRender();
       }),
       effect(() => {
@@ -579,6 +614,7 @@ export default function GlobeView({ active }: { active: boolean }) {
       removeCameraMoved();
       removeDirector();
       launch.destroy();
+      impacts.destroy();
       handler.destroy();
       widget.destroy();
       widgetRef.current = null;

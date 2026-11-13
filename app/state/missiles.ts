@@ -194,8 +194,8 @@ export const stage = computed<Stage>(() => {
 /** True while the detonation on the city map was opened from a flight on the globe. */
 export const cameFromFlight = signal(false);
 
-/** How long the globe stays on the impact before the city map opens, milliseconds. */
-const ARRIVAL_PAUSE_MS = 1500;
+/** How long the globe stays on the impact before the city map opens, milliseconds: long enough to see the flash and the cloud start to rise. */
+const ARRIVAL_PAUSE_MS = 4500;
 let arrivalTimer: ReturnType<typeof setTimeout> | undefined;
 
 /** Indexes of the flights that reach their target. */
