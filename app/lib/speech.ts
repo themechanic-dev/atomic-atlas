@@ -58,6 +58,7 @@ export function detonationSpeech(result: DetonationResult, water: WaterResult | 
 /** What the voice says after an accident simulation. */
 export function accidentSpeech(name: string, result: ReleaseResult): string {
   const parts = [t('speech.accident', { name })];
+  if (result.iodineRangeM > 0) parts.push(t('speech.accident.iodine', { r: spokenDistance(result.iodineRangeM) }));
   parts.push(result.urgentRangeM > 0 ? t('speech.accident.urgent', { r: spokenDistance(result.urgentRangeM) }) : t('speech.accident.urgentNone'));
   if (result.relocationRangeM > 0) parts.push(t('speech.accident.relocation', { r: spokenDistance(result.relocationRangeM) }));
   return parts.join(' ');

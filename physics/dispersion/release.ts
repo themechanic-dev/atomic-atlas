@@ -16,11 +16,13 @@ const DAY_S = 86400;
 export const SEVEN_DAYS_S = 7 * DAY_S;
 export const ONE_YEAR_S = 365.25 * DAY_S;
 
-/** IAEA generic criteria for protective actions, as projected effective dose, Sv. */
+/** IAEA generic criteria for protective actions (GSR Part 7, Table II.2), as projected dose, Sv. */
 export const IAEA_CRITERIA = {
-  /** In the first 7 days: sheltering, evacuation. */
+  /** Equivalent dose to the thyroid from radioiodine in the first 7 days: iodine thyroid blocking. */
+  thyroidSv: 0.05,
+  /** Effective dose in the first 7 days: sheltering, evacuation. */
   urgentSv: 0.1,
-  /** In the first year: temporary relocation. */
+  /** Effective dose in the first year: temporary relocation. */
   relocationSv: 0.1,
 } as const;
 
@@ -47,6 +49,8 @@ export interface PointDose {
   first7dSv: number;
   /** Projected effective dose in the first year, Sv. */
   firstYearSv: number;
+  /** Committed equivalent dose to the thyroid of an adult from radioiodine breathed in while the plume passes, Sv. */
+  thyroidSv: number;
   /** Activity on the ground per nuclide right after the plume has passed, Bq/m2. */
   depositionBqM2: Record<string, number>;
   /** Time for the plume to arrive, seconds. */
@@ -75,6 +79,7 @@ export function doseAt(release: Release, downwindM: number, crosswindM = 0): Poi
     ground1ySv: 0,
     first7dSv: 0,
     firstYearSv: 0,
+    thyroidSv: 0,
     depositionBqM2: {},
     arrivalS,
   };
@@ -87,6 +92,7 @@ export function doseAt(release: Release, downwindM: number, crosswindM = 0): Poi
     const exposure = activityBq * perBq * inTransit * airborne;
     const deposited = exposure * nuclide.depositionVelocityMs;
     out.inhalationSv += exposure * BREATHING_RATE_M3S * nuclide.inhalationSvPerBq;
+    out.thyroidSv += exposure * BREATHING_RATE_M3S * nuclide.thyroidInhalationSvPerBq;
     out.cloudSv += exposure * nuclide.submersionSvPerBqSM3;
     out.ground7dSv += deposited * nuclide.groundSvPerBqSM2 * integratedDecay(nuclide, SEVEN_DAYS_S);
     out.ground1ySv += deposited * nuclide.groundSvPerBqSM2 * integratedDecay(nuclide, ONE_YEAR_S);
@@ -139,6 +145,8 @@ export function halfWidthAt(release: Release, pick: (dose: PointDose) => number,
 
 export interface ReleaseResult {
   release: Release;
+  /** Distance out to which iodine thyroid blocking would be warranted (50 mSv to an adult's thyroid in 7 days), metres. */
+  iodineRangeM: number;
   /** Distance out to which sheltering or evacuation would be warranted (100 mSv in 7 days), metres. */
   urgentRangeM: number;
   /** Distance out to which temporary relocation would be warranted (100 mSv in the first year), metres. */
@@ -149,6 +157,7 @@ export interface ReleaseResult {
 }
 
 export function assessRelease(release: Release): ReleaseResult {
+  const iodineRangeM = distanceToDose(release, (dose) => dose.thyroidSv, IAEA_CRITERIA.thyroidSv);
   const urgentRangeM = distanceToDose(release, (dose) => dose.first7dSv, IAEA_CRITERIA.urgentSv);
   const relocationRangeM = distanceToDose(release, (dose) => dose.firstYearSv, IAEA_CRITERIA.relocationSv);
   const { conditions } = release;
@@ -156,13 +165,14 @@ export function assessRelease(release: Release): ReleaseResult {
   const at10km = doseAt(release, 10_000);
   return {
     release,
+    iodineRangeM,
     urgentRangeM,
     relocationRangeM,
     windAtReleaseMs: windAtHeight(conditions.wind10Ms, conditions.releaseHeightM, conditions.stability),
     explanation: {
       id: 'plume',
       formula:
-        'C = Q / (2π σy σz u) · exp(−y² / 2σy²) · [exp(−(z−H)² / 2σz²) + exp(−(z+H)² / 2σz²)] · DF(x) · exp(−λx/u);  E = C · (BR · e_inh + e_cloud) + C · v_d · e_ground · (1 − e^(−λT)) / λ',
+        'C = Q / (2π σy σz u) · exp(−y² / 2σy²) · [exp(−(z−H)² / 2σz²) + exp(−(z+H)² / 2σz²)] · DF(x) · exp(−λx/u);  E = C · (BR · e_inh + e_cloud) + C · v_d · e_ground · (1 − e^(−λT)) / λ;  H_thyroid = Σ_iodine C · BR · e_inh / w_thyroid',
       inputs: [
         { symbol: 'Q', labelKey: 'activityReleased', value: total, quantity: 'activity' },
         { symbol: 'H', labelKey: 'releaseHeight', value: conditions.releaseHeightM, quantity: 'height' },
@@ -171,9 +181,10 @@ export function assessRelease(release: Release): ReleaseResult {
       outputs: [
         { symbol: 'E₇', labelKey: 'dose7dAt10km', value: at10km.first7dSv, quantity: 'effectiveDose' },
         { symbol: 'E₁', labelKey: 'dose1yAt10km', value: at10km.firstYearSv, quantity: 'effectiveDose' },
+        { symbol: 'H_thy', labelKey: 'thyroidAt10km', value: at10km.thyroidSv, quantity: 'effectiveDose' },
       ],
-      sources: ['hotspot2013', 'icrp119', 'fgr12', 'iaeaGsr7'],
-      where: 'HotSpot User\'s Guide 3.0, chapter 7; ICRP 119 Table G.1; FGR 12 Tables III.1 and III.3; IAEA GSR Part 7 Table II.2',
+      sources: ['hotspot2013', 'icrp119', 'fgr12', 'iaeaGsr7', 'fgr11'],
+      where: 'HotSpot User\'s Guide 3.0, chapter 7; ICRP 119 Table G.1 and its table of tissue weighting factors (thyroid 0.05); FGR 12 Tables III.1 and III.3; IAEA GSR Part 7 Table II.2 (the thyroid criterion counts radioiodine only); FGR 11 Table 2.1 for the share of the effective dose of radioiodine that is to the thyroid',
       uncertainty: 'rough',
     },
   };

@@ -10,7 +10,7 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 1.5: one detonation, missiles and hypersonic gliders on the globe,
+> Version 1.6: one detonation, missiles and hypersonic gliders on the globe,
 > accidents, water and dams, war scenarios with a general missile defence, an
 > offline assistant and a voice, offline map areas with the population at 100 m,
 > and the mushroom cloud in 3D, on Linux, Windows and Android.
@@ -52,8 +52,8 @@ Free and open source (MIT).
 - **Accidents.** A release as large as Chernobyl, Fukushima, Kyshtym, Windscale
   or Three Mile Island (or a share of one), anywhere, in a wind and weather you
   choose: the dose in the first week and the first year, the caesium left on
-  the ground, and how far the international criteria for sheltering,
-  evacuation and relocation would be reached.
+  the ground, and how far the international criteria for iodine thyroid
+  blocking, sheltering, evacuation and relocation would be reached.
 - **Water.** For a burst in the sea, a lake or a lagoon: the depth of the water
   from the terrain tiles (or as you give it), how far the waves stay 10, 3 and
   1 m high, when they arrive, and the low land connected to the sea that they
@@ -123,7 +123,7 @@ buildings, weather and people do not behave like a formula.
 | Timing | Blast arrival from the shock-front speed along the slant range; heat pulse; cloud rise | Glasstone & Dolan (1977), eq. 3.55.2, Figs. 3.77a–b, §7.85–7.86, Table 2.12 |
 | Mushroom cloud | Height and radius of the stabilised cloud, base of the head, stem radius, spread in time (cube-root scaling), colour | Glasstone & Dolan (1977), Figs. 2.16, 9.96 and 10.158c, §2.05, §2.08, §2.15–2.17, §10.158 |
 | Damage to things | Houses, vehicles, parked aircraft, electricity networks, ignition of tinder | Glasstone & Dolan (1977), §5.52–5.68, §5.87–5.89, Tables 5.145, 5.153 and 7.40, §5.99–5.105 |
-| Release into the air | Gaussian plume of the HotSpot codes with depletion; dose from breathing, cloud and ground; generic criteria for protective actions | HotSpot Health Physics Codes 3.0 User's Guide (LLNL, 2013), ch. 7; ICRP Publication 119, Table G.1; Federal Guidance Report 12, Tables III.1 and III.3; IAEA GSR Part 7, Table II.2 |
+| Release into the air | Gaussian plume of the HotSpot codes with depletion; dose from breathing, cloud and ground; dose to the thyroid from radioiodine (effective dose coefficient over the thyroid weight, 0.05); generic criteria for protective actions, iodine thyroid blocking included | HotSpot Health Physics Codes 3.0 User's Guide (LLNL, 2013), ch. 7; ICRP Publication 119, Table G.1 and tissue weighting factors; Federal Guidance Report 12, Tables III.1 and III.3; Federal Guidance Report 11, Table 2.1; IAEA GSR Part 7, Table II.2 |
 | Historical releases | Activity released per radionuclide | UNSCEAR 2008 Annexes C and D; UNSCEAR 2013 Annex A; NRPA Bulletin 8/2007 |
 | Water waves | Wave height against distance in deep and shallow water; period and length of the peak wave; speed from linear wave theory; growth towards the shore and breaking | Glasstone & Dolan (1977), §6.119–6.121, Table 6.57; U.S. Army Corps of Engineers, *Coastal Engineering Manual*, Part II, chapters 1 and 4 |
 | Flooding by waves | Land lower than the run-up height and connected to the sea | the above, on AWS Terrain Tiles |

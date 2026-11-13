@@ -89,6 +89,13 @@ export const SOURCES = {
       'ICRP, Compendium of Dose Coefficients based on ICRP Publication 60. ICRP Publication 119, Annals of the ICRP 41 (Suppl.), 2012.',
     url: 'https://www.icrp.org/publication.asp?id=ICRP%20Publication%20119',
   },
+  fgr11: {
+    id: 'fgr11',
+    short: 'Federal Guidance Report 11',
+    citation:
+      'K. F. Eckerman, A. B. Wolbarst and A. C. B. Richardson, Limiting Values of Radionuclide Intake and Air Concentration and Dose Conversion Factors for Inhalation, Submersion, and Ingestion. Federal Guidance Report No. 11, U.S. Environmental Protection Agency, EPA-520/1-88-020, 1988.',
+    url: 'https://www.epa.gov/sites/default/files/2015-05/documents/520-1-88-020.pdf',
+  },
   fgr12: {
     id: 'fgr12',
     short: 'Federal Guidance Report 12',

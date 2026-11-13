@@ -19,7 +19,7 @@ import {
   updateAccidentForm,
   useHistoricalPlace,
 } from '../state/accident';
-import { PLUME_COLORS, PLUME_LEVELS_SV } from '../map/overlays';
+import { IODINE_COLOR, PLUME_COLORS, PLUME_LEVELS_SV } from '../map/overlays';
 import { settings } from '../state/settings';
 import { explaining } from '../state/simulation';
 import { Button, Field, HowButton, Icon, NumberInput, Segmented } from './controls';
@@ -160,12 +160,15 @@ export function AccidentPanel() {
               <HowButton onClick={() => (explaining.value = 'plume')} testId="how-plume" />
             </div>
             <dl class="facts" data-testid="accident-ranges">
+              <dt>{t('accident.iodine', { dose: formatEffectiveDose(IAEA_CRITERIA.thyroidSv) })}</dt>
+              <dd data-testid="accident-iodine-range">{range(run.result.iodineRangeM)}</dd>
               <dt>{t('accident.urgent', { dose: formatEffectiveDose(IAEA_CRITERIA.urgentSv) })}</dt>
               <dd>{range(run.result.urgentRangeM)}</dd>
               <dt>{t('accident.relocation', { dose: formatEffectiveDose(IAEA_CRITERIA.relocationSv) })}</dt>
               <dd>{range(run.result.relocationRangeM)}</dd>
             </dl>
             <p class="hint">{t('accident.criteria.hint')}</p>
+            <p class="hint" data-testid="accident-iodine-hint">{t('accident.iodine.hint')}</p>
           </div>
           <div class="card">
             <div class="card-head">
@@ -177,6 +180,7 @@ export function AccidentPanel() {
                   <th>{t('accident.distance')}</th>
                   <th>{t('accident.dose7d')}</th>
                   <th>{t('accident.dose1y')}</th>
+                  <th>{t('accident.thyroidShort')}</th>
                   <th>Cs-137</th>
                 </tr>
               </thead>
@@ -186,6 +190,7 @@ export function AccidentPanel() {
                     <td>{formatDistance(rangeM)}</td>
                     <td class="num">{formatEffectiveDose(dose.first7dSv)}</td>
                     <td class="num">{formatEffectiveDose(dose.firstYearSv)}</td>
+                    <td class="num">{dose.thyroidSv > 0 ? formatEffectiveDose(dose.thyroidSv) : '–'}</td>
                     <td class="num">{dose.depositionBqM2['Cs-137'] ? `${formatActivity(dose.depositionBqM2['Cs-137'])}/m²` : '–'}</td>
                   </tr>
                 ))}
@@ -205,6 +210,10 @@ export function AccidentPanel() {
                 </li>
               ))}
             </ul>
+            <p class="legend-iodine" data-testid="accident-legend-iodine">
+              <span class="legend-dash" style={{ borderColor: IODINE_COLOR }} />
+              {t('accident.legend.iodine', { dose: formatEffectiveDose(IAEA_CRITERIA.thyroidSv) })}
+            </p>
           </div>
           <p class="hint">{t('accident.assumptions')}</p>
         </section>

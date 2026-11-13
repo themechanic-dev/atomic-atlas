@@ -7,7 +7,7 @@ import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { useEffect, useRef } from 'preact/hooks';
-import { distanceToDose, doseAt, halfWidthAt, type PointDose } from '@physics/dispersion/release';
+import { distanceToDose, doseAt, halfWidthAt, IAEA_CRITERIA, type PointDose } from '@physics/dispersion/release';
 import { accumulatedDose } from '@physics/fallout/wseg10';
 import { t } from '../i18n';
 import {
@@ -37,6 +37,7 @@ import {
   resultBounds,
   ringFeatures,
   ringLabelFeatures,
+  IODINE_COLOR,
   PLUME_LEVELS_SV,
   plumeFeatures,
   ringsAt,
@@ -170,6 +171,9 @@ function addOverlays(map: MapLibreMap): void {
   map.addSource('aa-plume', { type: 'geojson', data: EMPTY });
   map.addLayer({ id: 'aa-plume-fill', type: 'fill', source: 'aa-plume', paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.24 } }, below);
   map.addLayer({ id: 'aa-plume-line', type: 'line', source: 'aa-plume', paint: { 'line-color': ['get', 'color'], 'line-width': 1.8 } });
+  // The area in which iodine thyroid blocking would be warranted: a dashed outline over the plume.
+  map.addSource('aa-iodine', { type: 'geojson', data: EMPTY });
+  map.addLayer({ id: 'aa-iodine-line', type: 'line', source: 'aa-iodine', paint: { 'line-color': IODINE_COLOR, 'line-width': 2.4, 'line-dasharray': [2.5, 1.5] } });
 
   // Airports (squares would need an icon; a ringed dot does) and power stations, by fuel.
   map.addSource('aa-sites', { type: 'geojson', data: siteFeatures(sites.value) });
@@ -334,11 +338,13 @@ let falloutDrawn = true;
 let ringsAppliedAt = 0;
 
 const firstYear = (dose: PointDose): number => dose.firstYearSv;
+const thyroid = (dose: PointDose): number => dose.thyroidSv;
 
 /** Draws the plume of the current accident run and shows only the layers of the simulator in front. */
 function applyAccident(map: MapLibreMap): void {
   const plume = map.getSource('aa-plume') as GeoJSONSource | undefined;
-  if (!plume) return;
+  const iodine = map.getSource('aa-iodine') as GeoJSONSource | undefined;
+  if (!plume || !iodine) return;
   const inAccident = mode.value === 'accident';
   const run = accidentRun.value;
   if (run && inAccident) {
@@ -352,13 +358,23 @@ function applyAccident(map: MapLibreMap): void {
         (level, downwindM) => halfWidthAt(release, firstYear, level, downwindM),
       ),
     );
+    iodine.setData(
+      plumeFeatures(
+        run.at,
+        run.towardsDeg,
+        [IAEA_CRITERIA.thyroidSv],
+        () => run.result.iodineRangeM,
+        (level, downwindM) => halfWidthAt(release, thyroid, level, downwindM),
+      ),
+    );
   } else {
     plume.setData(EMPTY);
+    iodine.setData(EMPTY);
   }
   // Each simulator shows its own shapes.
   const detonationLayers = ['aa-fallout-fill', 'aa-fallout-line', 'aa-rings-fill', 'aa-rings-line', 'aa-rings-line-thermal', 'aa-rings-line-radiation', 'aa-rings-line-front', 'aa-ring-labels'];
   for (const id of detonationLayers) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', inAccident ? 'none' : 'visible');
-  for (const id of ['aa-plume-fill', 'aa-plume-line']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', inAccident ? 'visible' : 'none');
+  for (const id of ['aa-plume-fill', 'aa-plume-line', 'aa-iodine-line']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', inAccident ? 'visible' : 'none');
 }
 
 /** Read-out for a point in the accident simulator: the dose there. */
@@ -379,6 +395,7 @@ function accidentProbeRows(point: LngLat): Array<[string, string]> {
   const dose = doseAt(run.result.release, x, y);
   rows.push([t('accident.dose7d'), formatEffectiveDose(dose.first7dSv)]);
   rows.push([t('accident.dose1y'), formatEffectiveDose(dose.firstYearSv)]);
+  if (dose.thyroidSv > 0) rows.push([t('accident.thyroid'), formatEffectiveDose(dose.thyroidSv)]);
   const caesium = dose.depositionBqM2['Cs-137'];
   if (caesium) rows.push(['Cs-137', `${formatActivity(caesium)}/m²`]);
   rows.push([t('accident.arrival'), formatSeconds(dose.arrivalS)]);

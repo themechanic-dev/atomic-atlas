@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import accidents from '../../data/accidents.json';
 import { SOURCES } from '../sources';
-import { NUCLIDES } from './nuclides';
+import { NUCLIDES, THYROID_WEIGHT } from './nuclides';
 import { depletionFactor, dilution, sampleTimeFactor, sigmaY, sigmaZ, windAtHeight, type PlumeConditions } from './plume';
 import { assessRelease, distanceToDose, doseAt, halfWidthAt, IAEA_CRITERIA, type Release } from './release';
 
@@ -125,6 +125,33 @@ describe('dose from a release', () => {
     const dose = doseAt(iodine, 20000);
     // Eight days half-life: a year on the ground gives little more than the first weeks.
     expect(dose.ground1ySv / dose.ground7dSv).toBeLessThan(2.3);
+  });
+
+  it('gives the thyroid twenty times the effective dose of breathing in radioiodine, and nothing for other nuclides', () => {
+    const iodine: Release = { nuclides: [{ nuclide: 'I-131', activityBq: 1e15 }], conditions };
+    const dose = doseAt(iodine, 5000);
+    // ICRP 119: 7.4e-9 Sv/Bq effective, over the thyroid weighting factor 0.05.
+    expect(NUCLIDES['I-131']!.thyroidInhalationSvPerBq).toBeCloseTo(1.48e-7, 12);
+    expect(NUCLIDES['I-133']!.thyroidInhalationSvPerBq).toBeCloseTo(3.0e-8, 12);
+    expect(dose.thyroidSv / dose.inhalationSv).toBeCloseTo(1 / THYROID_WEIGHT, 9);
+    // Federal Guidance Report 11, Table 2.1 (ICRP 30, workers): 2.92e-7 Sv/Bq to the thyroid for
+    // I-131. The ICRP 60 based figure used here is about half, as the newer models give.
+    expect(2.92e-7 / NUCLIDES['I-131']!.thyroidInhalationSvPerBq).toBeGreaterThan(1.5);
+    expect(2.92e-7 / NUCLIDES['I-131']!.thyroidInhalationSvPerBq).toBeLessThan(2.5);
+    // Only radioiodine counts (IAEA GSR Part 7, Table II.2, note b): not caesium, not tellurium.
+    for (const id of ['Cs-137', 'Cs-134', 'Te-132', 'Sr-90', 'Xe-133']) expect(NUCLIDES[id]!.thyroidInhalationSvPerBq, id).toBe(0);
+    expect(doseAt(caesium, 5000).thyroidSv).toBe(0);
+  });
+
+  it('warrants iodine thyroid blocking further out than evacuation for a release rich in iodine', () => {
+    const fukushima = accidents.find((a) => a.id === 'fukushima-2011')!;
+    const result = assessRelease({ nuclides: fukushima.nuclides.map((n) => ({ ...n, activityBq: n.activityBq * 0.1 })), conditions });
+    expect(result.iodineRangeM).toBeGreaterThan(result.urgentRangeM);
+    expect(doseAt(result.release, result.iodineRangeM * 0.999).thyroidSv).toBeGreaterThanOrEqual(IAEA_CRITERIA.thyroidSv);
+    expect(doseAt(result.release, result.iodineRangeM * 1.01).thyroidSv).toBeLessThan(IAEA_CRITERIA.thyroidSv);
+    expect(IAEA_CRITERIA.thyroidSv).toBe(0.05);
+    // A release without iodine never reaches it.
+    expect(assessRelease(caesium).iodineRangeM).toBe(0);
   });
 
   it('gives noble gases a cloud dose only', () => {

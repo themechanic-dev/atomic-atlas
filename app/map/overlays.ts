@@ -224,6 +224,8 @@ export function siteFeatures(
 /** Dose levels drawn as plume outlines: projected effective dose in the first year, Sv, strongest first. */
 export const PLUME_LEVELS_SV = [1, 0.1, 0.02, 0.001] as const;
 export const PLUME_COLORS: Record<number, string> = { 1: '#7a0403', 0.1: '#d7263d', 0.02: '#f5a524', 0.001: '#57cc99' };
+/** Dashed outline of the area in which iodine thyroid blocking would be warranted. */
+export const IODINE_COLOR = '#9b5de5';
 
 /**
  * The area in which a dose is at or above each level, as polygons along the wind.
