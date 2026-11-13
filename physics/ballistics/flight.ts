@@ -1,7 +1,8 @@
 // From a weapon category and a distance to a flight plan: how it flies, how high,
 // how long, with the explanation behind the numbers.
 
-import type { Explanation } from '../sources';
+import type { Explanation, SourceId } from '../sources';
+import { CRUISE_LOW_ALTITUDE_M, cruiseSpeed, type CruiseSpeed } from './cruise';
 import {
   GLIDE_BALLISTIC_COEFFICIENT,
   GLIDE_LIFT_TO_DRAG,
@@ -14,7 +15,6 @@ import {
 import {
   ballisticTrajectory,
   cruiseFlightTimeS,
-  SUBSONIC_CRUISE_SPEED,
   trajectoryPoints,
   type BallisticTrajectory,
   type TrajectoryPoint,
@@ -23,25 +23,29 @@ import {
 
 export type FlightKind = 'ballistic' | 'cruise' | 'glide';
 
-/** What is published about a glider: its speed at the start of the glide, or only its range. */
-export interface GlideVehicle {
-  /** Published speed at the start of the glide, m/s. */
-  startSpeedMs?: number | null;
-  /** Published range, metres: sets the start speed when no speed is published. */
+/** What is published about how a weapon flies, in SI units where it has units; all of it optional. */
+export interface FlightVehicle {
+  /** Published range, metres: sets a glider's start speed when no speed is published. */
   publishedRangeM?: number | null;
+  /** Published speed of a glider at the start of its glide, m/s. */
+  glideSpeedMs?: number | null;
+  /** Published cruise speed as a Mach number. */
+  speedMach?: number | null;
+  /** Published cruise speed in km/h. */
+  speedKmh?: number | null;
 }
 
 /**
  * Speed a glider starts its glide at: the published one, or else the one that just reaches
  * its published range (or, failing that too, the target) before it slows below Mach 5.
  */
-export function glideStartSpeedMs(vehicle: GlideVehicle | undefined, rangeM: number): number {
-  if (vehicle?.startSpeedMs && vehicle.startSpeedMs > 0) return vehicle.startSpeedMs;
+export function glideStartSpeedMs(vehicle: FlightVehicle | undefined, rangeM: number): number {
+  if (vehicle?.glideSpeedMs && vehicle.glideSpeedMs > 0) return vehicle.glideSpeedMs;
   return startSpeedForRangeM(vehicle?.publishedRangeM && vehicle.publishedRangeM > 0 ? vehicle.publishedRangeM : rangeM);
 }
 
-/** Height at which a cruise missile is drawn and timed: it follows the ground at tens of metres. */
-export const CRUISE_ALTITUDE_M = 100;
+/** Height at which a subsonic cruise missile is drawn and timed: it follows the ground at tens of metres. */
+export const CRUISE_ALTITUDE_M = CRUISE_LOW_ALTITUDE_M;
 
 export interface FlightPlan {
   kind: FlightKind;
@@ -54,6 +58,7 @@ export interface FlightPlan {
   speedMs: number;
   ballistic: BallisticTrajectory | null;
   glide: GlideTrajectory | null;
+  cruise: CruiseSpeed | null;
   /** Positions along the flight: time, distance over the ground, height. */
   points: TrajectoryPoint[];
   explanation: Explanation;
@@ -71,7 +76,7 @@ export function flightKind(category: string): FlightKind {
   return category === 'cruise' ? 'cruise' : category === 'glide' ? 'glide' : 'ballistic';
 }
 
-export function planFlight(category: string, rangeM: number, shape: TrajectoryShape = 'minimumEnergy', vehicle?: GlideVehicle): FlightPlan | null {
+export function planFlight(category: string, rangeM: number, shape: TrajectoryShape = 'minimumEnergy', vehicle?: FlightVehicle): FlightPlan | null {
   if (!(rangeM > 0)) return null;
 
   if (flightKind(category) === 'glide') {
@@ -85,6 +90,7 @@ export function planFlight(category: string, rangeM: number, shape: TrajectorySh
       speedMs: g.startSpeedMs,
       ballistic: null,
       glide: g,
+      cruise: null,
       points: glidePoints(g),
       explanation: {
         id: 'glide',
@@ -109,34 +115,55 @@ export function planFlight(category: string, rangeM: number, shape: TrajectorySh
   }
 
   if (flightKind(category) === 'cruise') {
-    const time = cruiseFlightTimeS(rangeM, SUBSONIC_CRUISE_SPEED);
+    const c = cruiseSpeed(vehicle);
+    const time = cruiseFlightTimeS(rangeM, c.speedMs);
     const count = 64;
     const points: TrajectoryPoint[] = [];
     for (let i = 0; i <= count; i++) {
-      points.push({ timeS: (time * i) / count, downrangeM: (rangeM * i) / count, altitudeM: CRUISE_ALTITUDE_M, speedMs: SUBSONIC_CRUISE_SPEED });
+      points.push({ timeS: (time * i) / count, downrangeM: (rangeM * i) / count, altitudeM: c.altitudeM, speedMs: c.speedMs });
     }
+    const distance = { symbol: 'd', labelKey: 'groundRange', value: rangeM, quantity: 'length' as const };
+    const speed = { symbol: 'v', labelKey: 'cruiseSpeed', value: c.speedMs, quantity: 'speed' as const };
+    const duration = { symbol: 't', labelKey: 'flightTime', value: time / 3600, quantity: 'time' as const };
+    const sources: SourceId[] = c.mach !== null ? ['ussa1976'] : [];
     return {
       kind: 'cruise',
       rangeM,
       flightTimeS: time,
-      apogeeM: CRUISE_ALTITUDE_M,
-      speedMs: SUBSONIC_CRUISE_SPEED,
+      apogeeM: c.altitudeM,
+      speedMs: c.speedMs,
       ballistic: null,
       glide: null,
+      cruise: c,
       points,
-      explanation: {
-        id: 'cruise',
-        formula: 't = d / v',
-        inputs: [
-          { symbol: 'd', labelKey: 'groundRange', value: rangeM, quantity: 'length' },
-          { symbol: 'v', labelKey: 'cruiseSpeed', value: SUBSONIC_CRUISE_SPEED, quantity: 'speed' },
-        ],
-        outputs: [{ symbol: 't', labelKey: 'flightTime', value: time / 3600, quantity: 'time' }],
-        // Plain distance over speed; the speed is a round figure, not a published value for one missile.
-        sources: [],
-        where: '',
-        uncertainty: '±20%',
-      },
+      explanation:
+        c.mach !== null
+          ? {
+              id: 'cruise',
+              formula: 'v = M · a(h);  t = d / v',
+              inputs: [
+                distance,
+                { symbol: 'M', labelKey: 'machNumber', value: c.mach, quantity: 'number' },
+                { symbol: 'a', labelKey: 'soundSpeed', value: c.soundSpeedMs ?? 0, quantity: 'speed' },
+              ],
+              outputs: [speed, duration],
+              sources,
+              where: c.high
+                ? 'published Mach number (catalog source), for flight at high altitude; speed of sound in the stratosphere (11-20 km): U.S. Standard Atmosphere 1976'
+                : 'published Mach number (catalog source); speed of sound at 100 m: U.S. Standard Atmosphere 1976',
+              uncertainty: '±10%',
+            }
+          : {
+              id: 'cruise',
+              formula: 't = d / v',
+              inputs: [distance, speed],
+              outputs: [duration],
+              // Plain distance over speed: the published speed of the missile (catalog source),
+              // or a round figure when none is published.
+              sources,
+              where: c.published ? 'published speed (catalog source)' : '',
+              uncertainty: c.published ? '±10%' : '±20%',
+            },
     };
   }
 
@@ -150,6 +177,7 @@ export function planFlight(category: string, rangeM: number, shape: TrajectorySh
     speedMs: t.burnoutSpeedMs,
     ballistic: t,
     glide: null,
+    cruise: null,
     points: trajectoryPoints(t, 120),
     explanation: {
       id: 'trajectory',
@@ -180,7 +208,7 @@ export function planFlight(category: string, rangeM: number, shape: TrajectorySh
  * as its glide model takes it from its published speed before it slows below Mach 5, and at
  * least its published range (sources often give only a lower bound, "more than").
  */
-export function reachM(category: string, publishedRangeM: number, shape: TrajectoryShape = 'minimumEnergy', vehicle?: GlideVehicle): number {
+export function reachM(category: string, publishedRangeM: number, shape: TrajectoryShape = 'minimumEnergy', vehicle?: FlightVehicle): number {
   if (!(publishedRangeM > 0)) return 0;
   if (flightKind(category) === 'glide') {
     return Math.max(publishedRangeM, glideReachM(glideStartSpeedMs({ ...vehicle, publishedRangeM }, publishedRangeM)));

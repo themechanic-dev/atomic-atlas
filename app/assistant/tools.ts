@@ -175,6 +175,8 @@ export async function runTool(name: string, args: Record<string, unknown>): Prom
           yields_kt: w.yieldsKt,
           range_km: w.rangeKm,
           glide_speed_km_s: w.glideSpeedKmS ?? null,
+          speed_mach: w.speedMach ?? null,
+          speed_kmh: w.speedKmh ?? null,
           warheads: w.warheadsMax,
           status: w.status,
           year: w.year,

@@ -66,6 +66,13 @@ export function formatSpeed(ms: number): string {
   return `${formatNumber(ms * 3.6, 3)} km/h`;
 }
 
+/** A published cruise speed as the source gives it: "Mach 3", or a speed in the user's units. */
+export function formatPublishedSpeed(published: { speedMach?: number; speedKmh?: number }): string | null {
+  if (published.speedMach) return `Mach ${formatNumber(published.speedMach, 2)}`;
+  if (published.speedKmh) return formatSpeed(published.speedKmh / 3.6);
+  return null;
+}
+
 /** An overpressure in psi, with kPa alongside: both are in common use. */
 export function formatPressure(psi: number): string {
   if (!Number.isFinite(psi)) return '–';

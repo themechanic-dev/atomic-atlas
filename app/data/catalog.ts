@@ -1,7 +1,7 @@
 // The weapons catalog and the ready-made scenarios that ship with the app.
 // Every record names the public source it comes from.
 
-import type { GlideVehicle } from '@physics/ballistics/flight';
+import type { FlightVehicle } from '@physics/ballistics/flight';
 import type { BurstMode } from '@physics/detonation';
 import scenariosJson from '@data/scenarios.json';
 import weaponsJson from '@data/weapons.json';
@@ -29,6 +29,10 @@ export interface Weapon {
   rangeKm: number | null;
   /** Published speed of a glide vehicle at the start of its glide, km/s. */
   glideSpeedKmS?: number;
+  /** Published cruise speed as a Mach number (cruise missiles), as the source gives it. */
+  speedMach?: number;
+  /** Published cruise speed in km/h (cruise missiles), as the source gives it. */
+  speedKmh?: number;
   warheadsMax: number;
   mirv: boolean;
   /** Published yield options per warhead, kilotons, ascending. */
@@ -68,11 +72,13 @@ export function weaponById(id: string | null): Weapon | null {
   return id ? (WEAPONS.find((w) => w.id === id) ?? null) : null;
 }
 
-/** What the glide model needs of a weapon: its published glide speed and range, in SI units. */
-export function glideVehicle(weapon: Weapon): GlideVehicle {
+/** What the flight models need of a weapon: its published range and speeds. */
+export function flightVehicle(weapon: Weapon): FlightVehicle {
   return {
-    startSpeedMs: weapon.glideSpeedKmS ? weapon.glideSpeedKmS * 1000 : null,
     publishedRangeM: weapon.rangeKm !== null ? weapon.rangeKm * 1000 : null,
+    glideSpeedMs: weapon.glideSpeedKmS ? weapon.glideSpeedKmS * 1000 : null,
+    speedMach: weapon.speedMach ?? null,
+    speedKmh: weapon.speedKmh ?? null,
   };
 }
 

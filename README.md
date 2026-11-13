@@ -10,7 +10,7 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 1.4: one detonation, missiles and hypersonic gliders on the globe,
+> Version 1.5: one detonation, missiles and hypersonic gliders on the globe,
 > accidents, water and dams, war scenarios with a general missile defence, an
 > offline assistant and a voice, offline map areas with the population at 100 m,
 > and the mushroom cloud in 3D, on Linux, Windows and Android.
@@ -33,7 +33,8 @@ Free and open source (MIT).
   the arc of each flight, its highest point, speed and flight time. Standard,
   lofted and depressed paths; one target per warhead for missiles that carry
   several. Hypersonic gliders fly their own way: low through the upper air,
-  slowed by drag, from the published speed of the glider. Play the flight
+  slowed by drag, from the published speed of the glider. Cruise missiles fly
+  at their published speed, supersonic ones high up. Play the flight
   against a clock, then open any target on the city map to see the effects there.
 - **Watch it happen.** Play a detonation back on the map in real time or slow
   motion: the fireball grows, the burn zones light up, the blast front sweeps
@@ -117,6 +118,7 @@ buildings, weather and people do not behave like a formula.
 | Fallout | WSEG-10 pattern; cloud heights; effective wind; t^-1.2 decay | D. W. Hanifen, *Documentation and Analysis of the WSEG-10 Fallout Prediction Model* (1980); Glasstone & Dolan (1977), Fig. 9.96, §9.84, eqs. 9.147.1 and 9.150.1 |
 | Casualties | Share of people killed and injured per overpressure zone; burns for those in sight of the fireball; lethality of radiation dose | U.S. Office of Technology Assessment, *The Effects of Nuclear War* (1979) |
 | Missile flight | Free-flight ellipse over a round, non-rotating Earth: speed, highest point and time from the distance and the climb angle | R. R. Bate, D. D. Mueller and J. E. White, *Fundamentals of Astrodynamics* (1971), chapter 6 |
+| Cruise flight | Distance over the published speed of the missile; a Mach number turned into a speed with the speed of sound where it flies (near the ground, or in the stratosphere for supersonic missiles); a typical subsonic speed when none is published | the catalog source of each missile; *U.S. Standard Atmosphere, 1976* |
 | Hypersonic glide | Level glide where lift and the pull of flying round the Earth carry the weight; drag slows it; height from the air density; range and time in closed form; HTV-2 test-glider figures (L/D 2.6, β 13,000 kg/m²) | C. L. Tracy and D. Wright, *Science & Global Security* 28 (2020), eqs. 1 and 7; A. J. Eggers, H. J. Allen and S. E. Neice, NACA Report 1382 (1958); *U.S. Standard Atmosphere, 1976* |
 | Timing | Blast arrival from the shock-front speed along the slant range; heat pulse; cloud rise | Glasstone & Dolan (1977), eq. 3.55.2, Figs. 3.77a–b, §7.85–7.86, Table 2.12 |
 | Mushroom cloud | Height and radius of the stabilised cloud, base of the head, stem radius, spread in time (cube-root scaling), colour | Glasstone & Dolan (1977), Figs. 2.16, 9.96 and 10.158c, §2.05, §2.08, §2.15–2.17, §10.158 |

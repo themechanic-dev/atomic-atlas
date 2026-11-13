@@ -97,7 +97,7 @@ describe('hypersonic glide (Tracy & Wright 2020)', () => {
 
 describe('glide flight plans', () => {
   it('plans a glider from its published speed', () => {
-    const plan = planFlight('glide', 6_000_000, 'minimumEnergy', { startSpeedMs: 6800, publishedRangeM: 6_000_000 })!;
+    const plan = planFlight('glide', 6_000_000, 'minimumEnergy', { glideSpeedMs: 6800, publishedRangeM: 6_000_000 })!;
     expect(plan.kind).toBe('glide');
     expect(plan.glide).not.toBeNull();
     expect(plan.ballistic).toBeNull();
@@ -112,8 +112,8 @@ describe('glide flight plans', () => {
   });
 
   it('ignores the shape of path, which is for ballistic missiles', () => {
-    const a = planFlight('glide', 3_000_000, 'lofted', { startSpeedMs: 6000 })!;
-    const b = planFlight('glide', 3_000_000, 'depressed', { startSpeedMs: 6000 })!;
+    const a = planFlight('glide', 3_000_000, 'lofted', { glideSpeedMs: 6000 })!;
+    const b = planFlight('glide', 3_000_000, 'depressed', { glideSpeedMs: 6000 })!;
     expect(a.flightTimeS).toBe(b.flightTimeS);
   });
 
@@ -124,14 +124,14 @@ describe('glide flight plans', () => {
   });
 
   it('reaches at least its published range, more when its speed takes it further', () => {
-    expect(reachM('glide', 6_000_000, 'minimumEnergy', { startSpeedMs: 6800 })).toBeGreaterThan(10_000_000);
-    close(reachM('glide', 6_000_000, 'minimumEnergy', { startSpeedMs: 5000 }), 6_000_000, 1e-12);
+    expect(reachM('glide', 6_000_000, 'minimumEnergy', { glideSpeedMs: 6800 })).toBeGreaterThan(10_000_000);
+    close(reachM('glide', 6_000_000, 'minimumEnergy', { glideSpeedMs: 5000 }), 6_000_000, 1e-12);
     close(reachM('glide', 2_500_000, 'lofted'), 2_500_000, 1e-9);
   });
 
   it('is not faster than a ballistic missile over intercontinental ranges (as the source finds)', () => {
     const range = 10_000_000;
-    const glide = planFlight('glide', range, 'minimumEnergy', { startSpeedMs: 6800 })!;
+    const glide = planFlight('glide', range, 'minimumEnergy', { glideSpeedMs: 6800 })!;
     const ballistic = ballisticTrajectory(range, 'depressed')!;
     expect(glide.flightTimeS).toBeGreaterThan(ballistic.flightTimeS);
   });

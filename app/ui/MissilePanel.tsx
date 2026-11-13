@@ -1,11 +1,12 @@
 // The missile simulator's form and results: a weapon, a launch point, targets,
 // the flight of each warhead and the clock that plays it back.
 
+import { cruiseSpeed } from '@physics/ballistics/cruise';
 import { flightKind } from '@physics/ballistics/flight';
 import type { TrajectoryShape } from '@physics/ballistics/trajectory';
-import { COUNTRIES } from '../data/catalog';
+import { COUNTRIES, flightVehicle } from '../data/catalog';
 import { t } from '../i18n';
-import { formatDistance, formatHeight, formatLatLon, formatSpeed, formatYield } from '../lib/format';
+import { formatDistance, formatHeight, formatLatLon, formatNumber, formatPublishedSpeed, formatSpeed, formatYield } from '../lib/format';
 import {
   chooseMissile,
   clearMissiles,
@@ -58,6 +59,7 @@ export function MissilePanel() {
   const total = duration.value;
   const kind = weapon ? flightKind(weapon.category) : 'ballistic';
   const ballistic = kind === 'ballistic';
+  const cruise = weapon && kind === 'cruise' ? cruiseSpeed(flightVehicle(weapon)) : null;
   const maxTargets = weapon?.warheadsMax ?? 1;
 
   return (
@@ -100,6 +102,12 @@ export function MissilePanel() {
                   <dd>{formatSpeed(weapon.glideSpeedKmS * 1000)}</dd>
                 </>
               ) : null}
+              {formatPublishedSpeed(weapon) ? (
+                <>
+                  <dt>{t('catalog.field.speed')}</dt>
+                  <dd data-testid="missile-speed">{formatPublishedSpeed(weapon)}</dd>
+                </>
+              ) : null}
               <dt>{t('catalog.field.warheads')}</dt>
               <dd>
                 {weapon.warheadsMax}
@@ -122,6 +130,15 @@ export function MissilePanel() {
               </select>
             </Field>
             {weapon.estimate ? <p class="hint warn">{t('catalog.estimate.hint')}</p> : null}
+            {kind === 'cruise' ? (
+              <p class="hint" data-testid="missile-cruise-hint">
+                {cruise?.high
+                  ? t('missiles.cruise.high')
+                  : cruise?.published
+                    ? t('missiles.cruise.published')
+                    : t('missiles.cruise.typical', { speed: formatSpeed(cruise?.speedMs ?? 0) })}
+              </p>
+            ) : null}
           </>
         ) : (
           <p class="hint">{t('missiles.choose.hint')}</p>
@@ -239,7 +256,10 @@ export function MissilePanel() {
                         <dt>{t('quantity.cruiseHeight')}</dt>
                         <dd>{formatHeight(flight.plan.apogeeM)}</dd>
                         <dt>{t('quantity.cruiseSpeed')}</dt>
-                        <dd>{formatSpeed(flight.plan.speedMs)}</dd>
+                        <dd data-testid={`flight-cruise-speed-${index}`}>
+                          {formatSpeed(flight.plan.speedMs)}
+                          {flight.plan.cruise?.mach ? ` (Mach ${formatNumber(flight.plan.cruise.mach, 2)})` : ''}
+                        </dd>
                       </>
                     )}
                   </dl>

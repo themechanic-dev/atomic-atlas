@@ -13,7 +13,7 @@ import {
   type WeaponStatus,
 } from '../data/catalog';
 import { t } from '../i18n';
-import { formatDistance, formatSpeed, formatYield } from '../lib/format';
+import { formatDistance, formatPublishedSpeed, formatSpeed, formatYield } from '../lib/format';
 import { openExternal } from '../lib/platform';
 import { settings } from '../state/settings';
 import { form, updateForm } from '../state/simulation';
@@ -130,6 +130,12 @@ export function CatalogDialog({ onClose }: { onClose: () => void }) {
                       <>
                         <dt>{t('catalog.field.glideSpeed')}</dt>
                         <dd>{formatSpeed(w.glideSpeedKmS * 1000)}</dd>
+                      </>
+                    ) : null}
+                    {formatPublishedSpeed(w) ? (
+                      <>
+                        <dt>{t('catalog.field.speed')}</dt>
+                        <dd>{formatPublishedSpeed(w)}</dd>
                       </>
                     ) : null}
                     <dt>{t('catalog.field.warheads')}</dt>

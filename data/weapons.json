@@ -236,6 +236,7 @@
     ],
     "carrier": "B-52H",
     "rangeKm": 2500,
+    "speedKmh": 800,
     "warheadsMax": 1,
     "mirv": false,
     "yieldsKt": [
@@ -258,9 +259,15 @@
         "publisher": "CSIS Missile Threat",
         "date": "2024-04",
         "url": "https://missilethreat.csis.org/missile/alcm/"
+      },
+      {
+        "title": "Boeing AGM-86 ALCM",
+        "publisher": "Directory of U.S. Military Rockets and Missiles (designation-systems.net)",
+        "date": "2002-03",
+        "url": "https://www.designation-systems.net/dusrm/m-86.html"
       }
     ],
-    "note": "W80-1 variable yield 5-150 kt per Nuclear Notebook; CSIS lists 200 kt. Replacement (LRSO) planned for 2030."
+    "note": "W80-1 variable yield 5-150 kt per Nuclear Notebook; CSIS lists 200 kt. Replacement (LRSO) planned for 2030. Speed 800 km/h (designation-systems.net)."
   },
   {
     "id": "lgm-118-peacekeeper",
@@ -700,6 +707,7 @@
     ],
     "carrier": "Tu-95MS, Tu-160",
     "rangeKm": 2800,
+    "speedMach": 0.58,
     "warheadsMax": 1,
     "mirv": false,
     "yieldsKt": [
@@ -723,7 +731,7 @@
         "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
       }
     ],
-    "note": "Nuclear variant of the Kh-101. CSIS lists range 2,500-2,800 km and 250 kt; yield from that single source."
+    "note": "Nuclear variant of the Kh-101. CSIS lists range 2,500-2,800 km and 250 kt; yield from that single source. CSIS: cruising speed Mach 0.58, maximum Mach 0.78."
   },
   {
     "id": "tsar-bomba-an602",
@@ -934,6 +942,7 @@
     ],
     "carrier": "Rafale BF3/4, Rafale M",
     "rangeKm": 600,
+    "speedMach": 3.0,
     "warheadsMax": 1,
     "mirv": false,
     "yieldsKt": [
@@ -956,9 +965,15 @@
         "publisher": "CSIS Missile Threat",
         "date": "2024-04",
         "url": "https://missilethreat.csis.org/missile/asmp/"
+      },
+      {
+        "title": "ASMPA",
+        "publisher": "GlobalSecurity.org",
+        "date": "2026-11",
+        "url": "https://www.globalsecurity.org/wmd/world/france/asmp-a.htm"
       }
     ],
-    "note": "TNA warhead: Notebook says under 300 kt, possibly about 100 kt (bounds, not options). Range cited 500-600 km."
+    "note": "TNA warhead: Notebook says under 300 kt, possibly about 100 kt (bounds, not options). Range cited 500-600 km. GlobalSecurity: about Mach 3, range estimated at 500 km at high altitude."
   },
   {
     "id": "df-41",
@@ -2134,6 +2149,7 @@
     ],
     "carrier": "",
     "rangeKm": 2500,
+    "speedKmh": 880,
     "warheadsMax": 1,
     "mirv": false,
     "yieldsKt": [
@@ -2164,7 +2180,7 @@
         "url": "https://www.designation-systems.net/dusrm/m-109.html"
       }
     ],
-    "note": "W84 warhead: CSIS 10-50 kt, Nuclear Weapon Archive variable 0.2-150 kt. In Europe from 1983, withdrawn by 1991."
+    "note": "W84 warhead: CSIS 10-50 kt, Nuclear Weapon Archive variable 0.2-150 kt. In Europe from 1983, withdrawn by 1991. Speed 880 km/h (designation-systems.net)."
   },
   {
     "id": "tlam-n",
@@ -2182,6 +2198,7 @@
     ],
     "carrier": "Attack submarines and surface ships",
     "rangeKm": 2500,
+    "speedKmh": 880,
     "warheadsMax": 1,
     "mirv": false,
     "yieldsKt": [
@@ -2212,7 +2229,7 @@
         "url": "https://nuclearweaponarchive.org/Usa/Weapons/Allbombs.html"
       }
     ],
-    "note": "W80-0 warhead, 5-200 kt (CSIS 200 kt; Nuclear Weapon Archive 5 and 170-200 kt). Ready for service 1983; since retired."
+    "note": "W80-0 warhead, 5-200 kt (CSIS 200 kt; Nuclear Weapon Archive 5 and 170-200 kt). Ready for service 1983; since retired. Speed 880 km/h (designation-systems.net)."
   },
   {
     "id": "agm-129-acm",
@@ -3189,6 +3206,7 @@
     ],
     "carrier": "Vulcan B.2A, Victor B.2R",
     "rangeKm": 200,
+    "speedMach": 2.5,
     "warheadsMax": 1,
     "mirv": false,
     "yieldsKt": [
@@ -3206,7 +3224,7 @@
         "url": "https://nuclearweaponarchive.org/Uk/UKArsenalDev.html"
       }
     ],
-    "note": "Rocket-powered air-launched stand-off missile, warhead of 1 Mt or more; in service December 1962 to 1970."
+    "note": "Rocket-powered air-launched stand-off missile, warhead of 1 Mt or more; in service December 1962 to 1970. Nuclear Weapon Archive: up to Mach 2.5."
   },
   {
     "id": "grapple-y",
@@ -3485,6 +3503,7 @@
     ],
     "carrier": "Mirage IVP, Mirage 2000N, Super Etendard",
     "rangeKm": 300,
+    "speedMach": 3.0,
     "warheadsMax": 1,
     "mirv": false,
     "yieldsKt": [
@@ -3508,7 +3527,7 @@
         "url": "https://nuclearweaponarchive.org/France/FranceArsenalDev.html"
       }
     ],
-    "note": "TN 80/81 warhead of 300 kt; in service from 1986, range 80-300 km. Replaced by the ASMP-A from 2009."
+    "note": "TN 80/81 warhead of 300 kt; in service from 1986, range 80-300 km. Replaced by the ASMP-A from 2009. CSIS: ramjet to a maximum of Mach 3.0 depending on the altitude; range 300 km at high altitude, 80 km at low altitude."
   },
   {
     "id": "an-52",

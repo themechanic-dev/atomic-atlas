@@ -11,7 +11,7 @@ import type { TrajectoryShape } from '@physics/ballistics/trajectory';
 import { estimateCasualties } from '@physics/casualties/model';
 import { DEFAULT_DEFENCE, leakProbability, phaseWindows, type DefencePhase, type DefenceSettings, type PhaseWindows } from '@physics/defence/layers';
 import { detonate, DEFAULT_SCENARIO } from '@physics/detonation';
-import { assumedFissionFraction, glideVehicle, weaponById } from '../data/catalog';
+import { assumedFissionFraction, flightVehicle, weaponById } from '../data/catalog';
 import { populationAround } from '../data/population';
 import { distanceM, type LngLat } from '../lib/geo';
 import { clearMissiles, launchPoint, missile, reach, shape, targets, warheadYieldKt } from './missiles';
@@ -107,7 +107,7 @@ export const warFlights = computed<WarFlight[]>(() => {
     const weapon = weaponById(salvo.weaponId);
     if (!weapon) return;
     salvo.targets.forEach((target, targetIndex) => {
-      const plan = planFlight(weapon.category, distanceM(salvo.from, target), salvo.shape, glideVehicle(weapon));
+      const plan = planFlight(weapon.category, distanceM(salvo.from, target), salvo.shape, flightVehicle(weapon));
       if (!plan) return;
       const windows = phaseWindows(plan, settings);
       // Ballistic missiles and gliders climb under rocket power first; cruise missiles do not.
