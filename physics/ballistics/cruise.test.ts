@@ -45,7 +45,12 @@ describe('cruise flight plans', () => {
     expect(plan.flightTimeS / 60).toBeGreaterThan(5.5);
     expect(plan.flightTimeS / 60).toBeLessThan(5.8);
     expect(plan.apogeeM).toBe(CRUISE_HIGH_ALTITUDE_M);
-    expect(plan.points.every((p) => p.altitudeM === CRUISE_HIGH_ALTITUDE_M)).toBe(true);
+    // Level at 15 km, then drawn coming down over the last 45 km to meet the target.
+    expect(plan.points.filter((p) => p.downrangeM <= 255_000).every((p) => p.altitudeM === CRUISE_HIGH_ALTITUDE_M)).toBe(true);
+    expect(plan.points.some((p) => p.downrangeM === 255_000)).toBe(true);
+    expect(plan.points.at(-1)!.altitudeM).toBeCloseTo(0, 9);
+    expect(plan.points.at(-1)!.timeS).toBeCloseTo(plan.flightTimeS, 9);
+    for (let i = 1; i < plan.points.length; i++) expect(plan.points[i]!.timeS).toBeGreaterThan(plan.points[i - 1]!.timeS);
     expect(plan.cruise?.mach).toBe(3);
     expect(plan.explanation.formula).toContain('M · a(h)');
     expect(plan.explanation.sources).toContain('ussa1976');

@@ -46,6 +46,8 @@ export function glideStartSpeedMs(vehicle: FlightVehicle | undefined, rangeM: nu
 
 /** Height at which a subsonic cruise missile is drawn and timed: it follows the ground at tens of metres. */
 export const CRUISE_ALTITUDE_M = CRUISE_LOW_ALTITUDE_M;
+/** Ground distance over which a high-flying cruise missile is drawn coming down, against its height. */
+export const CRUISE_DESCENT_PER_HEIGHT = 3;
 
 export interface FlightPlan {
   kind: FlightKind;
@@ -118,10 +120,20 @@ export function planFlight(category: string, rangeM: number, shape: TrajectorySh
     const c = cruiseSpeed(vehicle);
     const time = cruiseFlightTimeS(rangeM, c.speedMs);
     const count = 64;
-    const points: TrajectoryPoint[] = [];
-    for (let i = 0; i <= count; i++) {
-      points.push({ timeS: (time * i) / count, downrangeM: (rangeM * i) / count, altitudeM: c.altitudeM, speedMs: c.speedMs });
-    }
+    // A missile flying high is drawn coming down over the last stretch, three times its
+    // height, so the line meets the target. A drawing aid: the time stays distance over speed.
+    const descent = c.high ? Math.min(CRUISE_DESCENT_PER_HEIGHT * c.altitudeM, rangeM / 2) : 0;
+    const distances = new Set<number>();
+    for (let i = 0; i <= count; i++) distances.add((rangeM * i) / count);
+    if (descent > 0) distances.add(rangeM - descent);
+    const points: TrajectoryPoint[] = [...distances]
+      .sort((a, b) => a - b)
+      .map((d) => ({
+        timeS: d / c.speedMs,
+        downrangeM: d,
+        altitudeM: descent > 0 && d > rangeM - descent ? (c.altitudeM * (rangeM - d)) / descent : c.altitudeM,
+        speedMs: c.speedMs,
+      }));
     const distance = { symbol: 'd', labelKey: 'groundRange', value: rangeM, quantity: 'length' as const };
     const speed = { symbol: 'v', labelKey: 'cruiseSpeed', value: c.speedMs, quantity: 'speed' as const };
     const duration = { symbol: 't', labelKey: 'flightTime', value: time / 3600, quantity: 'time' as const };
