@@ -366,6 +366,24 @@ export default function GlobeView({ active }: { active: boolean }) {
           );
         }
       }
+      // A glider: the height it glides at, halfway along.
+      if (from && lead?.plan && lead.plan.kind === 'glide') {
+        const plan = lead.plan;
+        const half = plan.points.reduce((best, p) => (Math.abs(p.downrangeM - plan.rangeM / 2) < Math.abs(best.downrangeM - plan.rangeM / 2) ? p : best));
+        launchEntities.push(
+          entities.add({
+            position: cartesian(alongGreatCircle(from, lead.target, half.downrangeM / plan.rangeM), half.altitudeM),
+            point: { pixelSize: 5, color: AMBER, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+            label: {
+              ...labelStyle(`${t('quantity.glideHeight')} · ${formatDistance(half.altitudeM, 2)}`, AMBER),
+              horizontalOrigin: HorizontalOrigin.CENTER,
+              verticalOrigin: VerticalOrigin.BOTTOM,
+              pixelOffset: new Cartesian2(0, -10),
+              show: new CallbackProperty(() => !(stage.value === 'launcher' || stage.value === 'boost' || stage.value === 'terminal'), false),
+            },
+          }),
+        );
+      }
       framed = all;
       launch.build(
         from && weapon && lead?.plan ? { from, target: lead.target, kind: launcherKind(weapon.platform) } : null,

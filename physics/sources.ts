@@ -55,6 +55,26 @@ export const SOURCES = {
     citation:
       'R. R. Bate, D. D. Mueller and J. E. White, Fundamentals of Astrodynamics. Dover Publications, 1971. Chapter 6, Ballistic Missile Trajectories.',
   },
+  tracyWright2020: {
+    id: 'tracyWright2020',
+    short: 'Tracy & Wright 2020',
+    citation:
+      'C. L. Tracy and D. Wright, Modeling the Performance of Hypersonic Boost-Glide Missiles. Science & Global Security 28 (3), 2020, 135-170.',
+    url: 'https://scienceandglobalsecurity.org/archive/sgs28tracy.pdf',
+  },
+  eggers1958: {
+    id: 'eggers1958',
+    short: 'Eggers, Allen & Neice 1958',
+    citation:
+      'A. J. Eggers Jr., H. J. Allen and S. E. Neice, A Comparative Analysis of the Performance of Long-Range Hypervelocity Vehicles. NACA Report 1382, 1958.',
+    url: 'https://ntrs.nasa.gov/citations/19930092363',
+  },
+  ussa1976: {
+    id: 'ussa1976',
+    short: 'U.S. Standard Atmosphere 1976',
+    citation: 'NOAA, NASA and U.S. Air Force, U.S. Standard Atmosphere, 1976. NOAA-S/T 76-1562, 1976.',
+    url: 'https://ntrs.nasa.gov/citations/19770009539',
+  },
   hotspot2013: {
     id: 'hotspot2013',
     short: 'HotSpot 3.0 User\'s Guide',

@@ -56,7 +56,8 @@ export function MissilePanel() {
   const from = launchPoint.value;
   const list = flights.value;
   const total = duration.value;
-  const ballistic = weapon ? flightKind(weapon.category) === 'ballistic' : true;
+  const kind = weapon ? flightKind(weapon.category) : 'ballistic';
+  const ballistic = kind === 'ballistic';
   const maxTargets = weapon?.warheadsMax ?? 1;
 
   return (
@@ -93,6 +94,12 @@ export function MissilePanel() {
               </dd>
               <dt>{t('catalog.field.range')}</dt>
               <dd>{formatDistance((weapon.rangeKm ?? 0) * 1000, 3)}</dd>
+              {weapon.glideSpeedKmS ? (
+                <>
+                  <dt>{t('catalog.field.glideSpeed')}</dt>
+                  <dd>{formatSpeed(weapon.glideSpeedKmS * 1000)}</dd>
+                </>
+              ) : null}
               <dt>{t('catalog.field.warheads')}</dt>
               <dd>
                 {weapon.warheadsMax}
@@ -139,6 +146,18 @@ export function MissilePanel() {
           {shape.value !== 'minimumEnergy' ? (
             <p class="hint" data-testid="missile-reach">
               {t('missiles.shape.reach', { range: formatDistance(reach.value, 3) })}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {weapon && kind === 'glide' ? (
+        <div class="group" data-testid="missile-glide">
+          <h3>{t('missiles.glide')}</h3>
+          <p class="hint">{t('missiles.glide.hint')}</p>
+          {reach.value > (weapon.rangeKm ?? 0) * 1000 * 1.001 ? (
+            <p class="hint" data-testid="missile-reach">
+              {t('missiles.glide.reach', { range: formatDistance(reach.value, 3) })}
             </p>
           ) : null}
         </div>
@@ -203,6 +222,17 @@ export function MissilePanel() {
                         <dd data-testid={`flight-apogee-${index}`}>{formatDistance(flight.plan.apogeeM, 3)}</dd>
                         <dt>{t('quantity.burnoutSpeed')}</dt>
                         <dd>{formatSpeed(flight.plan.speedMs)}</dd>
+                      </>
+                    ) : flight.plan.glide ? (
+                      <>
+                        <dt>{t('quantity.glideHeight')}</dt>
+                        <dd data-testid={`flight-glide-height-${index}`}>
+                          {formatDistance(flight.plan.glide.startHeightM, 2)} → {formatDistance(flight.plan.glide.diveHeightM, 2)}
+                        </dd>
+                        <dt>{t('quantity.glideSpeed')}</dt>
+                        <dd>{formatSpeed(flight.plan.glide.startSpeedMs)}</dd>
+                        <dt>{t('quantity.diveSpeed')}</dt>
+                        <dd data-testid={`flight-dive-speed-${index}`}>{formatSpeed(flight.plan.glide.diveSpeedMs)}</dd>
                       </>
                     ) : (
                       <>

@@ -1,12 +1,13 @@
 // The weapons catalog and the ready-made scenarios that ship with the app.
 // Every record names the public source it comes from.
 
+import type { GlideVehicle } from '@physics/ballistics/flight';
 import type { BurstMode } from '@physics/detonation';
 import scenariosJson from '@data/scenarios.json';
 import weaponsJson from '@data/weapons.json';
 
 export type CountryCode = 'US' | 'RU' | 'SU' | 'GB' | 'FR' | 'CN' | 'IN' | 'PK' | 'IL' | 'KP';
-export type WeaponCategory = 'ICBM' | 'SLBM' | 'IRBM' | 'MRBM' | 'SRBM' | 'cruise' | 'bomb' | 'test';
+export type WeaponCategory = 'ICBM' | 'SLBM' | 'IRBM' | 'MRBM' | 'SRBM' | 'cruise' | 'glide' | 'bomb' | 'test';
 export type WeaponStatus = 'active' | 'retired' | 'test' | 'development';
 
 export interface SourceRef {
@@ -26,6 +27,8 @@ export interface Weapon {
   carrier: string;
   /** Maximum published range in km; null for bombs and test devices. */
   rangeKm: number | null;
+  /** Published speed of a glide vehicle at the start of its glide, km/s. */
+  glideSpeedKmS?: number;
   warheadsMax: number;
   mirv: boolean;
   /** Published yield options per warhead, kilotons, ascending. */
@@ -59,10 +62,18 @@ export const WEAPONS: Weapon[] = weaponsJson as Weapon[];
 export const PRESETS: PresetScenario[] = scenariosJson as PresetScenario[];
 
 export const COUNTRIES: CountryCode[] = ['US', 'RU', 'SU', 'GB', 'FR', 'CN', 'IN', 'PK', 'IL', 'KP'];
-export const CATEGORIES: WeaponCategory[] = ['ICBM', 'SLBM', 'IRBM', 'MRBM', 'SRBM', 'cruise', 'bomb', 'test'];
+export const CATEGORIES: WeaponCategory[] = ['ICBM', 'SLBM', 'IRBM', 'MRBM', 'SRBM', 'cruise', 'glide', 'bomb', 'test'];
 
 export function weaponById(id: string | null): Weapon | null {
   return id ? (WEAPONS.find((w) => w.id === id) ?? null) : null;
+}
+
+/** What the glide model needs of a weapon: its published glide speed and range, in SI units. */
+export function glideVehicle(weapon: Weapon): GlideVehicle {
+  return {
+    startSpeedMs: weapon.glideSpeedKmS ? weapon.glideSpeedKmS * 1000 : null,
+    publishedRangeM: weapon.rangeKm !== null ? weapon.rangeKm * 1000 : null,
+  };
 }
 
 /**

@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import el from '../app/i18n/el.json';
 import en from '../app/i18n/en.json';
 import { parseWeather, weatherUrl } from '../app/data/weather';
+import { glideVehicle, type Weapon } from '../app/data/catalog';
 import {
   alongGreatCircle,
   beyondHorizon,
@@ -198,6 +199,8 @@ describe('catalog', () => {
     const allowed = new Set([
       'id', 'name', 'designations', 'country', 'category', 'platform', 'carrier', 'rangeKm', 'warheadsMax', 'mirv',
       'yieldsKt', 'fissionFraction', 'year', 'status', 'estimate', 'sources', 'note',
+      // A published speed, used only to time the flight, like the range.
+      'glideSpeedKmS',
     ]);
     for (const w of weapons) for (const key of Object.keys(w)) expect(allowed.has(key), `${w.id}.${key}`).toBe(true);
     expect(JSON.stringify(weapons)).not.toMatch(/\bCEP\b|circular error/i);
@@ -218,11 +221,14 @@ describe('catalog', () => {
       const rangeM = (w.rangeKm as number) * 1000;
       expect(rangeM, w.id).toBeGreaterThan(0);
       expect(w.warheadsMax, w.id).toBeGreaterThanOrEqual(1);
+      const vehicle = glideVehicle(w as Weapon);
       for (const shape of ['minimumEnergy', 'lofted', 'depressed'] as const) {
-        const reach = reachM(w.category, rangeM, shape);
+        const reach = reachM(w.category, rangeM, shape, vehicle);
         expect(reach, w.id).toBeGreaterThan(0);
-        expect(reach, w.id).toBeLessThanOrEqual(rangeM);
-        const plan = planFlight(w.category, reach, shape);
+        // A glider reaches at least its published range, often more; a ballistic missile no more.
+        if (w.category === 'glide') expect(reach, w.id).toBeGreaterThanOrEqual(rangeM);
+        else expect(reach, w.id).toBeLessThanOrEqual(rangeM);
+        const plan = planFlight(w.category, reach, shape, vehicle);
         expect(plan, `${w.id} ${shape}`).not.toBeNull();
         expect(plan!.flightTimeS, w.id).toBeGreaterThan(0);
       }

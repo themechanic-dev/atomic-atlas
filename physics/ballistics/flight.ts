@@ -3,6 +3,15 @@
 
 import type { Explanation } from '../sources';
 import {
+  GLIDE_BALLISTIC_COEFFICIENT,
+  GLIDE_LIFT_TO_DRAG,
+  glidePoints,
+  glideReachM,
+  glideTrajectory,
+  startSpeedForRangeM,
+  type GlideTrajectory,
+} from './glide';
+import {
   ballisticTrajectory,
   cruiseFlightTimeS,
   SUBSONIC_CRUISE_SPEED,
@@ -12,7 +21,24 @@ import {
   type TrajectoryShape,
 } from './trajectory';
 
-export type FlightKind = 'ballistic' | 'cruise';
+export type FlightKind = 'ballistic' | 'cruise' | 'glide';
+
+/** What is published about a glider: its speed at the start of the glide, or only its range. */
+export interface GlideVehicle {
+  /** Published speed at the start of the glide, m/s. */
+  startSpeedMs?: number | null;
+  /** Published range, metres: sets the start speed when no speed is published. */
+  publishedRangeM?: number | null;
+}
+
+/**
+ * Speed a glider starts its glide at: the published one, or else the one that just reaches
+ * its published range (or, failing that too, the target) before it slows below Mach 5.
+ */
+export function glideStartSpeedMs(vehicle: GlideVehicle | undefined, rangeM: number): number {
+  if (vehicle?.startSpeedMs && vehicle.startSpeedMs > 0) return vehicle.startSpeedMs;
+  return startSpeedForRangeM(vehicle?.publishedRangeM && vehicle.publishedRangeM > 0 ? vehicle.publishedRangeM : rangeM);
+}
 
 /** Height at which a cruise missile is drawn and timed: it follows the ground at tens of metres. */
 export const CRUISE_ALTITUDE_M = 100;
@@ -27,6 +53,7 @@ export interface FlightPlan {
   /** Speed at burnout and at re-entry (ballistic) or cruise speed, m/s. */
   speedMs: number;
   ballistic: BallisticTrajectory | null;
+  glide: GlideTrajectory | null;
   /** Positions along the flight: time, distance over the ground, height. */
   points: TrajectoryPoint[];
   explanation: Explanation;
@@ -39,13 +66,47 @@ const ANGLE_FORMULA: Record<TrajectoryShape, string> = {
   depressed: '0.5 (π − Ψ) / 4',
 };
 
-/** Categories that fly through the air like an aircraft; everything else with a range is ballistic. */
+/** Cruise missiles fly like aircraft, gliders glide; everything else with a range is ballistic. */
 export function flightKind(category: string): FlightKind {
-  return category === 'cruise' ? 'cruise' : 'ballistic';
+  return category === 'cruise' ? 'cruise' : category === 'glide' ? 'glide' : 'ballistic';
 }
 
-export function planFlight(category: string, rangeM: number, shape: TrajectoryShape = 'minimumEnergy'): FlightPlan | null {
+export function planFlight(category: string, rangeM: number, shape: TrajectoryShape = 'minimumEnergy', vehicle?: GlideVehicle): FlightPlan | null {
   if (!(rangeM > 0)) return null;
+
+  if (flightKind(category) === 'glide') {
+    const g = glideTrajectory(rangeM, glideStartSpeedMs(vehicle, rangeM));
+    if (!g) return null;
+    return {
+      kind: 'glide',
+      rangeM,
+      flightTimeS: g.flightTimeS,
+      apogeeM: g.startHeightM,
+      speedMs: g.startSpeedMs,
+      ballistic: null,
+      glide: g,
+      points: glidePoints(g),
+      explanation: {
+        id: 'glide',
+        formula:
+          'ρ(h) = 2β (g − v²/r) / ((L/D) v²);  d = ((L/D) r / 2) ln((1 − v₁²/(g r)) / (1 − v₀²/(g r)));  t = (L/D) √(r/g) (artanh(v₀/√(g r)) − artanh(v₁/√(g r)))',
+        inputs: [
+          { symbol: 'd', labelKey: 'groundRange', value: rangeM, quantity: 'length' },
+          { symbol: 'v₀', labelKey: 'glideSpeed', value: g.startSpeedMs, quantity: 'speed' },
+          { symbol: 'L/D', labelKey: 'liftToDrag', value: GLIDE_LIFT_TO_DRAG, quantity: 'number' },
+          { symbol: 'β', labelKey: 'ballisticCoefficient', value: GLIDE_BALLISTIC_COEFFICIENT, quantity: 'number' },
+        ],
+        outputs: [
+          { symbol: 'h₀', labelKey: 'glideHeight', value: g.startHeightM, quantity: 'length' },
+          { symbol: 'v₁', labelKey: 'diveSpeed', value: g.diveSpeedMs, quantity: 'speed' },
+          { symbol: 't', labelKey: 'flightTime', value: g.flightTimeS / 3600, quantity: 'time' },
+        ],
+        sources: ['tracyWright2020', 'eggers1958', 'ussa1976'],
+        where: 'Tracy & Wright (2020) Eqs. (1) and (7), HTV-2 figures; glide range: Eggers, Allen & Neice (1958); air density: U.S. Standard Atmosphere 1976',
+        uncertainty: '±20%',
+      },
+    };
+  }
 
   if (flightKind(category) === 'cruise') {
     const time = cruiseFlightTimeS(rangeM, SUBSONIC_CRUISE_SPEED);
@@ -61,6 +122,7 @@ export function planFlight(category: string, rangeM: number, shape: TrajectorySh
       apogeeM: CRUISE_ALTITUDE_M,
       speedMs: SUBSONIC_CRUISE_SPEED,
       ballistic: null,
+      glide: null,
       points,
       explanation: {
         id: 'cruise',
@@ -87,6 +149,7 @@ export function planFlight(category: string, rangeM: number, shape: TrajectorySh
     apogeeM: t.apogeeM,
     speedMs: t.burnoutSpeedMs,
     ballistic: t,
+    glide: null,
     points: trajectoryPoints(t, 120),
     explanation: {
       id: 'trajectory',
@@ -113,10 +176,15 @@ export function planFlight(category: string, rangeM: number, shape: TrajectorySh
  * The published range is taken as the furthest the missile can throw its warheads, which is
  * the minimum-energy path. A steeper or flatter path needs more speed for the same distance,
  * so with the same speed at burnout it comes down sooner: this finds that distance.
- * Cruise missiles fly their published range whatever the setting.
+ * Cruise missiles fly their published range whatever the setting. A glider reaches as far
+ * as its glide model takes it from its published speed before it slows below Mach 5, and at
+ * least its published range (sources often give only a lower bound, "more than").
  */
-export function reachM(category: string, publishedRangeM: number, shape: TrajectoryShape = 'minimumEnergy'): number {
+export function reachM(category: string, publishedRangeM: number, shape: TrajectoryShape = 'minimumEnergy', vehicle?: GlideVehicle): number {
   if (!(publishedRangeM > 0)) return 0;
+  if (flightKind(category) === 'glide') {
+    return Math.max(publishedRangeM, glideReachM(glideStartSpeedMs({ ...vehicle, publishedRangeM }, publishedRangeM)));
+  }
   if (flightKind(category) === 'cruise' || shape === 'minimumEnergy') return publishedRangeM;
   const best = ballisticTrajectory(publishedRangeM, 'minimumEnergy');
   if (!best) return publishedRangeM;

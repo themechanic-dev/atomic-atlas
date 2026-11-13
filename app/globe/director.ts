@@ -11,7 +11,7 @@
 
 export type Stage = 'idle' | 'launcher' | 'boost' | 'midcourse' | 'terminal' | 'impact';
 
-export type FlightKindName = 'ballistic' | 'cruise';
+export type FlightKindName = 'ballistic' | 'cruise' | 'glide';
 
 export interface Timeline {
   /** Flight time at which the close view of the target begins, seconds. */

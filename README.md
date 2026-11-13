@@ -10,10 +10,10 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 1.3: one detonation, missiles on the globe, accidents, water and dams,
-> war scenarios with a general missile defence, an offline assistant and a voice,
-> offline map areas with the population at 100 m, and the mushroom cloud in 3D,
-> on Linux, Windows and Android.
+> Version 1.4: one detonation, missiles and hypersonic gliders on the globe,
+> accidents, water and dams, war scenarios with a general missile defence, an
+> offline assistant and a voice, offline map areas with the population at 100 m,
+> and the mushroom cloud in 3D, on Linux, Windows and Android.
 
 ## What it does
 
@@ -32,8 +32,9 @@ Free and open source (MIT).
   is launched from and where its warheads come down, and see the range ring,
   the arc of each flight, its highest point, speed and flight time. Standard,
   lofted and depressed paths; one target per warhead for missiles that carry
-  several. Play the flight against a clock, then open any target on the city
-  map to see the effects there.
+  several. Hypersonic gliders fly their own way: low through the upper air,
+  slowed by drag, from the published speed of the glider. Play the flight
+  against a clock, then open any target on the city map to see the effects there.
 - **Watch it happen.** Play a detonation back on the map in real time or slow
   motion: the fireball grows, the burn zones light up, the blast front sweeps
   outwards and every building changes at the moment the front reaches it.
@@ -116,6 +117,7 @@ buildings, weather and people do not behave like a formula.
 | Fallout | WSEG-10 pattern; cloud heights; effective wind; t^-1.2 decay | D. W. Hanifen, *Documentation and Analysis of the WSEG-10 Fallout Prediction Model* (1980); Glasstone & Dolan (1977), Fig. 9.96, §9.84, eqs. 9.147.1 and 9.150.1 |
 | Casualties | Share of people killed and injured per overpressure zone; burns for those in sight of the fireball; lethality of radiation dose | U.S. Office of Technology Assessment, *The Effects of Nuclear War* (1979) |
 | Missile flight | Free-flight ellipse over a round, non-rotating Earth: speed, highest point and time from the distance and the climb angle | R. R. Bate, D. D. Mueller and J. E. White, *Fundamentals of Astrodynamics* (1971), chapter 6 |
+| Hypersonic glide | Level glide where lift and the pull of flying round the Earth carry the weight; drag slows it; height from the air density; range and time in closed form; HTV-2 test-glider figures (L/D 2.6, β 13,000 kg/m²) | C. L. Tracy and D. Wright, *Science & Global Security* 28 (2020), eqs. 1 and 7; A. J. Eggers, H. J. Allen and S. E. Neice, NACA Report 1382 (1958); *U.S. Standard Atmosphere, 1976* |
 | Timing | Blast arrival from the shock-front speed along the slant range; heat pulse; cloud rise | Glasstone & Dolan (1977), eq. 3.55.2, Figs. 3.77a–b, §7.85–7.86, Table 2.12 |
 | Mushroom cloud | Height and radius of the stabilised cloud, base of the head, stem radius, spread in time (cube-root scaling), colour | Glasstone & Dolan (1977), Figs. 2.16, 9.96 and 10.158c, §2.05, §2.08, §2.15–2.17, §10.158 |
 | Damage to things | Houses, vehicles, parked aircraft, electricity networks, ignition of tinder | Glasstone & Dolan (1977), §5.52–5.68, §5.87–5.89, Tables 5.145, 5.153 and 7.40, §5.99–5.105 |
@@ -131,7 +133,7 @@ buildings, weather and people do not behave like a formula.
 
 ### Accuracy tests
 
-`npm test` runs 290+ checks, including the assistant's topic filter. The physics is tested against values printed in the
+`npm test` runs 350+ checks, including the assistant's topic filter. The physics is tested against values printed in the
 sources: the worked examples next to Glasstone & Dolan's charts (for example
 1,000 psi at 110 ft for 1 kt at 200 ft; 4 psi out to 2,600 ft), their tables of
 wind speed against overpressure, thermal partition and fallout contours, the
@@ -140,7 +142,11 @@ Assessment. A change that breaks one of them fails the build.
 
 The missile flights are checked against the closed-form results of the source and
 against an independent step-by-step simulation of the same flight (10,000 km:
-about 7.2 km/s, 1,300 km high, 32 minutes).
+about 7.2 km/s, 1,300 km high, 32 minutes). The glide model is checked against
+its source and the work it quotes: from 6.1 km/s it reaches about 7,500 km, from
+6 km/s its speed halves after about 6,000 km, and it flies at about 50 km at
+6 km/s; the air density is checked against the tables of the 1976 standard
+atmosphere.
 
 The water waves are checked against the waves measured at the Crossroads Baker
 test (Glasstone & Dolan Table 6.57): heights within a factor of 2, first arrival

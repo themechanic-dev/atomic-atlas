@@ -528,6 +528,47 @@
     "note": "CSIS: six MIRVs of 500-600 kt (750 kt option). Remaining missiles carry one Avangard glide vehicle (Notebook 2026)."
   },
   {
+    "id": "avangard",
+    "name": "Avangard",
+    "designations": [
+      "Yu-74",
+      "Project 4202",
+      "SS-19 Mod 4"
+    ],
+    "country": "RU",
+    "category": "glide",
+    "platform": [
+      "silo"
+    ],
+    "carrier": "SS-19 Mod 4 booster, a converted UR-100N UTTKh",
+    "rangeKm": 6000,
+    "glideSpeedKmS": 6.8,
+    "warheadsMax": 1,
+    "mirv": false,
+    "yieldsKt": [
+      2000
+    ],
+    "fissionFraction": null,
+    "year": 2019,
+    "status": "active",
+    "estimate": true,
+    "sources": [
+      {
+        "title": "Avangard",
+        "publisher": "CSIS Missile Threat",
+        "date": "2024-04",
+        "url": "https://missilethreat.csis.org/missile/avangard/"
+      },
+      {
+        "title": "Russian nuclear weapons, 2026",
+        "publisher": "Bulletin of the Atomic Scientists / FAS Nuclear Notebook",
+        "date": "2026-05",
+        "url": "https://thebulletin.org/premium/2026-05/russian-nuclear-weapons-2026/"
+      }
+    ],
+    "note": "Hypersonic glide vehicle on converted SS-19 boosters, two regiments at Dombarovsky (Notebook 2026). CSIS: range more than 6,000 km (the December 2018 test flew more than 6,000 km to Kamchatka); speed Mach 20, given as 6.8 km/s in its summary and 6.28 km/s in its text, 6.8 km/s used here; warhead '2 MT option (reported)', from a TASS report."
+  },
+  {
     "id": "rsm-56-bulava",
     "name": "RSM-56 Bulava",
     "designations": [

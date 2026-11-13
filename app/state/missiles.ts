@@ -6,7 +6,7 @@
 import { batch, computed, signal } from '@preact/signals';
 import { flightKind, planFlight, reachM, type FlightPlan } from '@physics/ballistics/flight';
 import type { TrajectoryShape } from '@physics/ballistics/trajectory';
-import { assumedFissionFraction, WEAPONS, weaponById, type Weapon } from '../data/catalog';
+import { assumedFissionFraction, glideVehicle, WEAPONS, weaponById, type Weapon } from '../data/catalog';
 import { isLand } from '../data/land';
 import { directedRate, LAUNCHER_HOLD_MS, LIFTOFF_MS, stageAt, timelineFor, type Stage, type Timeline } from '../globe/director';
 import { distanceM, type LngLat } from '../lib/geo';
@@ -43,7 +43,7 @@ export interface Flight {
 /** How far the chosen weapon reaches on the chosen shape of path, metres. */
 export const reach = computed(() => {
   const weapon = missile.value;
-  return weapon ? reachM(weapon.category, (weapon.rangeKm ?? 0) * 1000, shape.value) : 0;
+  return weapon ? reachM(weapon.category, (weapon.rangeKm ?? 0) * 1000, shape.value, glideVehicle(weapon)) : 0;
 });
 
 export const flights = computed<Flight[]>(() => {
@@ -54,7 +54,7 @@ export const flights = computed<Flight[]>(() => {
   return targets.value.map((target) => {
     const d = distanceM(from, target);
     const inRange = d <= limit;
-    return { target, distanceM: d, inRange, plan: inRange ? planFlight(weapon.category, d, shape.value) : null };
+    return { target, distanceM: d, inRange, plan: inRange ? planFlight(weapon.category, d, shape.value, glideVehicle(weapon)) : null };
   });
 });
 
