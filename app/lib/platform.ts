@@ -7,6 +7,8 @@ import type { Theme } from '../state/settings';
 export interface VoiceStatus {
   supported: boolean;
   installed: boolean;
+  /** The male English voices that are there: downloaded (desktop) or found on the phone (Android, only 'male'). */
+  maleVoices: ('male' | 'male2')[];
   installing: boolean;
   error: string | null;
 }
@@ -58,9 +60,10 @@ interface DesktopShell {
   /** Present from version 0.7: the offline voice (Piper). */
   voice?: {
     status(): Promise<VoiceStatus>;
-    install(): Promise<VoiceStatus>;
+    /** 'base': the engine with the Greek and English voices; 'male', 'male2': a male English voice (from 1.7). */
+    install(part?: 'base' | 'male' | 'male2'): Promise<VoiceStatus>;
     remove(): Promise<VoiceStatus>;
-    speak(text: string, language: 'el' | 'en', rate: number): Promise<Uint8Array | null>;
+    speak(text: string, language: 'el' | 'en', rate: number, male?: 'male' | 'male2' | null): Promise<Uint8Array | null>;
     stop(): Promise<void>;
     onProgress(listener: (share: number) => void): () => void;
   };

@@ -38,9 +38,10 @@ const api = {
   },
   voice: {
     status: (): Promise<unknown> => ipcRenderer.invoke('voice:status'),
-    install: (): Promise<unknown> => ipcRenderer.invoke('voice:install'),
+    install: (part?: 'base' | 'male' | 'male2'): Promise<unknown> => ipcRenderer.invoke('voice:install', part ?? 'base'),
     remove: (): Promise<unknown> => ipcRenderer.invoke('voice:remove'),
-    speak: (text: string, language: 'el' | 'en', rate: number): Promise<Uint8Array | null> => ipcRenderer.invoke('voice:speak', text, language, rate),
+    speak: (text: string, language: 'el' | 'en', rate: number, male?: 'male' | 'male2' | null): Promise<Uint8Array | null> =>
+      ipcRenderer.invoke('voice:speak', text, language, rate, male ?? null),
     stop: (): Promise<void> => ipcRenderer.invoke('voice:stop'),
     onProgress: (listener: (share: number) => void): (() => void) => {
       const handler = (_event: unknown, share: number): void => listener(share);

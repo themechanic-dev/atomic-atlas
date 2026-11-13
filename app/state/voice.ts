@@ -1,10 +1,11 @@
 // The voice: a short spoken summary after each simulation, and the assistant's answers;
 // on the desktop with Piper, on Android with the phone's own voice. Nothing is listened to;
-// the app only speaks.
+// the app only speaks. English can be spoken by a female or a male voice; Greek has one.
 
 import { effect, signal } from '@preact/signals';
 import { t } from '../i18n';
 import { accidentSpeech, detonationSpeech } from '../lib/speech';
+import { pickPhoneFemaleVoice, pickPhoneMaleVoice, type PhoneVoice } from '../lib/voices';
 import { platform, type VoiceStatus } from '../lib/platform';
 import { accidentRun } from './accident';
 import { settings } from './settings';
@@ -29,6 +30,16 @@ const onAndroid = (): boolean => platform() === 'android' && typeof window.Capac
 /** On Android the phone's own voice speaks: nothing to download. */
 export const usesPhoneVoice = onAndroid;
 
+/** The phone's male and female English voices, when it has them (Android). */
+const phoneMaleVoice = signal<string | null>(null);
+const phoneFemaleVoice = signal<string | null>(null);
+
+/** The male voice English is to be spoken by, or null for the female voice (and for Greek). */
+const wantsMale = (): 'male' | 'male2' | null => {
+  const { language, englishVoice } = settings.value;
+  return language === 'en' && englishVoice !== 'female' ? englishVoice : null;
+};
+
 export function voiceSupported(): boolean {
   return Boolean(shellVoice()) || onAndroid();
 }
@@ -42,20 +53,32 @@ export async function refreshVoice(): Promise<void> {
   if (onAndroid()) {
     const result = (await window.Capacitor!.nativePromise!('Speech', 'available', { language: settings.value.language }).catch(() => null)) as { state?: string } | null;
     const state = result?.state ?? 'no';
-    voiceStatus.value = { supported: state !== 'no', installed: state === 'yes', installing: false, error: state === 'missing' ? 'missing' : null };
+    if (state === 'yes') {
+      const list = (await window.Capacitor!.nativePromise!('Speech', 'voices', { language: 'en' }).catch(() => null)) as { voices?: PhoneVoice[] } | null;
+      phoneMaleVoice.value = pickPhoneMaleVoice(list?.voices ?? []);
+      phoneFemaleVoice.value = pickPhoneFemaleVoice(list?.voices ?? []);
+    }
+    voiceStatus.value = {
+      supported: state !== 'no',
+      installed: state === 'yes',
+      maleVoices: phoneMaleVoice.value !== null ? ['male'] : [],
+      installing: false,
+      error: state === 'missing' ? 'missing' : null,
+    };
     // The engine starts a moment after the app; ask again shortly.
     if (state === 'starting') setTimeout(() => void refreshVoice(), 1500);
   }
 }
 
-export async function downloadVoice(): Promise<void> {
+/** Downloads the voice ('base') or, once it is there, a male English voice. Desktop only. */
+export async function downloadVoice(part: 'base' | 'male' | 'male2' = 'base'): Promise<void> {
   const voice = shellVoice();
   if (!voice) return;
   voiceProgress.value = 0;
   const off = voice.onProgress((share) => (voiceProgress.value = share));
   try {
-    voiceStatus.value = { ...(voiceStatus.value ?? { supported: true, installed: false, error: null }), installing: true };
-    voiceStatus.value = await voice.install();
+    voiceStatus.value = { ...(voiceStatus.value ?? { supported: true, installed: false, maleVoices: [], error: null }), installing: true };
+    voiceStatus.value = await voice.install(part);
   } finally {
     off();
     voiceProgress.value = null;
@@ -93,7 +116,13 @@ export async function speak(text: string): Promise<void> {
       androidListener = true;
       void window.Capacitor?.Plugins?.Speech?.addListener?.('done', () => (speaking.value = false));
     }
-    await window.Capacitor!.nativePromise!('Speech', 'speak', { text, language: settings.value.language, rate: settings.value.voiceRate }).catch(() => (speaking.value = false));
+    // English names its voice, so "female" stays female whatever the phone's default is; a
+    // phone has at most one male voice, which both male choices use. Greek: the default voice.
+    const english = settings.value.language === 'en';
+    const named = english ? (wantsMale() ? phoneMaleVoice.value : phoneFemaleVoice.value) : null;
+    await window.Capacitor!.nativePromise!('Speech', 'speak', { text, language: settings.value.language, rate: settings.value.voiceRate, ...(named ? { voice: named } : {}) }).catch(
+      () => (speaking.value = false),
+    );
     return;
   }
   const voice = shellVoice();
@@ -101,7 +130,7 @@ export async function speak(text: string): Promise<void> {
   stopVoice();
   const mine = ++request;
   speaking.value = true;
-  const bytes = await voice.speak(text, settings.value.language, settings.value.voiceRate);
+  const bytes = await voice.speak(text, settings.value.language, settings.value.voiceRate, wantsMale());
   if (mine !== request || !bytes) {
     if (mine === request) speaking.value = false;
     return;

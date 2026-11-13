@@ -20,6 +20,7 @@ import {
   sideViewHeading,
 } from '../app/lib/geo';
 import { DEFAULT_SETTINGS, parseSettings } from '../app/state/settings';
+import { PHONE_FEMALE_VOICES, PHONE_MALE_VOICES, pickPhoneFemaleVoice, pickPhoneMaleVoice } from '../app/lib/voices';
 import scenarios from '../data/scenarios.json';
 import { planFlight, reachM } from '../physics/ballistics/flight';
 import weapons from '../data/weapons.json';
@@ -97,6 +98,38 @@ describe('settings', () => {
     expect(parseSettings('not json')).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings(null)).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings(JSON.stringify({ language: 'xx', distance: 7, theme: 'neon', extra: true }))).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('keep the English voice: female by default, one of the male voices when chosen', () => {
+    expect(DEFAULT_SETTINGS.englishVoice).toBe('female');
+    expect(parseSettings(JSON.stringify({ englishVoice: 'male' })).englishVoice).toBe('male');
+    expect(parseSettings(JSON.stringify({ englishVoice: 'male2' })).englishVoice).toBe('male2');
+    expect(parseSettings(JSON.stringify({ englishVoice: 'robot' })).englishVoice).toBe('female');
+  });
+});
+
+describe('voice', () => {
+  const voice = (name: string, more: Partial<{ network: boolean; installed: boolean }> = {}) => ({ name, locale: 'en-US', network: false, installed: true, ...more });
+
+  it('picks a measured male English voice of the phone, offline and installed, the clearest first', () => {
+    expect(pickPhoneMaleVoice([voice('en-us-x-iob-local'), voice('en-us-x-iol-local'), voice('en-us-x-tpd-local')])).toBe('en-us-x-tpd-local');
+    expect(pickPhoneMaleVoice([voice('en-us-x-tpd-local', { installed: false }), voice('en-us-x-iom-local')])).toBe('en-us-x-iom-local');
+    expect(pickPhoneMaleVoice([voice('en-us-x-iom-network', { network: true })])).toBeNull();
+    expect(pickPhoneMaleVoice([voice('en-us-x-tpf-local'), voice('en-US-language')])).toBeNull();
+    expect(PHONE_MALE_VOICES.every((name) => name.endsWith('-local'))).toBe(true);
+  });
+
+  it('picks a measured female English voice of the phone, the default one first, and never a male one', () => {
+    expect(pickPhoneFemaleVoice([voice('en-us-x-tpd-local'), voice('en-us-x-iob-local'), voice('en-us-x-iog-local')])).toBe('en-us-x-iog-local');
+    expect(pickPhoneFemaleVoice([voice('en-us-x-tpd-local')])).toBeNull();
+    expect(PHONE_FEMALE_VOICES.some((name) => (PHONE_MALE_VOICES as readonly string[]).includes(name))).toBe(false);
+  });
+
+  it('downloads the desktop voices from one fixed revision, each file checked', () => {
+    const code = readFileSync(join(root, 'desktop/voice.ts'), 'utf8');
+    expect(code).not.toMatch(/piper-voices\/resolve\/main/);
+    expect(code).toMatch(/VOICES_REVISION = '[0-9a-f]{40}'/);
+    expect(code.match(/configSha256: '[0-9a-f]{64}'/g)?.length).toBe(code.match(/ {4}sha256: '[0-9a-f]{64}'/g)?.length);
   });
 });
 

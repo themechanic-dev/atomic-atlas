@@ -8,6 +8,8 @@ export type TemperatureUnit = 'C' | 'F';
 export type Theme = 'dark' | 'light';
 export type MapSourceId = 'openfreemap' | 'builtin' | 'satellite';
 export type WeatherSourceId = 'openmeteo' | 'manual';
+/** The English voice: female, or one of the two male voices (on a phone, its own male voice). */
+export type EnglishVoice = 'female' | 'male' | 'male2';
 
 export interface Settings {
   language: Language;
@@ -27,6 +29,8 @@ export interface Settings {
   voice: boolean;
   /** Speed of the voice: 0.85, 1 or 1.2. */
   voiceRate: number;
+  /** The English voice; Greek has only the one (female) voice. */
+  englishVoice: EnglishVoice;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -43,6 +47,7 @@ export const DEFAULT_SETTINGS: Settings = {
   infrastructure: true,
   voice: true,
   voiceRate: 1,
+  englishVoice: 'female',
 };
 
 const STORAGE_KEY = 'atomic-atlas.settings.v1';
@@ -75,6 +80,7 @@ export function parseSettings(raw: string | null): Settings {
   if (typeof data.infrastructure === 'boolean') out.infrastructure = data.infrastructure;
   if (typeof data.voice === 'boolean') out.voice = data.voice;
   if (typeof data.voiceRate === 'number' && [0.85, 1, 1.2].includes(data.voiceRate)) out.voiceRate = data.voiceRate;
+  if (isOneOf(data.englishVoice, ['female', 'male', 'male2'] as const)) out.englishVoice = data.englishVoice;
   if (typeof data.mapStyleUrl === 'string' && data.mapStyleUrl.length < 2000) out.mapStyleUrl = data.mapStyleUrl;
   return out;
 }

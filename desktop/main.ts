@@ -307,10 +307,10 @@ if (!app.requestSingleInstanceLock()) {
     });
     ipcMain.handle('app:quit', () => app.quit());
     ipcMain.handle('voice:status', () => voiceStatus());
-    ipcMain.handle('voice:install', (event) => installVoice(event.sender));
+    ipcMain.handle('voice:install', (event, part: unknown) => installVoice(event.sender, part === 'male' || part === 'male2' ? part : 'base'));
     ipcMain.handle('voice:remove', () => removeVoice());
-    ipcMain.handle('voice:speak', (_event, text: unknown, language: unknown, rate: unknown) =>
-      typeof text === 'string' && (language === 'el' || language === 'en') ? synthesize(text.slice(0, 4000), language, typeof rate === 'number' ? rate : 1) : null,
+    ipcMain.handle('voice:speak', (_event, text: unknown, language: unknown, rate: unknown, male: unknown) =>
+      typeof text === 'string' && (language === 'el' || language === 'en') ? synthesize(text.slice(0, 4000), language, typeof rate === 'number' ? rate : 1, male === 'male' || male === 'male2' ? male : null) : null,
     );
     ipcMain.handle('voice:stop', () => stopSpeaking());
     ipcMain.handle('assistant:status', () => assistantStatus());

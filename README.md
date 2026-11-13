@@ -10,7 +10,7 @@ every number was calculated and where the formula comes from.
 Runs on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 1.6: one detonation, missiles and hypersonic gliders on the globe,
+> Version 1.7: one detonation, missiles and hypersonic gliders on the globe,
 > accidents, water and dams, war scenarios with a general missile defence, an
 > offline assistant and a voice, offline map areas with the population at 100 m,
 > and the mushroom cloud in 3D, on Linux, Windows and Android.
@@ -83,7 +83,9 @@ Free and open source (MIT).
   1.3 GB or 2.7 GB on a phone. On a computer the answer appears as it is written.
 - **Voice.** After each simulation a short spoken summary, in English or Greek.
   On a computer with Piper, offline, downloaded from the settings (about
-  150 MB); on a phone with the phone's own voice. The app never listens.
+  150 MB); on a phone with the phone's own voice. English can be spoken by a
+  female or a male voice (two male voices on a computer, each a download of its
+  own; the phone's male voice where it has one). The app never listens.
 - **"How was this calculated?"** Next to every number: the formula, the inputs,
   the source (section, figure or table) and how uncertain it is.
 - **Weapons catalog.** 125 systems of all nine nuclear-armed states, in service
@@ -177,8 +179,9 @@ the book differ.
   250 hPa. Only the coordinates of the burst are sent.
 - Assistant (optional download): llama.cpp (ggml-org, release b12308) with
   Qwen3.5-4B or Qwen3.5-9B in GGUF form from HuggingFace. Voice (optional
-  download): Piper with the voices Joy (Greek) and Lessac (English) from
-  HuggingFace `rhasspy/piper-voices`.
+  download): Piper with the voices Joy (Greek), Lessac, Ryan and HFC male
+  (English) from HuggingFace `rhasspy/piper-voices`, at one fixed revision and
+  checked against their SHA-256.
 - Nothing needs an account or a key. With the built-in map and a manual wind the
   app makes no network requests at all.
 
