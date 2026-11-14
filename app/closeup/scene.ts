@@ -677,8 +677,10 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     const height = canvas.clientHeight || 1;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    // A tall, narrow picture needs the camera further back to hold the same scene.
-    const back = camera.aspect < 1 ? (1 / camera.aspect) * (view.narrow ?? 1) : 1;
+    // A picture narrower than a computer's needs the camera further back to hold the same
+    // scene (a phone held upright gives an almost square picture or a tall one).
+    const WIDE = 1.8;
+    const back = camera.aspect < WIDE ? Math.pow(WIDE / camera.aspect, 0.85) * (camera.aspect < 1 ? (view.narrow ?? 1) : 1) : 1;
     const [x, y, z] = view.from;
     camera.position.set(x * back, y * back, z * back);
     camera.lookAt(...view.at);
@@ -696,6 +698,16 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
 
   build('street');
   resize();
+  // The dialog can change the canvas's size without the window changing (its layout settles
+  // after it opens, or the phone turns): follow the canvas itself.
+  let lastSize = '';
+  const observer = new ResizeObserver(() => {
+    const size = `${canvas.clientWidth}x${canvas.clientHeight}`;
+    if (size === lastSize) return;
+    lastSize = size;
+    resize();
+  });
+  observer.observe(canvas);
 
   return {
     setKind(kind) {
@@ -713,6 +725,7 @@ export function createScene(canvas: HTMLCanvasElement, theme: 'dark' | 'light'):
     },
     resize,
     dispose() {
+      observer.disconnect();
       cancelAnimationFrame(frame);
       frame = 0;
       disposeWorld();

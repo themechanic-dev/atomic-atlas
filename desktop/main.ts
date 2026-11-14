@@ -240,6 +240,20 @@ function createWindow(): void {
     if (mainWindow === win) mainWindow = null;
   });
 
+  // If the page's process dies (seen once on the first start in a Windows VM whose display
+  // driver had just been reset), the window would stay empty: load the page again, at most
+  // twice a minute, so a page that keeps failing does not loop.
+  let reloads: number[] = [];
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error('page process gone', details.reason, details.exitCode);
+    if (details.reason === 'clean-exit' || win.isDestroyed()) return;
+    const now = Date.now();
+    reloads = reloads.filter((t) => now - t < 60_000);
+    if (reloads.length >= 2) return;
+    reloads.push(now);
+    win.webContents.reload();
+  });
+
   // Links to sources and references open in the system browser, never inside the app.
   win.webContents.setWindowOpenHandler(({ url }) => {
     openInBrowser(url);

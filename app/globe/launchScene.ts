@@ -11,6 +11,8 @@ import { BoundingSphere, Cartesian2, Cartesian3, Color, HeadingPitchRange, Math 
 import {
   CallbackPositionProperty,
   CallbackProperty,
+  ClippingPlane,
+  ClippingPlaneCollection,
   ConeEmitter,
   DirectionalLight,
   ParticleSystem,
@@ -211,19 +213,45 @@ export function createLaunchScene(widget: CesiumWidget, read: LaunchReadout) {
     return read.stage() === 'boost' && read.liftoff() > 0.02;
   };
 
+  // CesiumJS starts loading a model only once it is shown. So the models are always shown,
+  // shrunk to nothing outside the close view: they load as soon as the flight is set up, and
+  // a slow computer has them ready when the launcher comes on screen.
   const model = (name: string, build: () => import('three').Object3D, scale = SCALE) => ({
     uri: modelUrl(name, build),
-    scale,
-    show: new CallbackProperty(closeUp, false),
+    scale: new CallbackProperty(() => (closeUp() ? scale : scale * 1e-5), false),
     shadows: ShadowMode.DISABLED,
   });
 
+  /**
+   * Where a missile waiting in a silo or tube is cut off: the part below this height (the
+   * opening of the silo, the deck of the submarine or ship) is not drawn. The globe hides
+   * what is below the ground too, but not on every graphics chip (not in a Windows virtual
+   * machine without a GPU), so the model itself is cut.
+   */
+  let cut: Cartesian3 | null = null;
+  let clipping: ClippingPlaneCollection | null = null;
+
+  /** Moves the cutting plane with the missile: it lies in the missile's own frame. */
+  function updateCut(): void {
+    if (!clipping || !cut || !frame) return;
+    const m = missile();
+    const rotation = Matrix3.fromQuaternion(missileOrientation(m.axis));
+    const plane = clipping.get(0);
+    plane.normal = Matrix3.multiplyByVector(Matrix3.transpose(rotation, new Matrix3()), frame.up, new Cartesian3());
+    plane.distance = Cartesian3.dot(Cartesian3.subtract(m.tail, cut, new Cartesian3()), frame.up);
+  }
+
   function buildMissile(): void {
     const shape = input!.shape;
+    clipping = null;
+    if (cut) clipping = new ClippingPlaneCollection({ planes: [new ClippingPlane(Cartesian3.UNIT_Z, 0)], edgeWidth: 0 });
     add({
       position: new CallbackPositionProperty(() => missile().tail, false),
       orientation: new CallbackProperty(() => missileOrientation(missile().axis), false),
-      model: model(shape === 'cruise' ? 'missile-cruise' : 'missile-ballistic', shape === 'cruise' ? cruiseMissile : ballisticMissile, missileScale),
+      model: {
+        ...model(shape === 'cruise' ? 'missile-cruise' : 'missile-ballistic', shape === 'cruise' ? cruiseMissile : ballisticMissile, missileScale),
+        ...(clipping ? { clippingPlanes: clipping } : {}),
+      },
     });
     // A bright core at the nozzle; the rest of the flame is particles.
     add({
@@ -378,6 +406,7 @@ export function createLaunchScene(widget: CesiumWidget, read: LaunchReadout) {
         for (const s of particles) s.emissionRate = 0;
         return;
       }
+      updateCut();
       const m = missile();
       const rotation = missileOrientation(m.axis);
       const fire = burning();
@@ -409,11 +438,18 @@ export function createLaunchScene(widget: CesiumWidget, read: LaunchReadout) {
       const toward = combine(combine(frame.up, -1, frame.side, 0.45), 1, frame.ahead, 0.35);
       closeLight = new DirectionalLight({ direction: Cartesian3.normalize(toward, toward), intensity: 3.2 });
       scene.light = closeLight;
-      scene.globe.depthTestAgainstTerrain = true;
     } else {
       scene.light = sunLight ?? new SunLight();
-      scene.globe.depthTestAgainstTerrain = depthTestBefore;
     }
+  }
+
+  /**
+   * A missile waiting in a silo or a tube is below the ground or the sea: the globe must hide
+   * it. That is set when the launch is set up, not when the close view starts, so not even the
+   * first frame shows the missile through the ground.
+   */
+  function hideBelowGround(on: boolean): void {
+    scene.globe.depthTestAgainstTerrain = on || depthTestBefore;
   }
 
   /** Builds the launcher and missile for a flight, or removes them when there is none. */
@@ -425,8 +461,11 @@ export function createLaunchScene(widget: CesiumWidget, read: LaunchReadout) {
     frame = null;
     base = null;
     foot = null;
+    cut = null;
     lightUp(false);
+    hideBelowGround(false);
     if (!next) return;
+    hideBelowGround(next.kind === 'silo' || next.kind === 'submarine' || next.kind === 'ship');
     const bearing = initialBearing(next.from, next.target);
     missileScale = SCALE * (next.kind === 'aircraft' ? 0.5 : 1);
     missileLength = MISSILE_LENGTH_M * missileScale;
@@ -444,6 +483,15 @@ export function createLaunchScene(widget: CesiumWidget, read: LaunchReadout) {
             : next.kind === 'pad'
               ? offset(f, 0, 3.3 * SCALE)
               : offset(f, 0, 1.6 * SCALE);
+    // The height the missile comes up through: the floor of the silo's opening, the deck.
+    cut =
+      next.kind === 'silo'
+        ? offset(f, 0, 0.7 * SCALE)
+        : next.kind === 'submarine'
+          ? offset(f, -12 * SCALE, 4.35 * SCALE, -1.6 * SCALE)
+          : next.kind === 'ship'
+            ? offset(f, 12.4 * SCALE, 5.1 * SCALE)
+            : null;
     foot =
       next.kind === 'vehicle'
         ? offset(f, TRUCK_PIVOT.x * SCALE, 0)
@@ -505,6 +553,7 @@ export function createLaunchScene(widget: CesiumWidget, read: LaunchReadout) {
     removeUpdate?.();
     removeUpdate = null;
     lightUp(false);
+    hideBelowGround(false);
   }
 
   return { build, directCamera, showArrival, destroy };
