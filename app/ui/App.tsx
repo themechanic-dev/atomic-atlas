@@ -3,7 +3,7 @@
 import { lazy, Suspense } from 'preact/compat';
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
-import { syncNativeTheme } from '../lib/platform';
+import { platform, syncNativeTheme } from '../lib/platform';
 import { MapView } from '../map/MapView';
 import { settings } from '../state/settings';
 import { detonation } from '../state/simulation';
@@ -24,6 +24,9 @@ import { MissilePanel } from './MissilePanel';
 import { ResultsPanel } from './ResultsPanel';
 import { ScenarioPanel } from './ScenarioPanel';
 import { SettingsDialog } from './SettingsDialog';
+
+/** The help chat of The Mechanic's projects, opened on this one. */
+const HELP_URL = 'https://themechanic.store/help/?project=atomic-atlas';
 
 type DialogName = 'settings' | 'catalog' | 'assistant' | 'downloads' | null;
 
@@ -108,6 +111,7 @@ export function App() {
         </div>
         <div class="topbar-actions">
           {downloadLinks.value ? <IconButton icon="download" label={t('downloads.title')} onClick={() => setDialog('downloads')} testId="open-downloads" /> : null}
+          {platform() === 'web' ? <IconButton icon="help" label={t('app.help')} onClick={() => window.open(HELP_URL, '_blank', 'noopener')} testId="open-help" /> : null}
           <IconButton icon="panel" label={t(open ? 'app.panel.hide' : 'app.panel.show')} onClick={() => (panelOpen.value = !open)} active={open} testId="toggle-panel" />
           {assistantSupported() ? <IconButton icon="assistant" label={t('assistant.title')} onClick={() => setDialog('assistant')} testId="open-assistant" /> : null}
           <IconButton icon="list" label={t('catalog.title')} onClick={() => setDialog('catalog')} testId="open-catalog-top" />

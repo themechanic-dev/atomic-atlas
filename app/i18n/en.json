@@ -5,6 +5,7 @@
   "app.mode.detonation": "Detonation",
   "app.panel.hide": "Hide the panel",
   "app.panel.show": "Show the panel",
+  "app.help": "Help",
   "app.disclaimer": "Educational simulator. Results come from public scientific models and are estimates, not predictions.",
 
   "map.hint": "Click the map to place ground zero · right-click a point for the effects there",
