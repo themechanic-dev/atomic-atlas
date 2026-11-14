@@ -19,8 +19,23 @@ function EnglishVoiceChoice() {
   const s = settings.value;
   const status = voiceStatus.value;
   const progress = voiceProgress.value;
-  if (s.language !== 'en' || !status) return null;
+  if (!status) return null;
   const phone = usesPhoneVoice();
+  // Greek: a choice only in a browser that has a male Greek voice; the apps speak Greek with a female voice.
+  if (s.language === 'el') {
+    if (!usesBrowserVoice() || status.maleVoices.length === 0) return null;
+    return (
+      <Field label={t('settings.voice.greek')}>
+        <Segmented<'female' | 'male'>
+          label={t('settings.voice.greek')}
+          value={s.greekVoice}
+          onChange={(greekVoice) => updateSettings({ greekVoice })}
+          options={(['female', 'male'] as const).map((voice) => ({ value: voice, label: t(voice === 'male' ? 'settings.voice.english.phoneMale' : 'settings.voice.english.female') }))}
+          testId="setting-greek-voice"
+        />
+      </Field>
+    );
+  }
   if (phone && status.maleVoices.length === 0) return null;
   const choices: EnglishVoice[] = phone ? ['female', 'male'] : ['female', 'male', 'male2'];
   // On a phone both male choices are its one male voice.

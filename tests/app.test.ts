@@ -104,6 +104,9 @@ describe('settings', () => {
     expect(DEFAULT_SETTINGS.englishVoice).toBe('female');
     expect(parseSettings(JSON.stringify({ englishVoice: 'male' })).englishVoice).toBe('male');
     expect(parseSettings(JSON.stringify({ englishVoice: 'male2' })).englishVoice).toBe('male2');
+    expect(DEFAULT_SETTINGS.greekVoice).toBe('female');
+    expect(parseSettings(JSON.stringify({ greekVoice: 'male' })).greekVoice).toBe('male');
+    expect(parseSettings(JSON.stringify({ greekVoice: 'robot' })).greekVoice).toBe('female');
     expect(parseSettings(JSON.stringify({ englishVoice: 'robot' })).englishVoice).toBe('female');
   });
 });
@@ -134,6 +137,7 @@ describe('voice', () => {
     expect(pickBrowserVoice(windows, 'el', 'female')).toBeNull();
     const edge = [v('Microsoft Nestoras Online (Natural) - Greek (Greece)', 'el-GR', false), v('Microsoft Athina Online (Natural) - Greek (Greece)', 'el-GR', false)];
     expect(pickBrowserVoice(edge, 'el', 'female')?.name).toContain('Athina');
+    expect(pickBrowserVoice(edge, 'el', 'male')?.name).toContain('Nestoras');
     expect(pickBrowserVoice([v('Google UK English Male', 'en-GB', false), v('Google UK English Female', 'en-GB', false)], 'en', 'male')?.name).toBe('Google UK English Male');
     expect(browserVoiceGender(v('Google UK English Female', 'en-GB'))).toBe('female');
     expect(pickBrowserVoice([v('espeak-ng el', 'el')], 'el', 'female')?.name).toBe('espeak-ng el');

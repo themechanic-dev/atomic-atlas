@@ -29,8 +29,10 @@ export interface Settings {
   voice: boolean;
   /** Speed of the voice: 0.85, 1 or 1.2. */
   voiceRate: number;
-  /** The English voice; Greek has only the one (female) voice. */
+  /** The English voice. */
   englishVoice: EnglishVoice;
+  /** The Greek voice in a browser: female (the default) or the browser's male voice; the apps speak Greek with a female voice only. */
+  greekVoice: 'female' | 'male';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -48,6 +50,7 @@ export const DEFAULT_SETTINGS: Settings = {
   voice: true,
   voiceRate: 1,
   englishVoice: 'female',
+  greekVoice: 'female',
 };
 
 const STORAGE_KEY = 'atomic-atlas.settings.v1';
@@ -81,6 +84,7 @@ export function parseSettings(raw: string | null): Settings {
   if (typeof data.voice === 'boolean') out.voice = data.voice;
   if (typeof data.voiceRate === 'number' && [0.85, 1, 1.2].includes(data.voiceRate)) out.voiceRate = data.voiceRate;
   if (isOneOf(data.englishVoice, ['female', 'male', 'male2'] as const)) out.englishVoice = data.englishVoice;
+  if (isOneOf(data.greekVoice, ['female', 'male'] as const)) out.greekVoice = data.greekVoice;
   if (typeof data.mapStyleUrl === 'string' && data.mapStyleUrl.length < 2000) out.mapStyleUrl = data.mapStyleUrl;
   return out;
 }

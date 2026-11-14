@@ -46,8 +46,9 @@ const phoneFemaleVoice = signal<string | null>(null);
 
 /** The male voice English is to be spoken by, or null for the female voice (and for Greek). */
 const wantsMale = (): 'male' | 'male2' | null => {
-  const { language, englishVoice } = settings.value;
-  return language === 'en' && englishVoice !== 'female' ? englishVoice : null;
+  const { language, englishVoice, greekVoice } = settings.value;
+  if (language === 'el') return platform() === 'web' && greekVoice === 'male' ? 'male' : null;
+  return englishVoice !== 'female' ? englishVoice : null;
 };
 
 export function voiceSupported(): boolean {
@@ -60,7 +61,8 @@ function refreshBrowserVoice(): void {
   const language = settings.value.language;
   const female = pickBrowserVoice(all, language, 'female');
   browserVoices.female = (female as SpeechSynthesisVoice | null) ?? null;
-  browserVoices.male = language === 'en' ? ((pickBrowserVoice(all, 'en', 'male') as SpeechSynthesisVoice | null) ?? null) : null;
+  // A browser offers a male voice too, in either language, when it has one.
+  browserVoices.male = (pickBrowserVoice(all, language, 'male') as SpeechSynthesisVoice | null) ?? null;
   // Greek voices there, but only male ones: the voice stays off and the settings say why.
   browserGreekOnlyMale.value = language === 'el' && !female && all.some((v) => v.lang.toLowerCase().startsWith('el'));
   voiceStatus.value = {

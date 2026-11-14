@@ -662,6 +662,7 @@
   "settings.voice.test": "Δοκιμή φωνής",
   "settings.voice.remove": "Αφαίρεση φωνής",
   "settings.voice.sample": "Αυτή είναι η φωνή του Atomic Atlas. Μετά από κάθε προσομοίωση λέει μια σύντομη περίληψη του αποτελέσματος.",
+  "settings.voice.greek": "Ελληνική φωνή",
   "settings.voice.english": "Αγγλική φωνή",
   "settings.voice.english.female": "Γυναικεία",
   "settings.voice.english.male": "Ανδρική 1",
