@@ -48,6 +48,7 @@ import { createBuildingDamage, DAMAGE_LAYER } from './buildingDamage';
 import { createMushroomLayer, MUSHROOM_LAYER } from './mushroom';
 import { smallDevice } from '../lib/platform';
 import { LABEL_FONT, skyFor, styleFor, TERRAIN_TILES, tuneStyle } from './style';
+import { globeFitZoom, panelInsets, START_CENTER, type Insets } from './startView';
 
 maplibregl.setWorkerUrl(new URL(workerUrl, document.baseURI).href);
 
@@ -444,16 +445,24 @@ function probeHtml(point: LngLat): string {
   );
 }
 
-/** Creates the MapLibre map. Throws when the device has no WebGL 2. */
+/** The part of the map under the panel, for the map's size and the panel as they are now. */
+function currentInsets(element: HTMLElement): Insets {
+  return panelInsets(panelOpen.value, window.innerWidth >= WIDE_LAYOUT, element.clientHeight);
+}
+
+/** Creates the MapLibre map, opening on the whole planet. Throws when the device has no WebGL 2. */
 function createMap(element: HTMLElement): MapLibreMap {
   registerOfflineProtocol();
-  return new maplibregl.Map({
+  const insets = currentInsets(element);
+  const map = new maplibregl.Map({
     container: element,
-    center: [18, 34],
-    zoom: 1.7,
+    center: START_CENTER,
+    zoom: globeFitZoom(element.clientWidth, element.clientHeight, insets, START_CENTER[1]),
     maxPitch: 78,
     attributionControl: { compact: true },
   });
+  map.setPadding(insets);
+  return map;
 }
 
 export function MapView() {
@@ -494,6 +503,25 @@ export function MapView() {
     // For diagnosis from the developer tools: __atomicAtlas.map is the MapLibre map.
     (globalThis as { __atomicAtlas?: unknown }).__atomicAtlas = mapHandle;
     applyStyle();
+
+    // The opening view stays fitted to the free part of the map (window resized or turned,
+    // panel opened or closed) until something else moves the camera.
+    let atStart = true;
+    map.on('movestart', (event) => {
+      if (!(event as { startView?: boolean }).startView) atStart = false;
+    });
+    const frame = (duration: number): void => {
+      const insets = currentInsets(element);
+      const now = map.getPadding();
+      const samePadding = now.top === insets.top && now.right === insets.right && now.bottom === insets.bottom && now.left === insets.left;
+      if (atStart) {
+        const zoom = globeFitZoom(element.clientWidth, element.clientHeight, insets, map.getCenter().lat);
+        if (samePadding && Math.abs(zoom - map.getZoom()) < 0.01) return;
+        map.easeTo({ padding: insets, zoom, duration }, { startView: true });
+      } else if (!samePadding) {
+        map.easeTo({ padding: insets, duration });
+      }
+    };
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true, showCompass: true, showZoom: true }), 'top-right');
 
@@ -657,10 +685,11 @@ export function MapView() {
         endLoading ??= beginBusy('busy.map');
         applyStyle();
       }),
-      // The panel covers the left of the map on wide windows: keep the view centred in what is left.
+      // The panel covers the left of the map on wide windows and its bottom on narrow ones:
+      // keep the view centred in what is left.
       effect(() => {
-        const left = panelOpen.value && window.innerWidth >= WIDE_LAYOUT ? 412 : 0;
-        map.easeTo({ padding: { left, top: 0, right: 0, bottom: 0 }, duration: settings.value.reduceMotion ? 0 : 300 });
+        void panelOpen.value;
+        untracked(() => frame(settings.value.reduceMotion ? 0 : 300));
       }),
       // Overlays follow the result, the language and the units.
       effect(() => {
@@ -737,10 +766,8 @@ export function MapView() {
             [bounds[2], bounds[3]],
           ],
           {
-            // On wide windows the map already keeps clear of the panel (its own padding).
-            padding: wide
-              ? { top: 70, bottom: 70, left: 50, right: 90 }
-              : { top: 60, bottom: Math.round(window.innerHeight * 0.46) + 20, left: 30, right: 30 },
+            // The map already keeps clear of the panel (its own padding); this is the margin around the rings.
+            padding: wide ? { top: 70, bottom: 70, left: 50, right: 90 } : { top: 60, bottom: 20, left: 30, right: 30 },
             duration: settings.value.reduceMotion ? 0 : 1600,
             maxZoom: 16,
           },
@@ -748,7 +775,10 @@ export function MapView() {
       }),
     ];
 
-    const resize = new ResizeObserver(() => map.resize());
+    const resize = new ResizeObserver(() => {
+      map.resize();
+      frame(0);
+    });
     resize.observe(element);
 
     return () => {
