@@ -653,6 +653,8 @@
   "settings.voice.error": "The download did not finish. Check the internet connection and try again.",
   "settings.voice.on": "Speak after each simulation and assistant answer",
   "settings.voice.on.hint": "A short summary of the result, and the assistant's answers, in the language of the app",
+  "settings.voice.onSummaries": "Speak after each simulation",
+  "settings.voice.onSummaries.hint": "A short summary of the result, in the language of the app",
   "settings.voice.rate": "Speed",
   "settings.voice.rate.0.85": "Slower",
   "settings.voice.rate.1": "Normal",

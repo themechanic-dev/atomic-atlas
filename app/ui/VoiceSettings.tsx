@@ -2,6 +2,7 @@
 // a female or a male voice, try it. Greek has only the one voice, so the choice is not shown.
 
 import { t } from '../i18n';
+import { assistantSupported } from '../state/assistant';
 import { settings, updateSettings, type EnglishVoice } from '../state/settings';
 import { browserGreekOnlyMale, downloadVoice, removeVoice, speak, usesBrowserVoice, usesPhoneVoice, voiceProgress, voiceStatus, voiceSupported } from '../state/voice';
 import { Button, Field, Segmented, Switch } from './controls';
@@ -60,6 +61,8 @@ export function VoiceSettings() {
   const s = settings.value;
   const status = voiceStatus.value;
   const progress = voiceProgress.value;
+  // Without the assistant (the web version) the voice reads only the summaries.
+  const onLabel = assistantSupported() ? 'settings.voice.on' : 'settings.voice.onSummaries';
   return (
     <section class="settings-group" data-testid="voice-settings">
       <h3>{t('settings.voice')}</h3>
@@ -85,8 +88,8 @@ export function VoiceSettings() {
         <>
           {usesPhoneVoice() ? <p class="hint">{t(usesBrowserVoice() ? 'settings.voice.browser' : 'settings.voice.phone')}</p> : null}
           {browserGreekOnlyMale.value ? <p class="hint">{t('settings.voice.browser.onlyMale')}</p> : null}
-          <Field label={t('settings.voice.on')} hint={t('settings.voice.on.hint')}>
-            <Switch checked={s.voice} onChange={(voice) => updateSettings({ voice })} label={t('settings.voice.on')} testId="setting-voice" />
+          <Field label={t(onLabel)} hint={t(`${onLabel}.hint`)}>
+            <Switch checked={s.voice} onChange={(voice) => updateSettings({ voice })} label={t(onLabel)} testId="setting-voice" />
           </Field>
           <Field label={t('settings.voice.rate')}>
             <Segmented<string>
