@@ -29,3 +29,43 @@ function pickFrom(names: readonly string[], voices: readonly PhoneVoice[]): stri
 
 export const pickPhoneMaleVoice = (voices: readonly PhoneVoice[]): string | null => pickFrom(PHONE_MALE_VOICES, voices);
 export const pickPhoneFemaleVoice = (voices: readonly PhoneVoice[]): string | null => pickFrom(PHONE_FEMALE_VOICES, voices);
+
+// ---------------------------------------------------------------- the browser's voices
+
+/** A voice of the browser (the fields of SpeechSynthesisVoice that matter here). */
+export interface BrowserVoice {
+  name: string;
+  lang: string;
+  localService: boolean;
+  default?: boolean;
+}
+
+// Browsers do not say whether a voice is male or female either; their names usually do.
+// These are the names browsers on Windows, macOS, Android and Linux give their voices.
+const FEMALE_NAMES = /female|woman|zira|hazel|susan|samantha|victoria|karen|moira|tessa|fiona|serena|allison|\bava\b|kate|catherine|jenny|aria|libby|sonia|natasha|emma|olivia|melina|maria|athina|nancy|joanna|salli|kimberly|ivy|amy|google us english|google ελληνικά/i;
+const MALE_NAMES = /\bmale\b|david|mark|george|daniel|james|ryan|\bguy\b|christopher|eric|\balex\b|\bfred\b|thomas|oliver|stefanos|nestoras|arthur|matthew|joey|justin|brian|russell/i;
+
+export type VoiceGender = 'female' | 'male';
+
+/** Guessed from the name; null when the name does not tell. */
+export function browserVoiceGender(voice: BrowserVoice): VoiceGender | null {
+  if (MALE_NAMES.test(voice.name) && !/female/i.test(voice.name)) return 'male';
+  if (FEMALE_NAMES.test(voice.name)) return 'female';
+  return null;
+}
+
+/**
+ * The browser voice to speak a language with: one whose name says it has the wanted gender,
+ * else one that does not say (for a female voice), else any voice of the language. Voices
+ * that work offline come first, then the browser's default.
+ */
+export function pickBrowserVoice(voices: readonly BrowserVoice[], language: 'en' | 'el', gender: VoiceGender): BrowserVoice | null {
+  const own = voices.filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith(language));
+  if (own.length === 0) return null;
+  const rank = (v: BrowserVoice): number => (v.localService ? 0 : 2) + (v.default ? 0 : 1);
+  const sorted = [...own].sort((a, b) => rank(a) - rank(b) || (a.lang.toLowerCase() === (language === 'el' ? 'el-gr' : 'en-us') ? -1 : 0));
+  const exact = sorted.find((v) => browserVoiceGender(v) === gender);
+  if (exact) return exact;
+  if (gender === 'male') return null;
+  return sorted.find((v) => browserVoiceGender(v) === null) ?? sorted[0] ?? null;
+}

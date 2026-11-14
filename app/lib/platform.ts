@@ -95,6 +95,17 @@ export function platform(): Platform {
   return 'web';
 }
 
+/**
+ * True on a phone or small tablet: Android, or a browser with a touch screen whose shorter
+ * side is under 820 px. Such a device gets the lighter limits the Android app has (fewer
+ * buildings, a coarser cloud): a phone's browser runs out of memory like its WebView does.
+ */
+export function smallDevice(): boolean {
+  if (platform() === 'android') return true;
+  if (platform() !== 'web' || typeof matchMedia !== 'function' || typeof screen === 'undefined') return false;
+  return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
+}
+
 export const APP_VERSION: string = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
 
 /** Opens a link to a source or reference in the system browser. */

@@ -644,6 +644,9 @@
   "settings.voice.unsupported": "The voice is not available on this system.",
   "settings.voice.phone": "The phone's own voice speaks, in the language of the app. Nothing to download.",
   "settings.voice.phone.missing": "The phone has no voice for this language. Install it in the phone's settings: Accessibility (or System) › Text-to-speech output › Install voice data.",
+  "settings.voice.browser": "The browser's own voice speaks, in the language of the app. Nothing to download.",
+  "settings.voice.browser.missing": "This browser has no voice for this language. A browser on another system, or the app, may have one.",
+  "settings.voice.browser.onlyMale": "This browser has only a male Greek voice, so it speaks with that one.",
   "settings.voice.download.hint": "After each simulation the app can say a short summary out loud, and the assistant's answers. The voice works offline; it is downloaded once (about 150 MB: the Piper speech engine with one Greek and one English voice). The app never listens.",
   "settings.voice.download": "Download the voice",
   "settings.voice.downloading": "Downloading… {percent} %",
@@ -722,5 +725,17 @@
   "assistant.tool.get_results": "Reading the results…",
   "assistant.tool.compare_yields": "Comparing yields…",
   "assistant.tool.lookup_weapon": "Looking in the catalog…",
-  "assistant.tool.explain_effect": "Reading the explanation and its source…"
+  "assistant.tool.explain_effect": "Reading the explanation and its source…",
+  "downloads.title": "Downloads",
+  "downloads.intro": "Atomic Atlas also comes as an app, with an offline assistant, a downloadable voice, the population at 100 m and map areas kept offline. Free, from GitHub; each link gives the newest version.",
+  "downloads.qr": "Android app",
+  "downloads.qr.hint": "Scan this code with the phone to download the app.",
+  "downloads.apk": "Download the Android app (APK)",
+  "downloads.apk.hint": "Android asks to allow installing apps from this source: allow it, for this one install.",
+  "downloads.deb": "Linux (.deb)",
+  "downloads.deb.hint": "Double-click the file, or run: sudo apt install ./atomic-atlas-linux-amd64.deb",
+  "downloads.exe": "Windows (Setup.exe)",
+  "downloads.exe.hint": "The installer is not digitally signed, so Windows shows a blue warning: choose \"More info\", then \"Run anyway\".",
+  "downloads.ios": "There is no app for iPhone or iPad: this web version is the way to use Atomic Atlas there.",
+  "downloads.code": "Source code on GitHub"
 }

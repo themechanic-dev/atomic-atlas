@@ -28,10 +28,28 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // The release APK is signed with the project's own key, so every new version installs
+    // over the last one. The key and its password live outside the source tree: a properties
+    // file named by ATOMIC_ATLAS_KEYSTORE, or ~/.cache/atomic-atlas/signing/. Without it the
+    // release build comes out unsigned.
+    def keystoreFile = file(System.getenv('ATOMIC_ATLAS_KEYSTORE') ?: "${System.getProperty('user.home')}/.cache/atomic-atlas/signing/atomic-atlas-keystore.properties")
+    def keystore = new Properties()
+    if (keystoreFile.exists()) keystoreFile.withInputStream { keystore.load(it) }
+    signingConfigs {
+        if (keystore.storeFile) {
+            release {
+                storeFile file(keystore.storeFile)
+                storePassword keystore.storePassword
+                keyAlias keystore.keyAlias
+                keyPassword keystore.keyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (keystore.storeFile) signingConfig signingConfigs.release
         }
     }
 }

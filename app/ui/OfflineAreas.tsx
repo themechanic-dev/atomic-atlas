@@ -4,6 +4,7 @@ import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { formatNumber } from '../lib/format';
 import { finePopulationSupported } from '../data/population100';
+import { platform } from '../lib/platform';
 import { mapHandle } from '../map/MapView';
 import { clearAreas, countTiles, downloadArea, MAX_TILES, offlineAreas } from '../map/offline';
 import { settings } from '../state/settings';
@@ -15,7 +16,8 @@ export function OfflineAreas() {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, refresh] = useState(0);
-  if (settings.value.mapSource !== 'openfreemap' || typeof caches === 'undefined') return null;
+  // The web version keeps no areas: it is used online, and a browser may clear its storage.
+  if (platform() === 'web' || settings.value.mapSource !== 'openfreemap' || typeof caches === 'undefined') return null;
   const areas = offlineAreas();
   const map = mapHandle.map;
   const b = map?.getBounds();

@@ -46,7 +46,7 @@ import {
 import { closeupRange, mode, panelOpen, WIDE_LAYOUT } from '../state/ui';
 import { createBuildingDamage, DAMAGE_LAYER } from './buildingDamage';
 import { createMushroomLayer, MUSHROOM_LAYER } from './mushroom';
-import { platform } from '../lib/platform';
+import { smallDevice } from '../lib/platform';
 import { LABEL_FONT, skyFor, styleFor, TERRAIN_TILES, tuneStyle } from './style';
 
 maplibregl.setWorkerUrl(new URL(workerUrl, document.baseURI).href);
@@ -542,7 +542,7 @@ export function MapView() {
       applyWater(map);
     });
     buildingDamage = createBuildingDamage(map);
-    mushroom = createMushroomLayer(platform() === 'android' ? 40 : 72);
+    mushroom = createMushroomLayer(smallDevice() ? 40 : 72);
     ensureSites();
     ensureDams();
     map.on('idle', finishLoading);

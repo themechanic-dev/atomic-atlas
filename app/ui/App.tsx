@@ -17,13 +17,15 @@ import { HowDialog } from './HowDialog';
 import { assistantSupported } from '../state/assistant';
 import { assistantQuestion } from '../state/ui';
 import { AssistantDialog } from './AssistantDialog';
+import { DownloadsDialog } from './DownloadsDialog';
+import { downloadLinks } from '../state/downloads';
 import { Logo } from './Logo';
 import { MissilePanel } from './MissilePanel';
 import { ResultsPanel } from './ResultsPanel';
 import { ScenarioPanel } from './ScenarioPanel';
 import { SettingsDialog } from './SettingsDialog';
 
-type DialogName = 'settings' | 'catalog' | 'assistant' | null;
+type DialogName = 'settings' | 'catalog' | 'assistant' | 'downloads' | null;
 
 // The globe brings a large library with it, so it is loaded when first needed.
 const GlobeView = lazy(() => import('../globe/GlobeView'));
@@ -75,6 +77,7 @@ export function App() {
           />
         </div>
         <div class="topbar-actions">
+          {downloadLinks.value ? <IconButton icon="download" label={t('downloads.title')} onClick={() => setDialog('downloads')} testId="open-downloads" /> : null}
           <IconButton icon="panel" label={t(open ? 'app.panel.hide' : 'app.panel.show')} onClick={() => (panelOpen.value = !open)} active={open} testId="toggle-panel" />
           {assistantSupported() ? <IconButton icon="assistant" label={t('assistant.title')} onClick={() => setDialog('assistant')} testId="open-assistant" /> : null}
           <IconButton icon="list" label={t('catalog.title')} onClick={() => setDialog('catalog')} testId="open-catalog-top" />
@@ -115,6 +118,7 @@ export function App() {
       </main>
 
       {dialog === 'settings' ? <SettingsDialog onClose={() => setDialog(null)} /> : null}
+      {dialog === 'downloads' ? <DownloadsDialog onClose={() => setDialog(null)} /> : null}
       {dialog === 'catalog' ? <CatalogDialog onClose={() => setDialog(null)} /> : null}
       {dialog === 'assistant' ? <AssistantDialog onClose={() => setDialog(null)} /> : null}
       <CloseupDialog />

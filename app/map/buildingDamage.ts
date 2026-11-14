@@ -11,7 +11,7 @@ import type { Feature, FeatureCollection, Polygon } from 'geojson';
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import { damageBand } from '@physics/damage/levels';
 import { distanceM, type LngLat } from '../lib/geo';
-import { platform } from '../lib/platform';
+import { smallDevice } from '../lib/platform';
 import type { BuildingBand } from './overlays';
 
 const TILES = 'openmaptiles';
@@ -21,7 +21,7 @@ export const DAMAGE_LAYER = 'aa-buildings-3d';
 /** Name of the state on each building: the number of its damage zone, 0 (heaviest) to 3. */
 const STATE = 'damage';
 /** No more single buildings than this are drawn; a phone holds fewer than a desktop. The nearest to ground zero are kept. */
-const MOST_BUILDINGS = platform() === 'android' ? 25_000 : 90_000;
+const MOST_BUILDINGS = smallDevice() ? 25_000 : 90_000;
 
 const BASE: Record<'dark' | 'light', string> = { dark: '#3a4047', light: '#d9d3c7' };
 /** Colours of the four damage zones, from ground zero outwards, and the pressure each stands for. */

@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "repo": "themechanic-dev/atomic-atlas",
+  "files": {
+    "apk": "atomic-atlas-android.apk",
+    "deb": "atomic-atlas-linux-amd64.deb",
+    "exe": "Atomic-Atlas-Setup.exe"
+  }
+}

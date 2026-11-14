@@ -1866,3 +1866,41 @@ p {
   margin: 2px 0 8px;
   font-size: 13px;
 }
+
+/* --- Downloads (web version) --------------------------------------------- */
+.download {
+  margin: 12px 0;
+}
+.download .btn {
+  text-decoration: none;
+  display: inline-flex;
+}
+.download .hint {
+  margin-top: 6px;
+}
+.downloads-qr {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin: 12px 0 16px;
+}
+.downloads-qr svg {
+  flex: none;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--border);
+}
+.downloads-ios {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.downloads-code {
+  margin-top: 16px;
+  font-size: 0.9em;
+}
+@media (max-width: 520px) {
+  .downloads-qr {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

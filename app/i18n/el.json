@@ -644,6 +644,9 @@
   "settings.voice.unsupported": "Η φωνή δεν είναι διαθέσιμη σε αυτό το σύστημα.",
   "settings.voice.phone": "Μιλάει η φωνή του ίδιου του κινητού, στη γλώσσα της εφαρμογής. Τίποτα για κατέβασμα.",
   "settings.voice.phone.missing": "Το κινητό δεν έχει φωνή για αυτή τη γλώσσα. Εγκατάστησέ τη από τις ρυθμίσεις του: Προσβασιμότητα (ή Σύστημα) › Έξοδος μετατροπής κειμένου σε ομιλία › Εγκατάσταση δεδομένων φωνής.",
+  "settings.voice.browser": "Μιλάει η φωνή του ίδιου του browser, στη γλώσσα της εφαρμογής. Τίποτα για κατέβασμα.",
+  "settings.voice.browser.missing": "Αυτός ο browser δεν έχει φωνή για αυτή τη γλώσσα. Μπορεί να έχει ένας browser σε άλλο σύστημα, ή η εφαρμογή.",
+  "settings.voice.browser.onlyMale": "Αυτός ο browser έχει μόνο ανδρική ελληνική φωνή, γι’ αυτό μιλά με αυτήν.",
   "settings.voice.download.hint": "Μετά από κάθε προσομοίωση η εφαρμογή μπορεί να λέει φωναχτά μια σύντομη περίληψη, και τις απαντήσεις του βοηθού. Η φωνή δουλεύει χωρίς internet· κατεβαίνει μία φορά (περίπου 150 MB: η μηχανή ομιλίας Piper με μία ελληνική και μία αγγλική φωνή). Η εφαρμογή δεν ακούει ποτέ.",
   "settings.voice.download": "Κατέβασμα φωνής",
   "settings.voice.downloading": "Κατεβαίνει… {percent} %",
@@ -722,5 +725,17 @@
   "assistant.tool.get_results": "Διαβάζει τα αποτελέσματα…",
   "assistant.tool.compare_yields": "Συγκρίνει ισχείς…",
   "assistant.tool.lookup_weapon": "Ψάχνει στον κατάλογο…",
-  "assistant.tool.explain_effect": "Διαβάζει την εξήγηση και την πηγή της…"
+  "assistant.tool.explain_effect": "Διαβάζει την εξήγηση και την πηγή της…",
+  "downloads.title": "Λήψεις",
+  "downloads.intro": "Το Atomic Atlas υπάρχει και ως εφαρμογή, με βοηθό χωρίς internet, φωνή για κατέβασμα, πληθυσμό στα 100 m και περιοχές του χάρτη χωρίς internet. Δωρεάν, από το GitHub· κάθε σύνδεσμος δίνει την πιο πρόσφατη έκδοση.",
+  "downloads.qr": "Εφαρμογή Android",
+  "downloads.qr.hint": "Σκάναρε τον κωδικό με το κινητό για να κατεβάσεις την εφαρμογή.",
+  "downloads.apk": "Λήψη της εφαρμογής Android (APK)",
+  "downloads.apk.hint": "Το Android ζητά να επιτρέψεις την εγκατάσταση από αυτή την πηγή: επίτρεψέ τη, για αυτή την εγκατάσταση.",
+  "downloads.deb": "Linux (.deb)",
+  "downloads.deb.hint": "Διπλό κλικ στο αρχείο, ή: sudo apt install ./atomic-atlas-linux-amd64.deb",
+  "downloads.exe": "Windows (Setup.exe)",
+  "downloads.exe.hint": "Ο εγκαταστάτης δεν έχει ψηφιακή υπογραφή, οπότε τα Windows δείχνουν μια μπλε προειδοποίηση: πάτησε «More info» και μετά «Run anyway».",
+  "downloads.ios": "Για iPhone και iPad δεν υπάρχει εφαρμογή: εκεί το Atomic Atlas χρησιμοποιείται από αυτή την έκδοση web.",
+  "downloads.code": "Ο κώδικας στο GitHub"
 }

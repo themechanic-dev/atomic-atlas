@@ -3,7 +3,7 @@
 
 import { t } from '../i18n';
 import { settings, updateSettings, type EnglishVoice } from '../state/settings';
-import { downloadVoice, removeVoice, speak, usesPhoneVoice, voiceProgress, voiceStatus, voiceSupported } from '../state/voice';
+import { browserGreekOnlyMale, downloadVoice, removeVoice, speak, usesBrowserVoice, usesPhoneVoice, voiceProgress, voiceStatus, voiceSupported } from '../state/voice';
 import { Button, Field, Segmented, Switch } from './controls';
 
 const RATES = ['0.85', '1', '1.2'] as const;
@@ -66,7 +66,7 @@ export function VoiceSettings() {
       {!status?.supported ? (
         <p class="hint">{t('settings.voice.unsupported')}</p>
       ) : usesPhoneVoice() && !status.installed ? (
-        <p class="hint">{t('settings.voice.phone.missing')}</p>
+        <p class="hint">{t(usesBrowserVoice() ? 'settings.voice.browser.missing' : 'settings.voice.phone.missing')}</p>
       ) : !status.installed ? (
         <>
           <p class="hint">{t('settings.voice.download.hint')}</p>
@@ -83,7 +83,8 @@ export function VoiceSettings() {
         </>
       ) : (
         <>
-          {usesPhoneVoice() ? <p class="hint">{t('settings.voice.phone')}</p> : null}
+          {usesPhoneVoice() ? <p class="hint">{t(usesBrowserVoice() ? 'settings.voice.browser' : 'settings.voice.phone')}</p> : null}
+          {browserGreekOnlyMale.value ? <p class="hint">{t('settings.voice.browser.onlyMale')}</p> : null}
           <Field label={t('settings.voice.on')} hint={t('settings.voice.on.hint')}>
             <Switch checked={s.voice} onChange={(voice) => updateSettings({ voice })} label={t('settings.voice.on')} testId="setting-voice" />
           </Field>

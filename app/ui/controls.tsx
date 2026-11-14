@@ -10,6 +10,7 @@ const ICON_PATHS: Record<string, string> = {
   settings:
     'M4 6h9M17 6h3M13 6a2 2 0 1 0 4 0a2 2 0 1 0-4 0M4 12h3M11 12h9M7 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0M4 18h11M19 18h1M15 18a2 2 0 1 0 4 0a2 2 0 1 0-4 0',
   close: 'M6 6l12 12M18 6L6 18',
+  download: 'M12 4v11M7 10l5 5 5-5M5 19h14',
   assistant: 'M4 5h16v11H9l-5 4V5zM8 9h8M8 12h5',
   help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9.4 9.5a2.7 2.7 0 1 1 3.7 2.5c-.7.3-1.1.8-1.1 1.5v.5M12 17h.01',
   list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',

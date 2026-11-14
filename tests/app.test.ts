@@ -20,7 +20,7 @@ import {
   sideViewHeading,
 } from '../app/lib/geo';
 import { DEFAULT_SETTINGS, parseSettings } from '../app/state/settings';
-import { PHONE_FEMALE_VOICES, PHONE_MALE_VOICES, pickPhoneFemaleVoice, pickPhoneMaleVoice } from '../app/lib/voices';
+import { browserVoiceGender, PHONE_FEMALE_VOICES, PHONE_MALE_VOICES, pickBrowserVoice, pickPhoneFemaleVoice, pickPhoneMaleVoice } from '../app/lib/voices';
 import scenarios from '../data/scenarios.json';
 import { planFlight, reachM } from '../physics/ballistics/flight';
 import weapons from '../data/weapons.json';
@@ -123,6 +123,22 @@ describe('voice', () => {
     expect(pickPhoneFemaleVoice([voice('en-us-x-tpd-local'), voice('en-us-x-iob-local'), voice('en-us-x-iog-local')])).toBe('en-us-x-iog-local');
     expect(pickPhoneFemaleVoice([voice('en-us-x-tpd-local')])).toBeNull();
     expect(PHONE_FEMALE_VOICES.some((name) => (PHONE_MALE_VOICES as readonly string[]).includes(name))).toBe(false);
+  });
+
+  it('picks a browser voice by the gender its name tells, offline voices first', () => {
+    const v = (name: string, lang: string, localService = true) => ({ name, lang, localService });
+    const windows = [v('Microsoft David - English (United States)', 'en-US'), v('Microsoft Zira - English (United States)', 'en-US'), v('Microsoft Stefanos - Greek (Greece)', 'el-GR')];
+    expect(pickBrowserVoice(windows, 'en', 'female')?.name).toContain('Zira');
+    expect(pickBrowserVoice(windows, 'en', 'male')?.name).toContain('David');
+    // Only a male Greek voice: Greek still speaks, with it (the user is told in the settings).
+    expect(pickBrowserVoice(windows, 'el', 'female')?.name).toContain('Stefanos');
+    const edge = [v('Microsoft Nestoras Online (Natural) - Greek (Greece)', 'el-GR', false), v('Microsoft Athina Online (Natural) - Greek (Greece)', 'el-GR', false)];
+    expect(pickBrowserVoice(edge, 'el', 'female')?.name).toContain('Athina');
+    expect(pickBrowserVoice([v('Google UK English Male', 'en-GB', false), v('Google UK English Female', 'en-GB', false)], 'en', 'male')?.name).toBe('Google UK English Male');
+    expect(browserVoiceGender(v('Google UK English Female', 'en-GB'))).toBe('female');
+    expect(pickBrowserVoice([v('espeak-ng el', 'el')], 'el', 'female')?.name).toBe('espeak-ng el');
+    expect(pickBrowserVoice([v('Alex', 'en-US')], 'el', 'female')).toBeNull();
+    expect(pickBrowserVoice([v('Samantha', 'en-US')], 'en', 'male')).toBeNull();
   });
 
   it('downloads the desktop voices from one fixed revision, each file checked', () => {

@@ -2,7 +2,7 @@
   "name": "atomic-atlas",
   "productName": "Atomic Atlas",
   "desktopName": "atomic-atlas.desktop",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Educational simulator of the effects of nuclear weapons, missiles and nuclear accidents on a real map and globe.",
   "author": {
     "name": "The Mechanic",
@@ -28,7 +28,9 @@
     "dist:linux": "npm run check && npm run build && electron-builder --config electron-builder.config.mjs --linux",
     "dist:win": "npm run check && npm run build && node scripts/dist-win.mjs",
     "android:sync": "npm run build:web && cap sync android",
-    "android:apk": "npm run check && npm run android:sync && node scripts/build-apk.mjs"
+    "android:apk": "npm run check && npm run android:sync && node scripts/build-apk.mjs",
+    "android:release": "npm run check && npm run android:sync && node scripts/build-apk.mjs release",
+    "release:names": "node scripts/release-names.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^8.6.0",
@@ -44,6 +46,7 @@
     "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2",
     "geotiff": "^3.0.5",
+    "jsqr": "^1.4.0",
     "maplibre-gl": "^6.17.0",
     "png-to-ico": "^3.0.2",
     "preact": "^11.2.0",
@@ -52,5 +55,8 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "qrcode-generator": "^2.0.4"
   }
 }

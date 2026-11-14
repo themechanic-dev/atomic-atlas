@@ -1,11 +1,12 @@
 // The voice: a short spoken summary after each simulation, and the assistant's answers;
-// on the desktop with Piper, on Android with the phone's own voice. Nothing is listened to;
-// the app only speaks. English can be spoken by a female or a male voice; Greek has one.
+// on the desktop with Piper, on Android with the phone's own voice, in a browser with the
+// browser's own voice (speechSynthesis). Nothing is listened to; the app only speaks.
+// English can be spoken by a female or a male voice; Greek has one, a female voice.
 
 import { effect, signal } from '@preact/signals';
 import { t } from '../i18n';
 import { accidentSpeech, detonationSpeech } from '../lib/speech';
-import { pickPhoneFemaleVoice, pickPhoneMaleVoice, type PhoneVoice } from '../lib/voices';
+import { pickBrowserVoice, pickPhoneFemaleVoice, pickPhoneMaleVoice, type PhoneVoice } from '../lib/voices';
 import { platform, type VoiceStatus } from '../lib/platform';
 import { accidentRun } from './accident';
 import { settings } from './settings';
@@ -27,8 +28,17 @@ export const assistantAnswering = signal(false);
 const shellVoice = () => (platform() === 'desktop' ? window.atomicAtlasShell?.voice : undefined);
 const onAndroid = (): boolean => platform() === 'android' && typeof window.Capacitor?.nativePromise === 'function';
 
-/** On Android the phone's own voice speaks: nothing to download. */
-export const usesPhoneVoice = onAndroid;
+const onWeb = (): boolean => platform() === 'web' && typeof speechSynthesis !== 'undefined';
+
+/** On Android and in a browser the device's own voice speaks: nothing to download. */
+export const usesPhoneVoice = (): boolean => onAndroid() || onWeb();
+/** True in a browser, whose voice is the browser's. */
+export const usesBrowserVoice = onWeb;
+
+/** The browser's voices for the current language: the female one, and a male English one. */
+const browserVoices: { female: SpeechSynthesisVoice | null; male: SpeechSynthesisVoice | null } = { female: null, male: null };
+/** True when Greek has only a voice whose name says it is male (the settings say so). */
+export const browserGreekOnlyMale = signal(false);
 
 /** The phone's male and female English voices, when it has them (Android). */
 const phoneMaleVoice = signal<string | null>(null);
@@ -41,13 +51,34 @@ const wantsMale = (): 'male' | 'male2' | null => {
 };
 
 export function voiceSupported(): boolean {
-  return Boolean(shellVoice()) || onAndroid();
+  return Boolean(shellVoice()) || onAndroid() || onWeb();
+}
+
+/** Finds the browser's voices for the language now chosen; browsers list them a moment after load. */
+function refreshBrowserVoice(): void {
+  const all = speechSynthesis.getVoices();
+  const language = settings.value.language;
+  const female = pickBrowserVoice(all, language, 'female');
+  browserVoices.female = (female as SpeechSynthesisVoice | null) ?? null;
+  browserVoices.male = language === 'en' ? ((pickBrowserVoice(all, 'en', 'male') as SpeechSynthesisVoice | null) ?? null) : null;
+  browserGreekOnlyMale.value = language === 'el' && Boolean(female) && /stefanos|nestoras|\bmale\b/i.test(female!.name);
+  voiceStatus.value = {
+    supported: true,
+    installed: Boolean(female),
+    maleVoices: browserVoices.male ? ['male'] : [],
+    installing: false,
+    error: female ? null : 'missing',
+  };
 }
 
 export async function refreshVoice(): Promise<void> {
   const voice = shellVoice();
   if (voice) {
     voiceStatus.value = await voice.status();
+    return;
+  }
+  if (onWeb()) {
+    refreshBrowserVoice();
     return;
   }
   if (onAndroid()) {
@@ -98,6 +129,7 @@ export function stopVoice(): void {
   request++;
   void shellVoice()?.stop();
   if (onAndroid()) void window.Capacitor!.nativePromise!('Speech', 'stop').catch(() => undefined);
+  if (onWeb()) speechSynthesis.cancel();
   audio?.pause();
   audio = null;
   if (audioUrl) URL.revokeObjectURL(audioUrl);
@@ -109,6 +141,21 @@ let androidListener = false;
 
 export async function speak(text: string): Promise<void> {
   if (!voiceStatus.value?.installed || !text) return;
+  if (onWeb()) {
+    stopVoice();
+    const mine = request;
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = wantsMale() && browserVoices.male ? browserVoices.male : browserVoices.female;
+    if (voice) utterance.voice = voice;
+    utterance.lang = voice?.lang ?? (settings.value.language === 'el' ? 'el-GR' : 'en-US');
+    utterance.rate = settings.value.voiceRate;
+    utterance.onend = utterance.onerror = () => {
+      if (mine === request) speaking.value = false;
+    };
+    speaking.value = true;
+    speechSynthesis.speak(utterance);
+    return;
+  }
   if (onAndroid()) {
     stopVoice();
     speaking.value = true;
@@ -157,11 +204,13 @@ export function sayAgain(): void {
 export function initVoice(): void {
   if (!voiceSupported()) return;
   void refreshVoice();
-  // The phone's voice depends on the language: check again when it changes.
-  if (onAndroid()) effect(() => {
+  // The phone's and the browser's voice depend on the language: check again when it changes.
+  if (onAndroid() || onWeb()) effect(() => {
     void settings.value.language;
     void refreshVoice();
   });
+  // Browsers list their voices a moment after the page loads.
+  if (onWeb()) speechSynthesis.addEventListener?.('voiceschanged', () => void refreshVoice());
   let spokenDetonation = -1;
   let spokenAccident = -1;
   effect(() => {
