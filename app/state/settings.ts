@@ -89,11 +89,17 @@ export function parseSettings(raw: string | null): Settings {
   return out;
 }
 
+/** On a first visit the app speaks the browser's language when it is Greek; it has its own language switch, so browsers are told not to offer a translation (index.html). */
+function firstLanguage(): Language {
+  return typeof navigator !== 'undefined' && /^el\b/i.test(navigator.language || '') ? 'el' : 'en';
+}
+
 function load(): Settings {
   try {
-    return parseSettings(localStorage.getItem(STORAGE_KEY));
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? parseSettings(raw) : { ...DEFAULT_SETTINGS, language: firstLanguage() };
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_SETTINGS, language: firstLanguage() };
   }
 }
 
