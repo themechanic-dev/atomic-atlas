@@ -130,8 +130,8 @@ describe('voice', () => {
     const windows = [v('Microsoft David - English (United States)', 'en-US'), v('Microsoft Zira - English (United States)', 'en-US'), v('Microsoft Stefanos - Greek (Greece)', 'el-GR')];
     expect(pickBrowserVoice(windows, 'en', 'female')?.name).toContain('Zira');
     expect(pickBrowserVoice(windows, 'en', 'male')?.name).toContain('David');
-    // Only a male Greek voice: Greek still speaks, with it (the user is told in the settings).
-    expect(pickBrowserVoice(windows, 'el', 'female')?.name).toContain('Stefanos');
+    // Only a male Greek voice: Greek stays silent (female only, the user's decision).
+    expect(pickBrowserVoice(windows, 'el', 'female')).toBeNull();
     const edge = [v('Microsoft Nestoras Online (Natural) - Greek (Greece)', 'el-GR', false), v('Microsoft Athina Online (Natural) - Greek (Greece)', 'el-GR', false)];
     expect(pickBrowserVoice(edge, 'el', 'female')?.name).toContain('Athina');
     expect(pickBrowserVoice([v('Google UK English Male', 'en-GB', false), v('Google UK English Female', 'en-GB', false)], 'en', 'male')?.name).toBe('Google UK English Male');

@@ -69,7 +69,7 @@ export function VoiceSettings() {
       {!status?.supported ? (
         <p class="hint">{t('settings.voice.unsupported')}</p>
       ) : usesPhoneVoice() && !status.installed ? (
-        <p class="hint">{t(usesBrowserVoice() ? 'settings.voice.browser.missing' : 'settings.voice.phone.missing')}</p>
+        <p class="hint">{t(browserGreekOnlyMale.value ? 'settings.voice.browser.onlyMale' : usesBrowserVoice() ? 'settings.voice.browser.missing' : 'settings.voice.phone.missing')}</p>
       ) : !status.installed ? (
         <>
           <p class="hint">{t('settings.voice.download.hint')}</p>
@@ -87,7 +87,6 @@ export function VoiceSettings() {
       ) : (
         <>
           {usesPhoneVoice() ? <p class="hint">{t(usesBrowserVoice() ? 'settings.voice.browser' : 'settings.voice.phone')}</p> : null}
-          {browserGreekOnlyMale.value ? <p class="hint">{t('settings.voice.browser.onlyMale')}</p> : null}
           <Field label={t(onLabel)} hint={t(`${onLabel}.hint`)}>
             <Switch checked={s.voice} onChange={(voice) => updateSettings({ voice })} label={t(onLabel)} testId="setting-voice" />
           </Field>

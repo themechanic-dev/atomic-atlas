@@ -56,8 +56,9 @@ export function browserVoiceGender(voice: BrowserVoice): VoiceGender | null {
 
 /**
  * The browser voice to speak a language with: one whose name says it has the wanted gender,
- * else one that does not say (for a female voice), else any voice of the language. Voices
- * that work offline come first, then the browser's default.
+ * else (for a female voice) one whose name does not say. Greek is spoken by a female voice
+ * only (the user's decision, 13 and 14/11/2026): a browser with only male Greek voices gets
+ * none. English falls back to any English voice. Offline voices first, then the default.
  */
 export function pickBrowserVoice(voices: readonly BrowserVoice[], language: 'en' | 'el', gender: VoiceGender): BrowserVoice | null {
   const own = voices.filter((v) => v.lang.toLowerCase().replace('_', '-').startsWith(language));
@@ -67,5 +68,5 @@ export function pickBrowserVoice(voices: readonly BrowserVoice[], language: 'en'
   const exact = sorted.find((v) => browserVoiceGender(v) === gender);
   if (exact) return exact;
   if (gender === 'male') return null;
-  return sorted.find((v) => browserVoiceGender(v) === null) ?? sorted[0] ?? null;
+  return sorted.find((v) => browserVoiceGender(v) === null) ?? (language === 'en' ? (sorted[0] ?? null) : null);
 }

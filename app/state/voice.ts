@@ -61,7 +61,8 @@ function refreshBrowserVoice(): void {
   const female = pickBrowserVoice(all, language, 'female');
   browserVoices.female = (female as SpeechSynthesisVoice | null) ?? null;
   browserVoices.male = language === 'en' ? ((pickBrowserVoice(all, 'en', 'male') as SpeechSynthesisVoice | null) ?? null) : null;
-  browserGreekOnlyMale.value = language === 'el' && Boolean(female) && /stefanos|nestoras|\bmale\b/i.test(female!.name);
+  // Greek voices there, but only male ones: the voice stays off and the settings say why.
+  browserGreekOnlyMale.value = language === 'el' && !female && all.some((v) => v.lang.toLowerCase().startsWith('el'));
   voiceStatus.value = {
     supported: true,
     installed: Boolean(female),

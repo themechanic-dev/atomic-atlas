@@ -646,7 +646,7 @@
   "settings.voice.phone.missing": "The phone has no voice for this language. Install it in the phone's settings: Accessibility (or System) › Text-to-speech output › Install voice data.",
   "settings.voice.browser": "The browser's own voice speaks, in the language of the app. Nothing to download.",
   "settings.voice.browser.missing": "This browser has no voice for this language. A browser on another system, or the app, may have one.",
-  "settings.voice.browser.onlyMale": "This browser has only a male Greek voice, so it speaks with that one.",
+  "settings.voice.browser.onlyMale": "This browser has only a male Greek voice. Greek is spoken by a female voice only, so the voice stays off here.",
   "settings.voice.download.hint": "After each simulation the app can say a short summary out loud, and the assistant's answers. The voice works offline; it is downloaded once (about 150 MB: the Piper speech engine with one Greek and one English voice). The app never listens.",
   "settings.voice.download": "Download the voice",
   "settings.voice.downloading": "Downloading… {percent} %",
