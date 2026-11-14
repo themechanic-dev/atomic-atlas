@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import jsQR from 'jsqr';
 import { qrMatrix } from '../app/lib/qr';
-import { DEFAULT_DOWNLOADS, latestUrl, parseDownloads } from '../app/state/downloads';
+import { DEFAULT_DOWNLOADS, deviceKind, latestUrl, parseDownloads } from '../app/state/downloads';
 import shipped from '../app/public/downloads.json';
 
 describe('downloads', () => {
@@ -29,6 +29,18 @@ describe('downloads', () => {
     const url = latestUrl(DEFAULT_DOWNLOADS, DEFAULT_DOWNLOADS.files.apk);
     expect(url).toBe('https://github.com/themechanic-dev/atomic-atlas/releases/latest/download/atomic-atlas-android.apk');
     for (const name of Object.values(DEFAULT_DOWNLOADS.files)) expect(name).not.toMatch(/\d+\.\d+/);
+  });
+
+  it('tell a computer, an Android phone and an iPhone apart', () => {
+    const as = (userAgent: string, platform = 'Linux x86_64', maxTouchPoints = 0) => {
+      Object.defineProperty(globalThis, 'navigator', { value: { userAgent, platform, maxTouchPoints }, configurable: true });
+      return deviceKind();
+    };
+    expect(as('Mozilla/5.0 (Linux; Android 14; SM-S901B) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36')).toBe('android');
+    expect(as('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148')).toBe('ios');
+    // An iPad asks for the desktop site but has a touch screen.
+    expect(as('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/18.0 Safari/605.1.15', 'MacIntel', 5)).toBe('ios');
+    expect(as('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36', 'Win32')).toBe('desktop');
   });
 
   it('draw a QR code that a reader decodes back to the link', () => {
