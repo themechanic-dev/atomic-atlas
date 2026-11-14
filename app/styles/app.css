@@ -646,6 +646,21 @@ p {
   margin: 4px 0 0;
 }
 
+/* Touch screens: a finger that lands on a slider's track while scrolling a panel
+   must not change the value (Chrome jumps the value on touch-down). Only the thumb
+   takes touches there, so the value changes only when the thumb itself is dragged. */
+@media (pointer: coarse) {
+  input[type='range'] {
+    pointer-events: none;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    pointer-events: auto;
+  }
+  input[type='range']::-moz-range-thumb {
+    pointer-events: auto;
+  }
+}
+
 .slider-scale {
   display: flex;
   justify-content: space-between;
