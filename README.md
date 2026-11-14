@@ -2,18 +2,23 @@
 
 **by The Mechanic**
 
+**Try it in your browser: [themechanic.store/atomic-atlas](https://themechanic.store/atomic-atlas)**
+
+Download: [Linux (.deb)](https://github.com/themechanic-dev/atomic-atlas/releases/latest/download/atomic-atlas-linux-amd64.deb) · [Windows](https://github.com/themechanic-dev/atomic-atlas/releases/latest/download/Atomic-Atlas-Setup.exe) · [Android (APK)](https://github.com/themechanic-dev/atomic-atlas/releases/latest/download/atomic-atlas-android.apk)
+
 An educational simulator of what nuclear explosions do, on a real map and globe.
 Pick a place, a yield and a height of burst, and Atomic Atlas shows the blast,
 heat, radiation and fallout, estimates casualties as a range, and tells you how
 every number was calculated and where the formula comes from.
 
-Runs on Linux, Windows and Android with the same interface. English and Greek.
+Runs in the browser and on Linux, Windows and Android with the same interface. English and Greek.
 Free and open source (MIT).
 
-> Version 1.7: one detonation, missiles and hypersonic gliders on the globe,
-> accidents, water and dams, war scenarios with a general missile defence, an
-> offline assistant and a voice, offline map areas with the population at 100 m,
-> and the mushroom cloud in 3D, on Linux, Windows and Android.
+> Version 1.8: one detonation, missiles and hypersonic gliders on the globe,
+> accidents, water and dams, war scenarios with a general missile defence, and
+> the mushroom cloud in 3D carried by the wind, on Linux, Windows and Android,
+> and now in the browser. The Linux, Windows and Android apps add an offline
+> assistant and voices, and offline map areas with the population at 100 m.
 
 ## What it does
 

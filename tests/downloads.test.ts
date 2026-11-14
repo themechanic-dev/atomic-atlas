@@ -8,9 +8,9 @@ import { DEFAULT_DOWNLOADS, deviceKind, latestUrl, parseDownloads } from '../app
 import shipped from '../app/public/downloads.json';
 
 describe('downloads', () => {
-  it('ship turned off, for the repository that will hold the releases', () => {
+  it('ship turned on, for the public repository that holds the releases', () => {
     const c = parseDownloads(shipped)!;
-    expect(c.enabled).toBe(false);
+    expect(c.enabled).toBe(true);
     expect(c.repo).toBe('themechanic-dev/atomic-atlas');
     expect(c.files).toEqual(DEFAULT_DOWNLOADS.files);
   });
