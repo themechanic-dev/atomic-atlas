@@ -36,6 +36,19 @@ const yieldFromSlider = (position: number): number => {
   return Math.round(value / magnitude) * magnitude;
 };
 
+/** Where a yield sits along the slider, 0 to 1. */
+const sliderShare = (kt: number): number => (Math.log10(kt) - LOG_MIN) / (LOG_MAX - LOG_MIN);
+/** A tick under the slider at every power of ten, 10 t to 100 Mt. */
+const SCALE_TICKS = Array.from({ length: LOG_MAX - LOG_MIN + 1 }, (_, i) => 10 ** (LOG_MIN + i));
+/** The yields named under the slider. Each stands under the thumb's place for that yield. */
+const SCALE_LABELS: ReadonlyArray<{ kt: number; label: string }> = [
+  { kt: 0.01, label: '10 t' },
+  { kt: 1, label: '1 kt' },
+  { kt: 100, label: '100 kt' },
+  { kt: 10000, label: '10 Mt' },
+  { kt: 100000, label: '100 Mt' },
+];
+
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
 
 export function ScenarioPanel({ onOpenCatalog }: { onOpenCatalog: () => void }) {
@@ -133,12 +146,15 @@ export function ScenarioPanel({ onOpenCatalog }: { onOpenCatalog: () => void }) 
           aria-label={t('quantity.yield')}
           data-testid="yield-slider"
         />
-        <div class="slider-scale" aria-hidden="true">
-          <span>10 t</span>
-          <span>1 kt</span>
-          <span>100 kt</span>
-          <span>10 Mt</span>
-          <span>100 Mt</span>
+        <div class="slider-scale" aria-hidden="true" data-testid="yield-scale">
+          {SCALE_TICKS.map((kt) => (
+            <i key={kt} class="slider-tick" style={`--at:${sliderShare(kt)}`} />
+          ))}
+          {SCALE_LABELS.map(({ kt, label }) => (
+            <span key={kt} style={`--at:${sliderShare(kt)}`}>
+              {label}
+            </span>
+          ))}
         </div>
         <Field label={t('scenario.yield.exact')}>
           <NumberInput

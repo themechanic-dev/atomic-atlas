@@ -3,8 +3,9 @@
 
 import { damageBand } from '@physics/damage/levels';
 import type { DetonationResult, EffectRing } from '@physics/detonation';
-import type { Feature, FeatureCollection, Polygon } from 'geojson';
+import type { Feature, FeatureCollection, LineString, Point, Polygon } from 'geojson';
 import { circleRing, destination, fromWindFrame, unwrap, type LngLat } from '../lib/geo';
+import { settings } from '../state/settings';
 
 /** Colours of the effects; the same in the legend, the result list and on the map. */
 export const EFFECT_COLORS: Record<string, string> = {
@@ -19,6 +20,22 @@ export const EFFECT_COLORS: Record<string, string> = {
   radiation450: '#57cc99',
 };
 
+/**
+ * The same colours, deeper, for the light map: the pale yellows and oranges of the dark
+ * map vanish on a light background. Same hues in the same order.
+ */
+const EFFECT_COLORS_LIGHT: Record<string, string> = {
+  fireball: '#e0a100',
+  blast20: '#b0102a',
+  blast5: '#d9480f',
+  blast2: '#c77c02',
+  blast1: '#a87a00',
+  burn3: '#c55a00',
+  burn2: '#dd7a0a',
+  burn1: '#b7791f',
+  radiation450: '#2b8a3e',
+};
+
 /** H+1 hour dose rates (R/h) drawn as fallout contours, strongest first. */
 export const FALLOUT_LEVELS = [1000, 100, 10, 1] as const;
 export const FALLOUT_COLORS: Record<number, string> = {
@@ -27,6 +44,22 @@ export const FALLOUT_COLORS: Record<number, string> = {
   10: '#f66b19',
   1: '#fbb938',
 };
+const FALLOUT_COLORS_LIGHT: Record<number, string> = {
+  1000: '#5c0002',
+  100: '#a51d02',
+  10: '#d9480f',
+  1: '#c98a00',
+};
+
+/** The colour of an effect for the current theme: on the map, in the legend and in the result list. */
+export function effectColor(id: string): string {
+  return (settings.value.theme === 'light' ? EFFECT_COLORS_LIGHT : EFFECT_COLORS)[id] ?? (settings.value.theme === 'light' ? '#1f2933' : '#ffffff');
+}
+
+/** The colour of a fallout contour for the current theme. */
+export function falloutColor(level: number): string {
+  return (settings.value.theme === 'light' ? FALLOUT_COLORS_LIGHT : FALLOUT_COLORS)[level] ?? '#888888';
+}
 
 /** What of a detonation is on screen at a moment of its playback. */
 export interface PlaybackView {
@@ -55,7 +88,7 @@ export function ringFeatures(at: LngLat, result: DetonationResult, view: Playbac
       properties: {
         id: ring.id,
         kind: ring.kind,
-        color: EFFECT_COLORS[ring.id] ?? '#ffffff',
+        color: effectColor(ring.id),
         radius: radiusM,
         // While the heat pulse lasts the burn zones glow.
         glow: ring.kind === 'thermal' ? 0.06 + 0.3 * (view?.heat ?? 0) : 0.1,
@@ -63,7 +96,10 @@ export function ringFeatures(at: LngLat, result: DetonationResult, view: Playbac
       geometry: { type: 'Polygon', coordinates: [circleRing(at, radiusM)] },
     };
   });
-  if (view && view.frontM > 0) {
+  // The front is shown until it has passed the weakest blast ring: beyond it the shock has
+  // become a loud sound, and a ring hundreds of kilometres out would only mislead.
+  const outerBlastM = result.rings.reduce((max, ring) => (ring.kind === 'blast' ? Math.max(max, ring.radiusM) : max), 0);
+  if (view && view.frontM > 0 && view.frontM <= 1.15 * outerBlastM) {
     features.push({
       type: 'Feature',
       properties: { id: 'front', kind: 'front', color: '#ffffff', radius: view.frontM, glow: 0 },
@@ -83,15 +119,19 @@ export function ringLabelFeatures(at: LngLat, rings: EffectRing[], label: (ring:
       const p = destination(at, bearing, ring.radiusM);
       return {
         type: 'Feature',
-        properties: { id: ring.id, label: label(ring), color: EFFECT_COLORS[ring.id] ?? '#ffffff' },
+        properties: { id: ring.id, label: label(ring), color: effectColor(ring.id) },
         geometry: { type: 'Point', coordinates: [unwrap(p.lng, at.lng), p.lat] },
       };
     }),
   };
 }
 
-/** Fallout contours as polygons, weakest (largest) first so stronger ones draw on top. */
-export function falloutFeatures(at: LngLat, result: DetonationResult): FeatureCollection<Polygon> {
+/**
+ * Fallout contours as polygons, weakest (largest) first so stronger ones draw on top.
+ * `reachM` cuts them off at a distance downwind: during playback, as far as the wind has
+ * carried the cloud, the fallout under it has come down.
+ */
+export function falloutFeatures(at: LngLat, result: DetonationResult, reachM = Infinity): FeatureCollection<Polygon> {
   const model = result.fallout.model;
   const features: Array<Feature<Polygon>> = [];
   if (!model) return { type: 'FeatureCollection', features };
@@ -100,7 +140,9 @@ export function falloutFeatures(at: LngLat, result: DetonationResult): FeatureCo
   for (const level of [...FALLOUT_LEVELS].reverse()) {
     const extent = model.contourExtentM(level);
     if (!extent) continue;
-    const [x0, x1] = extent;
+    const x0 = extent[0];
+    const x1 = Math.min(extent[1], reachM);
+    if (!(x1 > x0)) continue;
     const steps = 160;
     const left: Array<[number, number]> = [];
     const right: Array<[number, number]> = [];
@@ -118,15 +160,59 @@ export function falloutFeatures(at: LngLat, result: DetonationResult): FeatureCo
     ring.push(ring[0]!);
     features.push({
       type: 'Feature',
-      properties: { level, color: FALLOUT_COLORS[level] },
+      properties: { level, color: falloutColor(level) },
       geometry: { type: 'Polygon', coordinates: [ring] },
     });
   }
   return { type: 'FeatureCollection', features };
 }
 
-/** Bounding box [west, south, east, north] of everything a detonation draws. */
-export function resultBounds(at: LngLat, result: DetonationResult, includeFallout: boolean): [number, number, number, number] {
+/** How far downwind the weakest fallout contour reaches before it closes, metres, or null without local fallout. */
+export function falloutReachM(result: DetonationResult): number | null {
+  const model = result.fallout.model;
+  if (!model) return null;
+  let reach = 0;
+  for (const level of FALLOUT_LEVELS) {
+    const extent = model.contourExtentM(level);
+    if (extent) reach = Math.max(reach, extent[1]);
+  }
+  return reach > 0 ? reach : null;
+}
+
+/**
+ * The way the wind carries the cloud during playback: a solid line as far as it has gone,
+ * a dashed one on to where it will be when the playback ends, an arrowhead where it is now,
+ * and a label there. `headM` is the length of the arrowhead.
+ */
+export function cloudTrackFeatures(
+  at: LngLat,
+  towardsDeg: number,
+  travelledM: number,
+  totalM: number,
+  headM: number,
+  label: string,
+): FeatureCollection<LineString | Polygon | Point> {
+  const features: Array<Feature<LineString | Polygon | Point>> = [];
+  if (!(totalM > 0)) return { type: 'FeatureCollection', features };
+  const point = (x: number, y = 0): [number, number] => {
+    const p = fromWindFrame(at, towardsDeg, x, y);
+    return [unwrap(p.lng, at.lng), p.lat];
+  };
+  const line = (from: number, to: number): Array<[number, number]> => {
+    const steps = 24;
+    return Array.from({ length: steps + 1 }, (_, i) => point(from + ((to - from) * i) / steps));
+  };
+  const tip = Math.min(Math.max(travelledM, 0), totalM);
+  if (tip < totalM) features.push({ type: 'Feature', properties: { part: 'ahead' }, geometry: { type: 'LineString', coordinates: line(tip, totalM) } });
+  if (tip > 0) features.push({ type: 'Feature', properties: { part: 'done' }, geometry: { type: 'LineString', coordinates: line(0, tip) } });
+  const head = [point(tip), point(tip - headM, 0.55 * headM), point(tip - 0.7 * headM), point(tip - headM, -0.55 * headM), point(tip)];
+  features.push({ type: 'Feature', properties: { part: 'head' }, geometry: { type: 'Polygon', coordinates: [head] } });
+  features.push({ type: 'Feature', properties: { part: 'label', label }, geometry: { type: 'Point', coordinates: point(tip) } });
+  return { type: 'FeatureCollection', features };
+}
+
+/** Bounding box [west, south, east, north] of everything a detonation draws, and of any extra points. */
+export function resultBounds(at: LngLat, result: DetonationResult, includeFallout: boolean, extra: readonly LngLat[] = []): [number, number, number, number] {
   let west = Infinity;
   let south = Infinity;
   let east = -Infinity;
@@ -147,6 +233,7 @@ export function resultBounds(at: LngLat, result: DetonationResult, includeFallou
       for (const [lng, lat] of feature.geometry.coordinates[0]!) add(lng!, lat!);
     }
   }
+  for (const p of extra) add(unwrap(p.lng, at.lng), p.lat);
   return [west, Math.max(south, -85), east, Math.min(north, 85)];
 }
 

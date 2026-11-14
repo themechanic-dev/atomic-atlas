@@ -7,6 +7,7 @@ import { shockSpeedMs } from '../blast/shock';
 import type { Explanation } from '../sources';
 import { CLOUD_RISE_S, freeAirOverpressurePsi, heatPulse, type HeatPulse } from './events';
 import { CLOUD_STABLE_S, cloudGrowth, type CloudGrowth, type CloudShape } from './cloudShape';
+import type { EffectiveWind } from '../fallout/wind';
 
 export interface ArrivalCurve {
   /** Time at which the blast front reaches a ground range, seconds. */
@@ -89,7 +90,19 @@ export interface BlastTimeline {
   cloudAt(timeS: number): CloudShape;
   /** The cloud once stabilised, about 10 minutes after the burst. */
   cloudFinal: CloudGrowth['stabilised'];
+  /** The wind that carries the cloud: the effective wind the fallout model carries the fallout with. */
+  wind: EffectiveWind;
+  /** How far downwind the wind has carried the cloud at a time after the burst, metres. */
+  driftAtM(timeS: number): number;
   explanation: Explanation;
+}
+
+/**
+ * The cloud moves with the wind from the moment of the burst, at the speed of the effective
+ * wind of the fallout model (WSEG-10), so the fallout under it comes down along the same line.
+ */
+export function cloudDriftM(wind: EffectiveWind, timeS: number): number {
+  return Math.max(0, wind.speedMs) * Math.max(0, timeS);
 }
 
 export function blastTimeline(result: DetonationResult): BlastTimeline {
@@ -120,15 +133,18 @@ export function blastTimeline(result: DetonationResult): BlastTimeline {
     cloudTopM: (timeS) => cloudAt(timeS).topM,
     cloudAt,
     cloudFinal: cloud.stabilised,
+    wind: result.fallout.wind,
+    driftAtM: (timeS) => cloudDriftM(result.fallout.wind, timeS),
     explanation: {
       id: 'arrival',
       formula:
         'U = c₀ √(1 + 6 p / 7 P₀);  D = √(d² + h²);  t = ∫₀ᴰ dr / U(p(r));  t_max = 0.0417 W^0.44 s;  ' +
-        'H(t) = h + R_fb + (H_top − h − R_fb) f(t);  R(t) = max(R_fb, R_cloud s(t));  r_stem = k(W) R(t)',
+        'H(t) = h + R_fb + (H_top − h − R_fb) f(t);  R(t) = max(R_fb, R_cloud s(t));  r_stem = k(W) R(t);  x_cloud(t) = v t',
       inputs: [
         { symbol: 'W', labelKey: 'yield', value: yieldKt, quantity: 'yield' },
         { symbol: 'h', labelKey: 'burstHeight', value: result.heightM, quantity: 'height' },
         { symbol: 'd', labelKey: 'radiusOnGround', value: shown?.radiusM ?? 0, quantity: 'length' },
+        { symbol: 'v', labelKey: 'effectiveWindSpeed', value: result.fallout.wind.speedMs, quantity: 'speed' },
       ],
       outputs: [
         { symbol: 't', labelKey: 'blastArrival', value: (shown ? arrival.timeAtS(shown.radiusM) : 0) / 3600, quantity: 'time' },

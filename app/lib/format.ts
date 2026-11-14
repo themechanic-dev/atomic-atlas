@@ -1,7 +1,7 @@
 // Numbers for people: the user's units, sensible rounding, the user's locale.
 // The physics layer works in SI; everything shown on screen goes through here.
 
-import { locale } from '../i18n';
+import { locale, t } from '../i18n';
 import { settings } from '../state/settings';
 import type { Quantity } from '@physics/sources';
 
@@ -57,6 +57,14 @@ export function formatHeight(metres: number): string {
   if (!Number.isFinite(metres)) return '–';
   if (settings.value.distance === 'mi') return `${formatNumber(metres / FOOT, 3)} ft`;
   return metres >= 10000 ? `${formatNumber(metres / 1000, 3)} km` : `${formatNumber(metres, 3)} m`;
+}
+
+const COMPASS_POINTS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
+
+/** The name of the nearest of the eight compass points to a direction, degrees clockwise from north. */
+export function formatCompass(deg: number): string {
+  const i = Math.round((((deg % 360) + 360) % 360) / 45) % 8;
+  return t(`compass.${COMPASS_POINTS[i]!}`);
 }
 
 /** A speed in m/s, shown in km/h or mph. */

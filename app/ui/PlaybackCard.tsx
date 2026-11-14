@@ -2,7 +2,7 @@
 // slow motion, with the moments worth knowing listed against the clock.
 
 import { t } from '../i18n';
-import { formatDistance, formatHeight, formatNumber } from '../lib/format';
+import { formatCompass, formatDistance, formatHeight, formatNumber, formatSpeed } from '../lib/format';
 import {
   blastActive,
   blastClock,
@@ -17,8 +17,9 @@ import {
   seekBlast,
   timeline,
 } from '../state/blastPlayback';
+import { falloutReachM } from '../map/overlays';
 import { settings } from '../state/settings';
-import { explaining } from '../state/simulation';
+import { detonation, explaining } from '../state/simulation';
 import { Button, HowButton, Segmented } from './controls';
 
 /** Seconds with one decimal below ten, whole seconds to a minute, then minutes and seconds. */
@@ -37,6 +38,8 @@ export function PlaybackCard() {
   if (!line) return null;
   const active = blastActive.value;
   const frame = blastFrame.value;
+  const result = detonation.value?.result;
+  const plumeEndM = result ? falloutReachM(result) : null;
   const now = blastClock.value;
   // The slider is stretched so the first seconds, where most happens, take half of it.
   const toSlider = (seconds: number): number => Math.round(1000 * Math.sqrt(Math.max(0, seconds) / line.durationS));
@@ -90,9 +93,21 @@ export function PlaybackCard() {
         ))}
       </ul>
       {frame ? (
-        <p class="hint" data-testid="blast-cloud">
-          {t('playback.cloud', { height: formatHeight(frame.cloudTopM), width: formatDistance(2 * frame.cloud.headRadiusM) })}
-        </p>
+        <>
+          <p class="hint" data-testid="blast-cloud">
+            {t('playback.cloud', { height: formatHeight(frame.cloudTopM), width: formatDistance(2 * frame.cloud.headRadiusM) })}
+          </p>
+          <p class="hint" data-testid="blast-drift">
+            {frame.driftEndM > 1
+              ? t('playback.drift', { distance: formatDistance(frame.driftM, 2), direction: formatCompass(frame.towardsDeg), speed: formatSpeed(frame.windMs) })
+              : t('playback.drift.calm')}
+          </p>
+          {frame.unfold > 0 ? (
+            <p class="hint" data-testid="blast-fallout-rest">
+              {plumeEndM !== null ? t('playback.fallout.rest', { distance: formatDistance(plumeEndM, 2) }) : t('playback.fallout.none')}
+            </p>
+          ) : null}
+        </>
       ) : (
         <p class="hint">{t('playback.hint')}</p>
       )}

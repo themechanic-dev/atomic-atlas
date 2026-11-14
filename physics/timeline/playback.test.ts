@@ -63,3 +63,22 @@ describe('fireball growth', () => {
     expect(fireballRadiusAtM(500, pulse, 60)).toBe(500);
   });
 });
+
+describe('cloud carried by the wind', () => {
+  it('moves at the effective wind speed of the fallout model, from the burst on', () => {
+    const result = detonate({ ...DEFAULT_SCENARIO, yieldKt: 100, wind: [{ heightM: 10, speedMs: 6.7, fromDeg: 270 }] });
+    const timeline = blastTimeline(result);
+    const v = result.fallout.wind.speedMs;
+    expect(v).toBeGreaterThan(0);
+    expect(timeline.wind.towardsDeg).toBeCloseTo(90, 6);
+    expect(timeline.driftAtM(0)).toBe(0);
+    expect(timeline.driftAtM(-5)).toBe(0);
+    expect(timeline.driftAtM(600)).toBeCloseTo(v * 600, 9);
+    expect(timeline.driftAtM(timeline.durationS)).toBeGreaterThan(timeline.driftAtM(600));
+  });
+
+  it('stays at ground zero in a calm', () => {
+    const calm = blastTimeline(detonate({ ...DEFAULT_SCENARIO, yieldKt: 15, wind: [{ heightM: 10, speedMs: 0, fromDeg: 270 }] }));
+    expect(calm.driftAtM(600)).toBe(0);
+  });
+});

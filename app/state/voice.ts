@@ -152,6 +152,8 @@ export async function speak(text: string): Promise<void> {
     if (voice) utterance.voice = voice;
     utterance.lang = voice?.lang ?? (settings.value.language === 'el' ? 'el-GR' : 'en-US');
     utterance.rate = settings.value.voiceRate;
+    // Always at full volume: the computer's own volume control sets how loud it is.
+    utterance.volume = 1;
     utterance.onend = utterance.onerror = () => {
       if (mine === request) speaking.value = false;
     };
@@ -187,6 +189,7 @@ export async function speak(text: string): Promise<void> {
   }
   audioUrl = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'audio/wav' }));
   audio = new Audio(audioUrl);
+  audio.volume = 1;
   audio.onended = () => {
     if (mine === request) speaking.value = false;
   };

@@ -30,6 +30,36 @@ type DialogName = 'settings' | 'catalog' | 'assistant' | 'downloads' | null;
 // The globe brings a large library with it, so it is loaded when first needed.
 const GlobeView = lazy(() => import('../globe/GlobeView'));
 
+/**
+ * The grip at the top of the panel on narrow screens: a finger drags the panel down to put
+ * it away. A short drag lets it spring back. (A tap is the grip's click: closing on the
+ * finger lifting would let the click that follows land on the map and set ground zero.)
+ */
+function dragPanelDown(event: PointerEvent): void {
+  const grip = event.currentTarget as HTMLElement;
+  const panel = grip.closest('.panel') as HTMLElement | null;
+  if (!panel) return;
+  const startY = event.clientY;
+  let dy = 0;
+  grip.setPointerCapture(event.pointerId);
+  panel.style.transition = 'none';
+  const move = (e: PointerEvent): void => {
+    dy = Math.max(0, e.clientY - startY);
+    panel.style.transform = `translateY(${dy}px)`;
+  };
+  const end = (): void => {
+    grip.removeEventListener('pointermove', move);
+    grip.removeEventListener('pointerup', end);
+    grip.removeEventListener('pointercancel', end);
+    panel.style.transition = '';
+    panel.style.transform = '';
+    if (dy > Math.min(120, panel.offsetHeight * 0.25)) panelOpen.value = false;
+  };
+  grip.addEventListener('pointermove', move);
+  grip.addEventListener('pointerup', end);
+  grip.addEventListener('pointercancel', end);
+}
+
 export function App() {
   const [dialog, setDialog] = useState<DialogName>(null);
   // A question asked from a result opens the assistant.
@@ -98,6 +128,17 @@ export function App() {
           </div>
         ) : null}
         <aside class={`panel${open ? '' : ' is-closed'}`} aria-label={t('scenario.title')} data-testid="panel">
+          <button
+            type="button"
+            class="panel-grip"
+            onPointerDown={dragPanelDown}
+            onClick={() => (panelOpen.value = false)}
+            aria-label={t('app.panel.hide')}
+            title={t('app.panel.hide')}
+            data-testid="panel-grip"
+          >
+            <span aria-hidden="true" />
+          </button>
           <div class="panel-scroll">
             {current === 'detonation' ? (
               <>
@@ -112,6 +153,11 @@ export function App() {
             <p class="panel-foot">{t('app.disclaimer')}</p>
           </div>
         </aside>
+        {open ? null : (
+          <button type="button" class="panel-peek" onClick={() => (panelOpen.value = true)} data-testid="panel-peek">
+            <span aria-hidden="true">▲</span> {t('app.panel.show')}
+          </button>
+        )}
         <div class="map-hint" data-testid="map-hint">
           {t(current === 'detonation' ? 'map.hint' : current === 'missiles' ? 'globe.hint' : 'accident.map.hint')}
         </div>

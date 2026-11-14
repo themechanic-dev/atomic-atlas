@@ -19,6 +19,8 @@ import {
   formatLatLon,
   formatPressure,
   formatDose,
+  formatCompass,
+  formatSpeed,
 } from '../lib/format';
 import { formatSeconds } from '../ui/PlaybackCard';
 import { destination, distanceM, type LngLat } from '../lib/geo';
@@ -29,11 +31,13 @@ import { addWaterLayers, applyWater } from './waterLayers';
 import { registerOfflineProtocol } from './offline';
 import { settings } from '../state/settings';
 import { accidentRun, accidentSite } from '../state/accident';
-import { blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, flashCount, timeline } from '../state/blastPlayback';
+import { blastActive, blastClock, blastFrame, blastPlaying, blastPrepared, blastPreparing, falloutUnfold, flashCount, timeline } from '../state/blastPlayback';
 import { beginBusy, detonation, groundZero } from '../state/simulation';
 import {
   buildingBands,
+  cloudTrackFeatures,
   falloutFeatures,
+  falloutReachM,
   resultBounds,
   ringFeatures,
   ringLabelFeatures,
@@ -83,6 +87,7 @@ function labelStartLayer(map: MapLibreMap): string | undefined {
 /** Adds our sources and layers to a freshly loaded style. */
 function addOverlays(map: MapLibreMap): void {
   const theme = settings.value.theme;
+  const light = theme === 'light';
 
   // 3D buildings: the light online style has them; the dark one only has footprints.
   if (map.getSource('openmaptiles') && !map.getLayer(BUILDING_LAYER)) {
@@ -121,7 +126,7 @@ function addOverlays(map: MapLibreMap): void {
       id: 'aa-fallout-fill',
       type: 'fill',
       source: 'aa-fallout',
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.28 },
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': light ? 0.36 : 0.28 },
     },
     below,
   );
@@ -130,7 +135,7 @@ function addOverlays(map: MapLibreMap): void {
       id: 'aa-fallout-line',
       type: 'line',
       source: 'aa-fallout',
-      paint: { 'line-color': ['get', 'color'], 'line-width': 1.2, 'line-opacity': 0.9 },
+      paint: { 'line-color': ['get', 'color'], 'line-width': light ? 2 : 1.2, 'line-opacity': 0.9 },
     },
     below,
   );
@@ -146,27 +151,37 @@ function addOverlays(map: MapLibreMap): void {
     },
     below,
   );
-  // Blast rings are solid, thermal rings dashed, the radiation ring dotted.
+  // Blast rings are solid, thermal rings dashed, the radiation ring dotted. On the light map
+  // the lines are thicker and the blast rings have a white edge, so they stand off the streets.
+  if (light) {
+    map.addLayer({
+      id: 'aa-rings-casing',
+      type: 'line',
+      source: 'aa-rings',
+      filter: ['in', ['get', 'kind'], ['literal', ['blast', 'fireball']]],
+      paint: { 'line-color': '#ffffff', 'line-width': 6, 'line-opacity': 0.85 },
+    });
+  }
   map.addLayer({
     id: 'aa-rings-line',
     type: 'line',
     source: 'aa-rings',
     filter: ['in', ['get', 'kind'], ['literal', ['blast', 'fireball']]],
-    paint: { 'line-color': ['get', 'color'], 'line-width': 2.2 },
+    paint: { 'line-color': ['get', 'color'], 'line-width': light ? 3 : 2.2 },
   });
   map.addLayer({
     id: 'aa-rings-line-thermal',
     type: 'line',
     source: 'aa-rings',
     filter: ['==', ['get', 'kind'], 'thermal'],
-    paint: { 'line-color': ['get', 'color'], 'line-width': 2, 'line-dasharray': [3, 2] },
+    paint: { 'line-color': ['get', 'color'], 'line-width': light ? 2.8 : 2, 'line-dasharray': [3, 2] },
   });
   map.addLayer({
     id: 'aa-rings-line-radiation',
     type: 'line',
     source: 'aa-rings',
     filter: ['==', ['get', 'kind'], 'radiation'],
-    paint: { 'line-color': ['get', 'color'], 'line-width': 2.4, 'line-dasharray': [0.6, 1.6] },
+    paint: { 'line-color': ['get', 'color'], 'line-width': light ? 3 : 2.4, 'line-dasharray': [0.6, 1.6] },
   });
   // The plume of an accident: areas of dose along the wind.
   map.addSource('aa-plume', { type: 'geojson', data: EMPTY });
@@ -215,13 +230,67 @@ function addOverlays(map: MapLibreMap): void {
     },
   });
 
-  // The blast front during playback: a bright line that sweeps outwards.
+  // During playback: where the wind carries the cloud, and where it will be when the playback ends.
+  const cloudColour = theme === 'dark' ? '#9fdcff' : '#1d6a9e';
+  map.addSource('aa-cloud', { type: 'geojson', data: EMPTY });
+  map.addLayer({
+    id: 'aa-cloud-ahead',
+    type: 'line',
+    source: 'aa-cloud',
+    filter: ['==', ['get', 'part'], 'ahead'],
+    layout: { 'line-cap': 'round' },
+    paint: { 'line-color': cloudColour, 'line-width': 2.2, 'line-opacity': 0.75, 'line-dasharray': [1.2, 2] },
+  });
+  map.addLayer({
+    id: 'aa-cloud-done',
+    type: 'line',
+    source: 'aa-cloud',
+    filter: ['==', ['get', 'part'], 'done'],
+    layout: { 'line-cap': 'round' },
+    paint: { 'line-color': cloudColour, 'line-width': 4 },
+  });
+  map.addLayer({ id: 'aa-cloud-head', type: 'fill', source: 'aa-cloud', filter: ['==', ['get', 'part'], 'head'], paint: { 'fill-color': cloudColour } });
+  map.addLayer({
+    id: CLOUD_LABEL_LAYER,
+    type: 'symbol',
+    source: 'aa-cloud',
+    filter: ['==', ['get', 'part'], 'label'],
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-font': LABEL_FONT,
+      'text-size': 13,
+      // Above the arrow's tip: the ring labels sit below and to the right of their rings.
+      'text-anchor': 'bottom',
+      'text-offset': [0, -0.9],
+      'text-allow-overlap': true,
+    },
+    paint: {
+      'text-color': cloudColour,
+      'text-halo-color': theme === 'dark' ? '#101214' : '#ffffff',
+      'text-halo-width': 1.8,
+    },
+  });
+
+  // The blast front during playback: a line that sweeps outwards. Bright on the dark map;
+  // on the light map a white line would vanish, so there it is dark with a white edge.
+  if (theme === 'light') {
+    map.addLayer({
+      id: 'aa-rings-line-front-edge',
+      type: 'line',
+      source: 'aa-rings',
+      filter: ['==', ['get', 'kind'], 'front'],
+      paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-blur': 1, 'line-opacity': 0.9 },
+    });
+  }
   map.addLayer({
     id: 'aa-rings-line-front',
     type: 'line',
     source: 'aa-rings',
     filter: ['==', ['get', 'kind'], 'front'],
-    paint: { 'line-color': '#ffffff', 'line-width': 3.5, 'line-blur': 2, 'line-opacity': 0.95 },
+    paint:
+      theme === 'light'
+        ? { 'line-color': '#1f2933', 'line-width': 3.2, 'line-blur': 0.5, 'line-opacity': 0.95 }
+        : { 'line-color': '#ffffff', 'line-width': 3.5, 'line-blur': 2, 'line-opacity': 0.95 },
   });
   map.addLayer({
     id: 'aa-ring-labels',
@@ -247,6 +316,9 @@ function addOverlays(map: MapLibreMap): void {
   if (mushroom && !map.getLayer(MUSHROOM_LAYER)) map.addLayer(mushroom);
 }
 
+/** The label of where the wind carries the cloud: drawn above the 3D cloud. */
+const CLOUD_LABEL_LAYER = 'aa-cloud-label';
+
 /** The 3D mushroom cloud; made with the map. */
 let mushroom: ReturnType<typeof createMushroomLayer> | null = null;
 
@@ -259,10 +331,23 @@ function applyMushroom(map: MapLibreMap): void {
     mushroom?.show(null);
     return;
   }
-  // Layers added after it (water, a restyled map) would draw over the cloud: keep it last.
+  // Layers added after it (water, a restyled map) would draw over the cloud: keep it last,
+  // with only the label of where the wind takes it above it, so the label can be read.
   const order = map.getLayersOrder();
-  if (map.getLayer(MUSHROOM_LAYER) && order[order.length - 1] !== MUSHROOM_LAYER) map.moveLayer(MUSHROOM_LAYER);
-  mushroom?.show({ at: current.at, shape: frame.cloud, timeS: frame.timeS, finalRadiusM: line.cloudFinal.radiusM, theme: settings.value.theme });
+  const top = order.slice(-2).join('|');
+  if (map.getLayer(MUSHROOM_LAYER) && map.getLayer(CLOUD_LABEL_LAYER) && top !== `${MUSHROOM_LAYER}|${CLOUD_LABEL_LAYER}`) {
+    map.moveLayer(MUSHROOM_LAYER);
+    map.moveLayer(CLOUD_LABEL_LAYER);
+  }
+  const towards = (frame.towardsDeg * Math.PI) / 180;
+  mushroom?.show({
+    at: current.at,
+    shape: frame.cloud,
+    timeS: frame.timeS,
+    finalRadiusM: line.cloudFinal.radiusM,
+    theme: settings.value.theme,
+    driftM: [frame.driftM * Math.sin(towards), frame.driftM * Math.cos(towards)],
+  });
 }
 
 function applyTerrain(map: MapLibreMap): void {
@@ -306,7 +391,8 @@ function applyDetonation(map: MapLibreMap, playbackOnly = false): void {
   const rings = map.getSource('aa-rings') as GeoJSONSource | undefined;
   const labels = map.getSource('aa-ring-labels') as GeoJSONSource | undefined;
   const fallout = map.getSource('aa-fallout') as GeoJSONSource | undefined;
-  if (!rings || !labels || !fallout) return;
+  const cloud = map.getSource('aa-cloud') as GeoJSONSource | undefined;
+  if (!rings || !labels || !fallout || !cloud) return;
   const frame = blastFrame.value;
   if (playbackOnly && frame) {
     // The rings follow the clock about five times a second. Measured: with the 3D buildings
@@ -320,22 +406,52 @@ function applyDetonation(map: MapLibreMap, playbackOnly = false): void {
     rings.setData(EMPTY);
     labels.setData(EMPTY);
     fallout.setData(EMPTY);
+    cloud.setData(EMPTY);
   } else {
     rings.setData(ringFeatures(current.at, current.result, frame));
     labels.setData(
       ringLabelFeatures(current.at, ringsAt(current.result, frame), (ring) => `${t(`effect.${ring.id}.short`)} · ${formatDistance(ring.radiusM)}`),
     );
-    const showFallout = !frame || frame.falloutShown;
-    if (showFallout !== falloutDrawn || !playbackOnly) {
-      falloutDrawn = showFallout;
-      fallout.setData(showFallout ? falloutFeatures(current.at, current.result) : EMPTY);
+    // During playback the fallout has come down as far as the wind has carried the cloud.
+    // At the end the rest of it, which comes down over the following hours, unfolds along
+    // the wind until the weakest contour closes. The finished picture shows all of it.
+    const plumeEndM = frame ? falloutReachM(current.result) : null;
+    let reach = Infinity;
+    if (frame) {
+      reach = frame.driftM;
+      if (frame.unfold > 0 && plumeEndM !== null) {
+        const u = frame.unfold;
+        reach = u >= 1 ? Infinity : frame.driftM + Math.max(plumeEndM - frame.driftM, 0) * u * u * (3 - 2 * u);
+      }
+    }
+    const key = !frame ? -1 : Number.isFinite(reach) ? Math.round(reach / 5) : -2;
+    if (key !== falloutKey || !playbackOnly) {
+      falloutKey = key;
+      fallout.setData(falloutFeatures(current.at, current.result, reach));
+    }
+    if (frame && frame.driftEndM > 1) {
+      const label = t('map.cloud', { direction: formatCompass(frame.towardsDeg), speed: formatSpeed(frame.windMs), distance: formatDistance(frame.driftM, 2) });
+      const head = Math.max(0.07 * Math.max(frame.driftEndM, current.result.maxRadiusM), 25);
+      const track = cloudTrackFeatures(current.at, frame.towardsDeg, frame.driftM, frame.driftEndM, head, label);
+      if (frame.unfold >= 1 && plumeEndM !== null) {
+        const end = destination(current.at, frame.towardsDeg, plumeEndM);
+        track.features.push({
+          type: 'Feature',
+          properties: { part: 'label', label: t('map.falloutEnd', { distance: formatDistance(plumeEndM, 2) }) },
+          geometry: { type: 'Point', coordinates: [end.lng, end.lat] },
+        });
+      }
+      cloud.setData(track);
+    } else {
+      cloud.setData(EMPTY);
     }
   }
   if (playbackOnly) applyReach();
   else applyBuildings(map);
 }
 
-let falloutDrawn = true;
+/** What the fallout layer holds now: -1 for all of it, otherwise how far downwind (5 m steps). */
+let falloutKey = -1;
 let ringsAppliedAt = 0;
 
 const firstYear = (dose: PointDose): number => dose.firstYearSv;
@@ -373,7 +489,22 @@ function applyAccident(map: MapLibreMap): void {
     iodine.setData(EMPTY);
   }
   // Each simulator shows its own shapes.
-  const detonationLayers = ['aa-fallout-fill', 'aa-fallout-line', 'aa-rings-fill', 'aa-rings-line', 'aa-rings-line-thermal', 'aa-rings-line-radiation', 'aa-rings-line-front', 'aa-ring-labels'];
+  const detonationLayers = [
+    'aa-fallout-fill',
+    'aa-fallout-line',
+    'aa-rings-fill',
+    'aa-rings-casing',
+    'aa-rings-line',
+    'aa-rings-line-thermal',
+    'aa-rings-line-radiation',
+    'aa-rings-line-front-edge',
+    'aa-rings-line-front',
+    'aa-ring-labels',
+    'aa-cloud-ahead',
+    'aa-cloud-done',
+    'aa-cloud-head',
+    CLOUD_LABEL_LAYER,
+  ];
   for (const id of detonationLayers) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', inAccident ? 'none' : 'visible');
   for (const id of ['aa-plume-fill', 'aa-plume-line', 'aa-iodine-line']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', inAccident ? 'visible' : 'none');
 }
@@ -510,6 +641,32 @@ export function MapView() {
     map.on('movestart', (event) => {
       if (!(event as { startView?: boolean }).startView) atStart = false;
     });
+    /**
+     * Brings a detonation into view: its rings and where the wind will have carried the
+     * cloud by the end of the playback (up to three times the largest ring, so small yields
+     * stay readable), and all of the fallout when asked.
+     */
+    const fitDetonation = (current: NonNullable<typeof detonation.value>, withFallout: boolean, durationMs: number): void => {
+      const wide = window.innerWidth >= WIDE_LAYOUT;
+      const line = timeline.value;
+      const drift = line ? Math.min(line.driftAtM(line.durationS), 3 * current.result.maxRadiusM) : 0;
+      const extra = drift > 0 && line ? [destination(current.at, line.wind.towardsDeg, drift)] : [];
+      const bounds = resultBounds(current.at, current.result, withFallout, extra);
+      map.fitBounds(
+        [
+          [bounds[0], bounds[1]],
+          [bounds[2], bounds[3]],
+        ],
+        {
+          // The map already keeps clear of the panel (its own padding); this is the margin around the rings.
+          padding: wide ? { top: 70, bottom: 70, left: 50, right: 90 } : { top: 60, bottom: 20, left: 30, right: 30 },
+          duration: settings.value.reduceMotion ? 0 : durationMs,
+          maxZoom: 16,
+        },
+      );
+    };
+    let unfoldFramed = false;
+
     const frame = (duration: number): void => {
       const insets = currentInsets(element);
       const now = map.getPadding();
@@ -758,20 +915,21 @@ export function MapView() {
         const current = detonation.value;
         if (!current) return;
         popup?.remove();
-        const wide = window.innerWidth >= WIDE_LAYOUT;
-        const bounds = resultBounds(current.at, current.result, false);
-        map.fitBounds(
-          [
-            [bounds[0], bounds[1]],
-            [bounds[2], bounds[3]],
-          ],
-          {
-            // The map already keeps clear of the panel (its own padding); this is the margin around the rings.
-            padding: wide ? { top: 70, bottom: 70, left: 50, right: 90 } : { top: 60, bottom: 20, left: 30, right: 30 },
-            duration: settings.value.reduceMotion ? 0 : 1600,
-            maxZoom: 16,
-          },
-        );
+        untracked(() => fitDetonation(current, false, 1600));
+      }),
+      // At the end of the playback the rest of the fallout unfolds: the view widens with it,
+      // and narrows back to the rings when the playback goes back in time.
+      effect(() => {
+        const share = falloutUnfold.value;
+        const current = untracked(() => detonation.value);
+        if (!current) return;
+        if (share > 0 && !unfoldFramed) {
+          unfoldFramed = true;
+          if (falloutReachM(current.result) !== null) untracked(() => fitDetonation(current, true, 4000));
+        } else if (share === 0 && unfoldFramed) {
+          unfoldFramed = false;
+          if (untracked(() => blastActive.value) && falloutReachM(current.result) !== null) untracked(() => fitDetonation(current, false, 900));
+        }
       }),
     ];
 

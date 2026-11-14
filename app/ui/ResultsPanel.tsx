@@ -19,7 +19,7 @@ import {
   formatSpeed,
   formatYield,
 } from '../lib/format';
-import { EFFECT_COLORS, FALLOUT_COLORS, FALLOUT_LEVELS } from '../map/overlays';
+import { effectColor, falloutColor, FALLOUT_LEVELS } from '../map/overlays';
 import { settings } from '../state/settings';
 import { cameFromFlight, returnToFlight } from '../state/missiles';
 import { casualties, detonation, explaining } from '../state/simulation';
@@ -144,7 +144,7 @@ export function ResultsPanel() {
         <ul class="effects">
           {result.rings.map((ring) => (
             <li key={ring.id} class={ring.radiusM > 0 ? '' : 'is-absent'} data-testid={`effect-${ring.id}`}>
-              <span class={`swatch swatch-${ring.kind}`} style={{ '--swatch': EFFECT_COLORS[ring.id] ?? '#fff' }} />
+              <span class={`swatch swatch-${ring.kind}`} style={{ '--swatch': effectColor(ring.id) }} />
               <span class="effect-text">
                 <span class="effect-name">{t(`effect.${ring.id}`)}</span>
                 <span class="effect-detail">
@@ -201,7 +201,7 @@ export function ResultsPanel() {
                     return (
                       <tr key={level} class="is-absent">
                         <td>
-                          <span class="swatch" style={{ '--swatch': FALLOUT_COLORS[level] }} /> {formatDoseRate(level).split(' (')[0]}
+                          <span class="swatch" style={{ '--swatch': falloutColor(level) }} /> {formatDoseRate(level).split(' (')[0]}
                         </td>
                         <td colSpan={3}>{t('results.notReached')}</td>
                       </tr>
@@ -216,7 +216,7 @@ export function ResultsPanel() {
                   return (
                     <tr key={level}>
                       <td>
-                        <span class="swatch" style={{ '--swatch': FALLOUT_COLORS[level] }} /> {formatDoseRate(level).split(' (')[0]}
+                        <span class="swatch" style={{ '--swatch': falloutColor(level) }} /> {formatDoseRate(level).split(' (')[0]}
                       </td>
                       <td>{formatDistance(extent[1], 2)}</td>
                       <td>{formatDistance(width, 2)}</td>

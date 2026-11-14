@@ -2,9 +2,9 @@
 // slow motion, and what is on screen at each moment.
 
 import { batch, computed, effect, signal } from '@preact/signals';
-import { CLOUD_RISE_S } from '@physics/timeline/events';
 import type { CloudShape } from '@physics/timeline/cloudShape';
 import { blastTimeline, fireballRadiusAtM, type BlastTimeline } from '@physics/timeline/playback';
+import { settings } from './settings';
 import { detonation } from './simulation';
 
 /** Seconds since the detonation shown on the map. */
@@ -20,6 +20,15 @@ let lastTick = 0;
 
 /** Counts the flashes, so the map can show each one once. */
 export const flashCount = signal(0);
+
+/**
+ * Once the playback has reached its end: how far the rest of the fallout, which comes down
+ * over the following hours, has been unfolded along the wind, 0 to 1. 0 before the end.
+ */
+export const falloutUnfold = signal(0);
+/** How long the rest of the fallout takes to unfold on screen, milliseconds. */
+const UNFOLD_MS = 4000;
+let unfoldFrame = 0;
 /**
  * True from the moment Play is pressed until the map has put the buildings back as they
  * stood before the burst; the clock waits for it. Released by the map (or by a time limit).
@@ -53,8 +62,16 @@ export interface BlastFrame {
   cloudTopM: number;
   /** The mushroom cloud, for the 3D view. */
   cloud: CloudShape;
-  /** True once the cloud has risen and fallout begins to come down. */
-  falloutShown: boolean;
+  /** How far downwind the wind has carried the cloud, metres; fallout has come down up to there. */
+  driftM: number;
+  /** How far it will have been carried when the playback ends, metres. */
+  driftEndM: number;
+  /** Direction the wind carries the cloud towards, degrees clockwise from north. */
+  towardsDeg: number;
+  /** Speed of that wind, m/s. */
+  windMs: number;
+  /** After the end: how far the rest of the fallout has been unfolded, 0 to 1. */
+  unfold: number;
 }
 
 /** What the map draws now, or null for the finished picture. */
@@ -72,8 +89,36 @@ export const blastFrame = computed<BlastFrame | null>(() => {
     heat,
     cloudTopM: cloud.topM,
     cloud,
-    falloutShown: t >= CLOUD_RISE_S,
+    driftM: line.driftAtM(t),
+    driftEndM: line.driftAtM(line.durationS),
+    towardsDeg: line.wind.towardsDeg,
+    windMs: line.wind.speedMs,
+    unfold: t >= line.durationS ? falloutUnfold.value : 0,
   };
+});
+
+// When the clock reaches the end the rest of the fallout unfolds; going back folds it away.
+effect(() => {
+  const line = timeline.value;
+  const atEnd = Boolean(line && blastActive.value && blastClock.value >= line.durationS);
+  if (!atEnd) {
+    if (unfoldFrame) cancelAnimationFrame(unfoldFrame);
+    unfoldFrame = 0;
+    if (falloutUnfold.peek() !== 0) falloutUnfold.value = 0;
+    return;
+  }
+  if (unfoldFrame || falloutUnfold.peek() > 0) return;
+  if (settings.peek().reduceMotion) {
+    falloutUnfold.value = 1;
+    return;
+  }
+  const start = performance.now();
+  const step = (now: number): void => {
+    const share = Math.min(1, (now - start) / UNFOLD_MS);
+    falloutUnfold.value = share;
+    unfoldFrame = share < 1 ? requestAnimationFrame(step) : 0;
+  };
+  unfoldFrame = requestAnimationFrame(step);
 });
 
 

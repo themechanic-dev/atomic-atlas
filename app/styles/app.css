@@ -300,6 +300,12 @@ p {
   pointer-events: none;
 }
 
+/* Only on narrow screens, where the panel is a sheet at the bottom. */
+.panel-grip,
+.panel-peek {
+  display: none;
+}
+
 .panel-scroll {
   overflow-y: auto;
   padding: 14px 14px 10px;
@@ -661,12 +667,48 @@ p {
   }
 }
 
+/* The names under a logarithmic slider stand where the thumb is for that value: the thumb's
+   centre travels from half a thumb in from the left to half a thumb in from the right. */
 .slider-scale {
-  display: flex;
-  justify-content: space-between;
+  --thumb: 16px;
+  position: relative;
+  height: 20px;
   font-size: 10.5px;
   color: var(--text-dim);
   margin-bottom: 4px;
+}
+
+.slider-scale > span,
+.slider-tick {
+  position: absolute;
+  left: calc(var(--thumb) / 2 + var(--at) * (100% - var(--thumb)));
+}
+
+.slider-scale > span {
+  top: 5px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* The two ends are kept inside the panel. */
+.slider-scale > span:first-of-type {
+  left: 0;
+  transform: none;
+}
+
+.slider-scale > span:last-of-type {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.slider-tick {
+  top: 0;
+  width: 1px;
+  height: 4px;
+  background: var(--text-dim);
+  opacity: 0.7;
 }
 
 .disclosure {
@@ -1665,6 +1707,63 @@ p {
 
   .panel.is-closed {
     transform: translateY(105%);
+  }
+
+  /* A grip to drag the panel down (or tap); the panel scrolls below it. */
+  .panel-grip {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .panel-grip > span {
+    width: 44px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .panel-grip:active > span {
+    opacity: 1;
+  }
+
+  /* With the panel away: a button at the bottom to bring it back. */
+  .panel-peek {
+    display: inline-flex;
+    position: absolute;
+    left: 50%;
+    /* Above the map's credits and scale. */
+    bottom: calc(56px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+    transform: translateX(-50%);
+    z-index: 3;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+  }
+
+  .panel-peek > span {
+    color: var(--accent);
+  }
+
+  .panel-scroll {
+    padding-top: 2px;
   }
 
   .map-hint {

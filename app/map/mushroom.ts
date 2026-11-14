@@ -181,6 +181,8 @@ uniform float u_noise_scale;
 uniform float u_bump_head;
 uniform float u_bump_stem;
 uniform float u_time;
+uniform vec2 u_drift;
+uniform float u_head_bottom;
 out vec3 v_normal;
 out vec3 v_local;
 out float v_part;
@@ -192,7 +194,10 @@ void main() {
   float amplitude = mix(u_bump_stem, u_bump_head, a_part);
   vec3 d = a_normal * billow * 2.0 * amplitude;
   float height = max(a_local.z + d.z, 0.0);
-  vec2 pos = a_pos + vec2(d.x, -d.y) * u_units_per_m;
+  // The wind carries the head downwind (east, north metres); the stem stays rooted at
+  // ground zero and leans, more the higher up.
+  vec2 lean = u_drift * pow(clamp(a_local.z / u_head_bottom, 0.0, 1.0), 1.5);
+  vec2 pos = a_pos + vec2(d.x + lean.x, -(d.y + lean.y)) * u_units_per_m;
   gl_Position = projectTileFor3D(pos, u_ground + height);
   v_normal = a_normal;
   v_local = a_local;
@@ -247,6 +252,8 @@ const UNIFORMS = [
   'u_bump_head',
   'u_bump_stem',
   'u_time',
+  'u_drift',
+  'u_head_bottom',
   'u_light',
   'u_white',
   'u_glow',
@@ -285,6 +292,8 @@ export interface MushroomView {
   /** Radius of the stabilised cloud: fixes the size of the billows for the whole playback. */
   finalRadiusM: number;
   theme: 'light' | 'dark';
+  /** How far the wind has carried the head of the cloud, metres east and north. */
+  driftM?: [number, number];
 }
 
 export interface MushroomLayer extends CustomLayerInterface {
@@ -423,6 +432,8 @@ export function createMushroomLayer(segments: number): MushroomLayer {
       gl2.uniform1f(u.u_bump_head, 0.11 * shape.headRadiusM * (1 - 0.8 * shape.glow));
       gl2.uniform1f(u.u_bump_stem, 0.15 * shape.stemRadiusM);
       gl2.uniform1f(u.u_time, current.timeS * 0.004);
+      gl2.uniform2fv(u.u_drift, current.driftM ?? [0, 0]);
+      gl2.uniform1f(u.u_head_bottom, Math.max(shape.headBottomM, 1));
       gl2.uniform3fv(u.u_light, LIGHT);
       gl2.uniform3fv(u.u_white, current.theme === 'dark' ? [0.84, 0.83, 0.81] : [0.95, 0.94, 0.92]);
       // On the light map the shadowed side is lighter, as the sky lights it more.
