@@ -1,13 +1,14 @@
 // The map: MapLibre GL with a globe at low zoom and 3D buildings in cities.
 
 import { effect, signal, untracked } from '@preact/signals';
-import type { FeatureCollection } from 'geojson';
+import type { FeatureCollection, Point, Polygon } from 'geojson';
 import type { GeoJSONSource, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { useEffect, useRef } from 'preact/hooks';
 import { distanceToDose, doseAt, halfWidthAt, IAEA_CRITERIA, type PointDose } from '@physics/dispersion/release';
+import { CLOUD_PATH_HOURS, type DetonationResult } from '@physics/detonation';
 import { accumulatedDose } from '@physics/fallout/wseg10';
 import { t } from '../i18n';
 import {
@@ -35,6 +36,7 @@ import { blastActive, blastClock, blastFrame, blastPlaying, blastPrepared, blast
 import { beginBusy, detonation, groundZero } from '../state/simulation';
 import {
   buildingBands,
+  cloudPathFeatures,
   cloudTrackFeatures,
   falloutFeatures,
   falloutReachM,
@@ -120,6 +122,30 @@ function addOverlays(map: MapLibreMap): void {
   map.addSource('aa-fallout', { type: 'geojson', data: EMPTY });
   map.addSource('aa-rings', { type: 'geojson', data: EMPTY });
   map.addSource('aa-ring-labels', { type: 'geojson', data: EMPTY });
+
+  // The band the radioactive cloud passes over in its first day, under the fallout's contours:
+  // where they show how strong the fallout is, the band shows where all of it goes.
+  map.addSource(CLOUD_PATH_SOURCE, { type: 'geojson', data: EMPTY });
+  map.addLayer(
+    {
+      id: 'aa-cloud-path-fill',
+      type: 'fill',
+      source: CLOUD_PATH_SOURCE,
+      filter: ['==', ['get', 'part'], 'band'],
+      paint: { 'fill-color': cloudPathColour(theme), 'fill-opacity': light ? 0.2 : 0.22 },
+    },
+    below,
+  );
+  map.addLayer(
+    {
+      id: 'aa-cloud-path-line',
+      type: 'line',
+      source: CLOUD_PATH_SOURCE,
+      filter: ['==', ['get', 'part'], 'band'],
+      paint: { 'line-color': cloudPathColour(theme), 'line-width': 2, 'line-opacity': 0.95, 'line-dasharray': [3, 2] },
+    },
+    below,
+  );
 
   map.addLayer(
     {
@@ -263,6 +289,8 @@ function addOverlays(map: MapLibreMap): void {
       'text-anchor': 'bottom',
       'text-offset': [0, -0.9],
       'text-allow-overlap': true,
+      // On one line: broken in two it ran over the stem of the mushroom.
+      'text-max-width': 40,
     },
     paint: {
       'text-color': cloudColour,
@@ -300,8 +328,9 @@ function addOverlays(map: MapLibreMap): void {
       'text-field': ['get', 'label'],
       'text-font': LABEL_FONT,
       'text-size': 12.5,
-      'text-anchor': 'left',
-      'text-offset': [0.5, 0],
+      // Reading outwards from the ring, on whichever side of ground zero the label sits.
+      'text-anchor': ['get', 'anchor'],
+      'text-offset': ['case', ['==', ['get', 'anchor'], 'right'], ['literal', [-0.5, 0]], ['literal', [0.5, 0]]],
       'text-allow-overlap': false,
       'text-max-width': 14,
     },
@@ -311,10 +340,33 @@ function addOverlays(map: MapLibreMap): void {
       'text-halo-width': 1.6,
     },
   });
+  map.addLayer({
+    id: 'aa-cloud-path-label',
+    type: 'symbol',
+    source: CLOUD_PATH_SOURCE,
+    filter: ['==', ['get', 'part'], 'label'],
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-font': LABEL_FONT,
+      'text-size': 12.5,
+      'text-anchor': 'center',
+      'text-max-width': 40,
+    },
+    paint: {
+      'text-color': cloudPathColour(theme),
+      'text-halo-color': theme === 'dark' ? '#101214' : '#ffffff',
+      'text-halo-width': 1.6,
+    },
+  });
   addWaterLayers(map, theme, below);
   // The mushroom cloud of the playback, drawn last: it stands over the rings and the labels.
   if (mushroom && !map.getLayer(MUSHROOM_LAYER)) map.addLayer(mushroom);
 }
+
+/** The band the radioactive cloud passes over in its first day, and its label. */
+const CLOUD_PATH_SOURCE = 'aa-cloud-path';
+/** Violet: apart from the fallout's yellow-to-red and the cloud track's blue, on either map. */
+const cloudPathColour = (theme: string): string => (theme === 'light' ? '#5b3fa0' : '#c2b2ff');
 
 /** The label of where the wind carries the cloud: drawn above the 3D cloud. */
 const CLOUD_LABEL_LAYER = 'aa-cloud-label';
@@ -392,7 +444,8 @@ function applyDetonation(map: MapLibreMap, playbackOnly = false): void {
   const labels = map.getSource('aa-ring-labels') as GeoJSONSource | undefined;
   const fallout = map.getSource('aa-fallout') as GeoJSONSource | undefined;
   const cloud = map.getSource('aa-cloud') as GeoJSONSource | undefined;
-  if (!rings || !labels || !fallout || !cloud) return;
+  const cloudPath = map.getSource(CLOUD_PATH_SOURCE) as GeoJSONSource | undefined;
+  if (!rings || !labels || !fallout || !cloud || !cloudPath) return;
   const frame = blastFrame.value;
   if (playbackOnly && frame) {
     // The rings follow the clock about five times a second. Measured: with the 3D buildings
@@ -407,10 +460,20 @@ function applyDetonation(map: MapLibreMap, playbackOnly = false): void {
     labels.setData(EMPTY);
     fallout.setData(EMPTY);
     cloud.setData(EMPTY);
+    cloudPath.setData(EMPTY);
+    cloudPathKey = -1;
   } else {
     rings.setData(ringFeatures(current.at, current.result, frame));
+    // The labels keep to the side away from the wind that carries the cloud (the playback's
+    // wind is the fallout model's), so they stay put when the playback starts.
+    const wind = current.result.fallout.wind;
     labels.setData(
-      ringLabelFeatures(current.at, ringsAt(current.result, frame), (ring) => `${t(`effect.${ring.id}.short`)} · ${formatDistance(ring.radiusM)}`),
+      ringLabelFeatures(
+        current.at,
+        ringsAt(current.result, frame),
+        (ring) => `${t(`effect.${ring.id}.short`)} · ${formatDistance(ring.radiusM)}`,
+        wind.speedMs > 0.5 ? wind.towardsDeg : undefined,
+      ),
     );
     // During playback the fallout has come down as far as the wind has carried the cloud.
     // At the end the rest of it, which comes down over the following hours, unfolds along
@@ -428,6 +491,29 @@ function applyDetonation(map: MapLibreMap, playbackOnly = false): void {
     if (key !== falloutKey || !playbackOnly) {
       falloutKey = key;
       fallout.setData(falloutFeatures(current.at, current.result, reach));
+    }
+    // The band the cloud passes over grows behind it during playback; at the end it unfolds
+    // with the fallout to the whole first day. The finished picture shows all of it.
+    const dayM = current.result.fallout.path.firstDayM;
+    let pathReach = Infinity;
+    if (frame) {
+      const u = frame.unfold;
+      pathReach = u >= 1 ? Infinity : frame.driftM + Math.max(dayM - frame.driftM, 0) * u * u * (3 - 2 * u);
+    }
+    const pathKey = !frame ? -1 : Number.isFinite(pathReach) ? Math.round(pathReach / 50) : -2;
+    if (pathKey !== cloudPathKey || !playbackOnly) {
+      cloudPathKey = pathKey;
+      const band = cloudPathFeatures(current.at, current.result, pathReach) as FeatureCollection<Polygon | Point>;
+      if (band.features.length > 0 && !Number.isFinite(pathReach)) {
+        // In the middle of the band's far end, so it stays inside the view that frames the band.
+        const end = destination(current.at, current.result.fallout.wind.towardsDeg, dayM);
+        band.features.push({
+          type: 'Feature',
+          properties: { part: 'label', label: t('map.cloudDay', { hours: CLOUD_PATH_HOURS, distance: formatDistance(dayM, 2) }) },
+          geometry: { type: 'Point', coordinates: [end.lng, end.lat] },
+        });
+      }
+      cloudPath.setData(band);
     }
     if (frame && frame.driftEndM > 1) {
       const label = t('map.cloud', { direction: formatCompass(frame.towardsDeg), speed: formatSpeed(frame.windMs), distance: formatDistance(frame.driftM, 2) });
@@ -451,7 +537,13 @@ function applyDetonation(map: MapLibreMap, playbackOnly = false): void {
 }
 
 /** What the fallout layer holds now: -1 for all of it, otherwise how far downwind (5 m steps). */
+/** A wind carries the cloud away: its path is drawn. */
+const hasCloudPath = (result: DetonationResult): boolean => result.fallout.wind.speedMs > 0.5 && result.fallout.path.firstDayM > 1;
+/** Something unfolds at the end of the playback: the rest of the fallout, or the cloud's path. */
+const unfolds = (result: DetonationResult): boolean => falloutReachM(result) !== null || hasCloudPath(result);
+
 let falloutKey = -1;
+let cloudPathKey = -1;
 let ringsAppliedAt = 0;
 
 const firstYear = (dose: PointDose): number => dose.firstYearSv;
@@ -490,6 +582,9 @@ function applyAccident(map: MapLibreMap): void {
   }
   // Each simulator shows its own shapes.
   const detonationLayers = [
+    'aa-cloud-path-fill',
+    'aa-cloud-path-line',
+    'aa-cloud-path-label',
     'aa-fallout-fill',
     'aa-fallout-line',
     'aa-rings-fill',
@@ -651,6 +746,9 @@ export function MapView() {
       const line = timeline.value;
       const drift = line ? Math.min(line.driftAtM(line.durationS), 3 * current.result.maxRadiusM) : 0;
       const extra = drift > 0 && line ? [destination(current.at, line.wind.towardsDeg, drift)] : [];
+      // With all of the fallout, the whole first day of the cloud's path too.
+      const path = current.result.fallout.path;
+      if (withFallout && hasCloudPath(current.result)) extra.push(destination(current.at, current.result.fallout.wind.towardsDeg, path.firstDayM + path.halfWidthM(path.firstDayM)));
       const bounds = resultBounds(current.at, current.result, withFallout, extra);
       map.fitBounds(
         [
@@ -925,10 +1023,10 @@ export function MapView() {
         if (!current) return;
         if (share > 0 && !unfoldFramed) {
           unfoldFramed = true;
-          if (falloutReachM(current.result) !== null) untracked(() => fitDetonation(current, true, 4000));
+          if (unfolds(current.result)) untracked(() => fitDetonation(current, true, 4000));
         } else if (share === 0 && unfoldFramed) {
           unfoldFramed = false;
-          if (untracked(() => blastActive.value) && falloutReachM(current.result) !== null) untracked(() => fitDetonation(current, false, 900));
+          if (untracked(() => blastActive.value) && unfolds(current.result)) untracked(() => fitDetonation(current, false, 900));
         }
       }),
     ];

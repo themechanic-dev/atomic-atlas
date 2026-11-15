@@ -109,17 +109,30 @@ export function ringFeatures(at: LngLat, result: DetonationResult, view: Playbac
   return { type: 'FeatureCollection', features };
 }
 
-/** A point on each ring where its label sits: spread around the north-east so labels do not pile up. */
-export function ringLabelFeatures(at: LngLat, rings: EffectRing[], label: (ring: EffectRing) => string): FeatureCollection {
+/**
+ * A point on each ring where its label sits, spread over 140° so labels do not pile up.
+ * With a wind, the labels go on the side away from where it carries the cloud, so the cloud's
+ * track, its label and the drifting mushroom never cover them; without one, on the east side.
+ * Each label reads outwards: `anchor` is 'left' (text to the east of its point) on the east
+ * half and 'right' on the west half.
+ */
+export function ringLabelFeatures(
+  at: LngLat,
+  rings: EffectRing[],
+  label: (ring: EffectRing) => string,
+  windTowardsDeg?: number,
+): FeatureCollection {
   const visible = rings.filter((r) => r.radiusM > 0).sort((a, b) => a.radiusM - b.radiusM);
+  const centre = windTowardsDeg === undefined ? 90 : windTowardsDeg + 180;
   return {
     type: 'FeatureCollection',
     features: visible.map((ring, i) => {
-      const bearing = 20 + (i * 140) / Math.max(visible.length - 1, 1);
+      const bearing = (((centre - 70 + (i * 140) / Math.max(visible.length - 1, 1)) % 360) + 360) % 360;
       const p = destination(at, bearing, ring.radiusM);
+      const anchor = Math.sin((bearing * Math.PI) / 180) >= -1e-9 ? 'left' : 'right';
       return {
         type: 'Feature',
-        properties: { id: ring.id, label: label(ring), color: effectColor(ring.id) },
+        properties: { id: ring.id, label: label(ring), color: effectColor(ring.id), anchor },
         geometry: { type: 'Point', coordinates: [unwrap(p.lng, at.lng), p.lat] },
       };
     }),
@@ -209,6 +222,38 @@ export function cloudTrackFeatures(
   features.push({ type: 'Feature', properties: { part: 'head' }, geometry: { type: 'Polygon', coordinates: [head] } });
   features.push({ type: 'Feature', properties: { part: 'label', label }, geometry: { type: 'Point', coordinates: point(tip) } });
   return { type: 'FeatureCollection', features };
+}
+
+/**
+ * The band the radioactive cloud passes over in its first day (`result.fallout.path`), from
+ * ground zero downwind, with rounded ends. `reachM` cuts it short: during playback, as far as
+ * the wind has carried the cloud. Empty in calm air.
+ */
+export function cloudPathFeatures(at: LngLat, result: DetonationResult, reachM = Infinity): FeatureCollection<Polygon> {
+  const { path, wind } = result.fallout;
+  const lengthM = Math.min(path.firstDayM, Math.max(reachM, 0));
+  if (!(wind.speedMs > 0.5) || !(lengthM > 1)) return { type: 'FeatureCollection', features: [] };
+  const towards = wind.towardsDeg;
+  const point = (x: number, y: number): [number, number] => {
+    const p = fromWindFrame(at, towards, x, y);
+    return [unwrap(p.lng, at.lng), p.lat];
+  };
+  // Closer steps near ground zero, where the band widens fastest.
+  const steps = 48;
+  const xs = Array.from({ length: steps + 1 }, (_, i) => lengthM * (i / steps) ** 1.6);
+  const left = xs.map((x) => point(x, path.halfWidthM(x)));
+  const right = xs.map((x) => point(x, -path.halfWidthM(x))).reverse();
+  const cap = (x: number, from: number, to: number): Array<[number, number]> => {
+    const r = path.halfWidthM(x);
+    return Array.from({ length: 13 }, (_, i) => {
+      const a = from + ((to - from) * i) / 12;
+      return point(x + r * Math.cos(a), r * Math.sin(a));
+    });
+  };
+  // Left side out, round the far end, right side back, round the end at ground zero.
+  const ring = [...left, ...cap(lengthM, Math.PI / 2, -Math.PI / 2), ...right, ...cap(0, -Math.PI / 2, -1.5 * Math.PI)];
+  ring.push(ring[0]!);
+  return { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { part: 'band' }, geometry: { type: 'Polygon', coordinates: [ring] } }] };
 }
 
 /** Bounding box [west, south, east, north] of everything a detonation draws, and of any extra points. */

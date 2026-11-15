@@ -136,3 +136,33 @@ describe('fallout switch', () => {
     expect(detonate(scenario({ burstMode: 'surface', fissionFraction: 0 })).fallout.significant).toBe(false);
   });
 });
+
+describe("the cloud's path over its first day", () => {
+  const wind = [{ heightM: 10, speedMs: 6.7, fromDeg: 270 }];
+  it('is there for every burst with a wind, high or low, as long as the wind carries it in 24 h', () => {
+    for (const s of [scenario({ yieldKt: 100, burstMode: 'surface', wind }), scenario({ yieldKt: 100, burstMode: 'custom', heightM: 1310, wind })]) {
+      const d = detonate(s);
+      expect(d.fallout.path.firstDayM).toBeCloseTo(d.fallout.wind.speedMs * 24 * 3600, 3);
+      expect(d.fallout.path.firstDayM).toBeGreaterThan(100_000);
+    }
+    expect(detonate(scenario({ yieldKt: 100, burstMode: 'custom', heightM: 1310, wind })).fallout.model).toBeNull();
+  });
+
+  it('starts at least as wide as the stabilised cloud and widens downwind', () => {
+    const d = detonate(scenario({ yieldKt: 100, burstMode: 'surface', wind }));
+    const w = d.fallout.path.halfWidthM;
+    expect(w(0)).toBeGreaterThanOrEqual(d.fallout.model!.cloudRadiusM);
+    expect(w(100_000)).toBeGreaterThan(w(10_000));
+    expect(w(10_000)).toBeGreaterThan(w(0));
+  });
+
+  it('has the same width whether or not fallout comes down locally', () => {
+    const low = detonate(scenario({ yieldKt: 100, burstMode: 'surface', wind })).fallout.path.halfWidthM;
+    const high = detonate(scenario({ yieldKt: 100, burstMode: 'custom', heightM: 1310, wind })).fallout.path.halfWidthM;
+    for (const x of [0, 20_000, 300_000]) expect(high(x)).toBeCloseTo(low(x), 6);
+  });
+
+  it('is empty in calm air', () => {
+    expect(detonate(scenario({ yieldKt: 100, wind: [] })).fallout.path.firstDayM).toBe(0);
+  });
+});

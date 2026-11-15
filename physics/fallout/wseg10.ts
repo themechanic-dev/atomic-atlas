@@ -60,6 +60,12 @@ export interface FalloutModel {
   contourHalfWidthM(xM: number, doseRate: number): number;
   /** Extent of a contour along the wind axis, metres: [upwind end (<= 0), downwind end]. null when not reached. */
   contourExtentM(doseRate: number): [number, number] | null;
+  /**
+   * Half-width of the cloud's path at a distance downwind, metres: two crosswind standard
+   * deviations, σ_y of eq. (22), which starts from the stabilised cloud and widens with the
+   * wind shear. Geometry only: the same whether or not any fallout comes down locally.
+   */
+  cloudPathHalfWidthM(xM: number): number;
 }
 
 export function wseg10(input: FalloutInput): FalloutModel {
@@ -173,6 +179,7 @@ export function wseg10(input: FalloutInput): FalloutModel {
     arrivalTimeH,
     contourHalfWidthM,
     contourExtentM,
+    cloudPathHalfWidthM: (xM) => (2 * sigmaY(Math.max(xM, 0) * MI_PER_M)) / MI_PER_M,
   };
 }
 

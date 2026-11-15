@@ -84,10 +84,24 @@ export interface FalloutResult {
   /** Fraction of the fallout taken to come down locally, 0..1. */
   localFraction: number;
   model: FalloutModel | null;
+  /**
+   * Where the wind carries the radioactive cloud over the first day, for every burst, high or
+   * low: with local fallout it comes down along this band, the strongest near ground zero;
+   * without, the cloud passes over it with its radioactivity high up. Geometry of WSEG-10.
+   */
+  path: {
+    /** Distance the effective wind carries the cloud in 24 hours, metres. 0 in calm air. */
+    firstDayM: number;
+    /** Half-width of the band at a distance downwind, metres. */
+    halfWidthM(xM: number): number;
+  };
   cloud: CloudHeights;
   wind: EffectiveWind;
   explanation: Explanation;
 }
+
+/** How long the cloud's path is shown for: the day after the burst. */
+export const CLOUD_PATH_HOURS = 24;
 
 export interface DetonationResult {
   scenario: Scenario;
@@ -281,10 +295,18 @@ export function detonate(scenario: Scenario): DetonationResult {
         localFraction,
       })
     : null;
+  // The band the cloud passes over: the same model's geometry, which does not depend on how
+  // much of the radioactivity comes down locally (none, for a burst this high).
+  const geometry =
+    model ?? wseg10({ yieldKt: W, fissionFraction: 1, windSpeedMs: wind.speedMs, shearMsPerKm: shear, localFraction: 0 });
   const fallout: FalloutResult = {
     significant,
     localFraction,
     model,
+    path: {
+      firstDayM: Math.max(wind.speedMs, 0) * CLOUD_PATH_HOURS * 3600,
+      halfWidthM: (xM) => geometry.cloudPathHalfWidthM(xM),
+    },
     cloud,
     wind: { ...wind, shearMsPerKm: shear },
     explanation: {

@@ -98,8 +98,13 @@ export function PlaybackCard() {
             {t('playback.cloud', { height: formatHeight(frame.cloudTopM), width: formatDistance(2 * frame.cloud.headRadiusM) })}
           </p>
           <p class="hint" data-testid="blast-drift">
+            {/* "Fallout comes down along its way" only where there is local fallout to come down. */}
             {frame.driftEndM > 1
-              ? t('playback.drift', { distance: formatDistance(frame.driftM, 2), direction: formatCompass(frame.towardsDeg), speed: formatSpeed(frame.windMs) })
+              ? t(plumeEndM !== null ? 'playback.drift' : 'playback.drift.high', {
+                  distance: formatDistance(frame.driftM, 2),
+                  direction: formatCompass(frame.towardsDeg),
+                  speed: formatSpeed(frame.windMs),
+                })
               : t('playback.drift.calm')}
           </p>
           {frame.unfold > 0 ? (
